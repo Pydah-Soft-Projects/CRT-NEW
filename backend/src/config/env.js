@@ -5,7 +5,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.PORT || 8000,
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/crt_db',
-  HRMS_MONGODB_URI: process.env.HRMS_MONGODB_URI || 'mongodb+srv://teampydah:TeamPydah@teampydah.y4zj6wh.mongodb.net/hrms',
+  HRMS_MONGODB_URI: process.env.HRMS_MONGODB_URI || '',
   JWT_SECRET_KEY: process.env.JWT_SECRET_KEY || 'versant-default-secret-key-2024',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
   JWT_REFRESH_SECRET_KEY: process.env.JWT_REFRESH_SECRET_KEY || 'versant-refresh-secret-key-2024',

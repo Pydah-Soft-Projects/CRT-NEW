@@ -21,6 +21,9 @@ class HRMSService {
 
     try {
       const uri = env.HRMS_MONGODB_URI;
+      if (!uri) {
+        throw new Error('HRMS_MONGODB_URI is not set in environment variables');
+      }
       this.connection = await mongoose.createConnection(uri, {
         maxPoolSize: 5,
         serverSelectionTimeoutMS: 8000

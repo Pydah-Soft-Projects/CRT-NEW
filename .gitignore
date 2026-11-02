@@ -24,10 +24,11 @@ MANIFEST
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+*.env
+*.env.*
+!.env.example
+!**/.env.example
 
 # IDE
 .vscode/
