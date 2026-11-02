@@ -53,12 +53,12 @@ export const FeatureProvider = ({ children }) => {
     const defaultFeatures = {
       student: {
         dashboard: { name: 'Dashboard', description: 'Main dashboard view', required: true },
-        online_tests: { name: 'Online Tests', description: 'Take online exams and tests', required: false },
-        practice_tests: { name: 'Practice Tests', description: 'Practice with Versant modules', required: false },
-        crt_modules: { name: 'CRT Modules', description: 'Access CRT aptitude and technical modules', required: false },
-        progress_tracking: { name: 'Progress Tracking', description: 'View progress analytics and statistics', required: false },
-        test_history: { name: 'Test History', description: 'View past test attempts and results', required: false },
-        profile: { name: 'Profile', description: 'Manage user profile and settings', required: false }
+        practice_tests: { name: 'Practice Tests', description: 'Practice with Versant modules', required: true },
+        crt_modules: { name: 'CRT Modules', description: 'Access CRT aptitude and technical modules', required: true },
+        online_tests: { name: 'Online Tests', description: 'Take online exams and tests', required: true },
+        progress_tracking: { name: 'Progress Tracking', description: 'View progress analytics and statistics', required: true },
+        test_history: { name: 'Test History', description: 'View past test attempts and results', required: true },
+        profile: { name: 'Profile', description: 'Manage user profile and settings', required: true }
       },
       campus_admin: {
         dashboard: { name: 'Dashboard', description: 'Main dashboard view', required: true },
@@ -110,12 +110,12 @@ export const FeatureProvider = ({ children }) => {
     const allFeatures = {
       student: [
         { name: 'Dashboard', path: '/student', icon: 'Home', feature: 'dashboard', required: true },
-        { name: 'Online Tests', path: '/student/exams', icon: 'Calendar', feature: 'online_tests' },
-        { name: 'Practice Tests', path: '/student/practice', icon: 'Book', feature: 'practice_tests' },
-        { name: 'CRT Modules', path: '/student/crt', icon: 'Book', feature: 'crt_modules' },
-        { name: 'Progress', path: '/student/progress', icon: 'PieChart', feature: 'progress_tracking' },
-        { name: 'Test History', path: '/student/history', icon: 'BarChart2', feature: 'test_history' },
-        { name: 'Profile', path: '/student/profile', icon: 'User', feature: 'profile' }
+        { name: 'Practice Tests', path: '/student/practice', icon: 'Book', feature: 'practice_tests', required: true },
+        { name: 'CRT Modules', path: '/student/crt', icon: 'Book', feature: 'crt_modules', required: true },
+        { name: 'Online Tests', path: '/student/exams', icon: 'Calendar', feature: 'online_tests', required: true },
+        { name: 'Progress', path: '/student/progress', icon: 'PieChart', feature: 'progress_tracking', required: true },
+        { name: 'Test History', path: '/student/history', icon: 'BarChart2', feature: 'test_history', required: true },
+        { name: 'Profile', path: '/student/profile', icon: 'User', feature: 'profile', required: true }
       ],
       campus_admin: [
         { name: 'Dashboard', path: '/campus-admin/dashboard', icon: 'LayoutDashboard', feature: 'dashboard', required: true },

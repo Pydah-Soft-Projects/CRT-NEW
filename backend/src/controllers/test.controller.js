@@ -190,13 +190,21 @@ exports.deleteTest = async (req, res) => {
  */
 exports.getStudentCount = async (req, res) => {
   try {
+    const b = req.body || {};
+    const collegeIds = req.sdmsScope?.collegeId ? [req.sdmsScope.collegeId] : (b.college_ids || b.target_college_ids || b.college_id || null);
+    const courseIds = req.sdmsScope?.courseId ? [req.sdmsScope.courseId] : (b.course_ids || b.target_course_ids || b.course_id || null);
+    const branchIds = b.branch_ids || b.target_branch_ids || b.branch_id || null;
+    const years = b.years || b.target_years || b.year || null;
+    const semesters = b.semesters || b.target_semesters || b.semester || null;
+    const sections = b.sections || b.target_sections || b.section || null;
+
     const result = await sdmsService.getFilteredStudents({
-      collegeId: req.sdmsScope?.collegeId || req.body.college_id || null,
-      courseId: req.sdmsScope?.courseId || req.body.course_id || null,
-      branchId: req.body.branch_id || null,
-      year: req.body.year || null,
-      semester: req.body.semester || null,
-      section: req.body.section || null,
+      collegeId: collegeIds,
+      courseId: courseIds,
+      branchId: branchIds,
+      year: years,
+      semester: semesters,
+      section: sections,
       page: 1,
       limit: 1,
       includePhoto: false,

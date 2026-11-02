@@ -1,14 +1,24 @@
 const sdmsService = require('../services/sdms.service');
 
-const getAcademicFilters = (req) => ({
-  collegeId: req.sdmsScope?.collegeId || req.query.college_id || req.query.campus_id || null,
-  courseId: req.sdmsScope?.courseId || req.query.course_id || null,
-  branchId: req.query.branch_id || null,
-  year: req.query.year || req.query.current_year || null,
-  semester: req.query.semester || req.query.current_semester || null,
-  section: req.query.section || null,
-  search: req.query.search || null
-});
+const getAcademicFilters = (req) => {
+  const getParam = (...names) => {
+    for (const name of names) {
+      if (req.query && req.query[name] !== undefined) return req.query[name];
+      if (req.body && req.body[name] !== undefined) return req.body[name];
+    }
+    return null;
+  };
+
+  return {
+    collegeId: req.sdmsScope?.collegeId || getParam('college_ids', 'college_id', 'target_college_ids', 'campus_id', 'campus_ids'),
+    courseId: req.sdmsScope?.courseId || getParam('course_ids', 'course_id', 'target_course_ids'),
+    branchId: getParam('branch_ids', 'branch_id', 'target_branch_ids'),
+    year: getParam('years', 'year', 'target_years', 'current_year'),
+    semester: getParam('semesters', 'semester', 'target_semesters', 'current_semester'),
+    section: getParam('sections', 'section', 'target_sections'),
+    search: req.query.search || req.body?.search || null
+  };
+};
 
 exports.getColleges = async (req, res) => {
   try {

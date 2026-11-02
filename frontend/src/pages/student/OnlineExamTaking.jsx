@@ -882,17 +882,19 @@ const OnlineExamTaking = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
   const listeningAnswerKey = examQuestionAnswerKey(currentQuestion, currentQuestionIndex);
+  const currentQuestionKey = examQuestionAnswerKey(currentQuestion, currentQuestionIndex);
+  const questionTitle = currentQuestion?.question || currentQuestion?.text || currentQuestion?.question_text || currentQuestion?.prompt || currentQuestion?.title || '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 fixed inset-0 overflow-auto">
-      <main className="w-full h-full px-4 py-6">
+      <main className="w-full h-full px-2.5 sm:px-4 py-3 sm:py-6 overflow-x-hidden">
         {/* Header with Timer */}
         <header className="pb-6 mb-6 border-b border-gradient-to-r from-transparent via-slate-200 to-transparent flex justify-between items-center">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-xl sm:text-2xl font-medium text-slate-700 tracking-wide"
+            className="text-sm sm:text-xl font-bold text-slate-800 tracking-wide truncate max-w-[50vw]"
           >
             {exam.name}
           </motion.h1>
@@ -1062,12 +1064,12 @@ const OnlineExamTaking = () => {
               >
                 <fieldset disabled={autoSubmitted} style={{ opacity: autoSubmitted ? 0.6 : 1 }}>
                   <motion.h3
-                    className="text-lg font-medium mb-6 text-slate-700 leading-relaxed"
+                    className="text-sm sm:text-lg font-bold mb-3 sm:mb-5 text-slate-800 leading-snug"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.4 }}
                   >
-                    {currentQuestion.question}
+                    {questionTitle}
                   </motion.h3>
 
 
@@ -1118,54 +1120,64 @@ const OnlineExamTaking = () => {
                     </motion.div>
                   )}
 
-                  {currentQuestion.question_type === 'mcq' && (
+                  {(!currentQuestion.question_type || currentQuestion.question_type === 'mcq') && currentQuestion.options && (
                     <motion.div
                       className="space-y-4"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.6, delay: 0.5 }}
                     >
-                      {Object.entries(currentQuestion.options).map(([key, value], index) => (
-                        <motion.div
-                          key={key}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-                          className={`border-2 rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${answers[currentQuestion.question_id] === value
-                              ? 'border-blue-400 bg-gradient-to-r from-blue-50 to-indigo-50 ring-4 ring-blue-100 shadow-lg scale-[1.02]'
-                              : 'border-slate-200 hover:border-blue-300 hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50'
-                            }`}
-                          onClick={() => handleAnswerChange(currentQuestion.question_id, value)}
-                        >
-                          <div className="flex items-center">
-                            <motion.div
-                              className={`h-5 w-5 mr-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${answers[currentQuestion.question_id] === value
-                                  ? 'border-blue-500 bg-blue-500'
-                                  : 'border-slate-300 hover:border-blue-400'
-                                }`}
-                            >
-                              {answers[currentQuestion.question_id] === value && (
-                                <motion.div
-                                  className="w-2 h-2 bg-white rounded-full"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ duration: 0.2 }}
-                                />
-                              )}
-                            </motion.div>
-                            <input
-                              type="radio"
-                              name={currentQuestion.question_id}
-                              value={value}
-                              checked={answers[currentQuestion.question_id] === value}
-                              onChange={() => handleAnswerChange(currentQuestion.question_id, value)}
-                              className="sr-only"
-                            />
-                            <span className="font-semibold text-slate-600 mr-3 text-lg">{key}.</span>
-                            <span className="text-slate-700 text-lg leading-relaxed">{value}</span>
-                          </div>
-                        </motion.div>
-                      ))}
+                      {Object.entries(currentQuestion.options).map(([key, value], index) => {
+                        const isSelected = answers[currentQuestionKey] === value || (currentQuestion.question_id && answers[currentQuestion.question_id] === value);
+                        const optionLabel = isNaN(Number(key)) ? `${key}.` : `${String.fromCharCode(65 + Number(key))}.`;
+                        const handleSelect = () => {
+                          handleAnswerChange(currentQuestionKey, value);
+                          if (currentQuestion.question_id && currentQuestion.question_id !== currentQuestionKey) {
+                            handleAnswerChange(currentQuestion.question_id, value);
+                          }
+                        };
+                        return (
+                          <motion.div
+                            key={key}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+                            className={`border-2 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer transition-all duration-300 hover:shadow-md ${isSelected
+                                ? 'border-blue-400 bg-gradient-to-r from-blue-50 to-indigo-50 ring-4 ring-blue-100 shadow-lg scale-[1.02]'
+                                : 'border-slate-200 hover:border-blue-300 hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50'
+                              }`}
+                            onClick={handleSelect}
+                          >
+                            <div className="flex items-center">
+                              <motion.div
+                                className={`h-5 w-5 mr-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
+                                    ? 'border-blue-500 bg-blue-500'
+                                    : 'border-slate-300 hover:border-blue-400'
+                                  }`}
+                              >
+                                {isSelected && (
+                                  <motion.div
+                                    className="w-2 h-2 bg-white rounded-full"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                  />
+                                )}
+                              </motion.div>
+                              <input
+                                type="radio"
+                                name={currentQuestionKey}
+                                value={value}
+                                checked={isSelected}
+                                onChange={handleSelect}
+                                className="sr-only"
+                              />
+                              <span className="font-semibold text-slate-600 mr-2 text-xs sm:text-sm shrink-0">{optionLabel}</span>
+                              <span className="text-slate-700 text-xs sm:text-sm leading-relaxed break-words">{value}</span>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                     </motion.div>
                   )}
 
@@ -1711,9 +1723,9 @@ const OnlineExamTaking = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-5 rounded-2xl shadow-md border border-slate-200">
                 <motion.h5
-                  className="text-center mb-6 font-light text-slate-700 text-lg"
+                  className="text-center mb-3 sm:mb-5 font-semibold text-slate-700 text-sm sm:text-base"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
@@ -1721,7 +1733,7 @@ const OnlineExamTaking = () => {
                   Question Navigation
                 </motion.h5>
                 <motion.div
-                  className="grid grid-cols-5 gap-3 mb-6"
+                  className="grid grid-cols-5 gap-2 sm:gap-2.5 mb-3 sm:mb-5"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.6 }}
@@ -1732,7 +1744,7 @@ const OnlineExamTaking = () => {
                       onClick={() => setCurrentQuestionIndex(index)}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      className={`w-12 h-12 rounded-2xl text-sm font-medium transition-all duration-300 shadow-lg relative ${index === currentQuestionIndex
+                      className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm relative ${index === currentQuestionIndex
                           ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-blue-200'
                           : answers[examQuestionAnswerKey(questions[index], index)] ||
                             recordings[examQuestionAnswerKey(questions[index], index)] ||

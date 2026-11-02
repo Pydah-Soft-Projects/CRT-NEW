@@ -390,10 +390,21 @@ export const deleteTest = async (testId) => {
   return api.delete(`/test-management/tests/${testId}`);
 };
 
-export const getAutoPracticeQuestions = async (module, topic, count = 25) => {
-  return api.get('/test-management/auto-practice-questions', {
-    params: { module, topic, count }
+export const getAutoPracticeQuestions = async (module, topic, count = 25, level = null, testNumber = 1, excludeIds = []) => {
+  return api.get('/student/auto-practice-questions', {
+    params: {
+      module,
+      topic,
+      count,
+      level,
+      test_number: testNumber,
+      exclude_ids: Array.isArray(excludeIds) && excludeIds.length ? excludeIds.join(',') : undefined
+    }
   });
+};
+
+export const submitPracticeTestResult = async (payload) => {
+  return api.post('/student/submit-practice-test', payload);
 };
 
 export const getAllTests = async () => api.get('/test-management/tests');

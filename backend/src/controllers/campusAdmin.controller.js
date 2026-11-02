@@ -121,19 +121,95 @@ exports.getOnlineTestOverview = async (req, res) => {
     const visibleTests = [];
     for (const test of tests) {
       if (testIncludesSdmsScope(test, scope)) {
-        visibleTests.push({
-          ...test,
-          test_id: String(test._id),
-          test_name: test.title,
-          module_name: test.module_id,
-          question_count: Array.isArray(test.questions) ? test.questions.length : 0,
-          campus_ids: (test.target_college_ids || []).map(String),
-          batch_ids: [],
-          college_ids: (test.target_college_ids || []).map(Number)
-        });
+        visibleTests.push(test);
       }
     }
-    return res.json({ success: true, data: visibleTests });
+
+    // Get all SDMS colleges map for friendly display
+    let collegeMap = {};
+    try {
+      const colleges = await sdmsService.getColleges();
+      if (Array.isArray(colleges)) {
+        colleges.forEach(c => { collegeMap[c.id] = c.name; });
+      }
+    } catch (e) {
+      // Ignore college fetch errors
+    }
+
+    // Fetch all results for visible tests
+    const testIds = visibleTests.map(t => t._id);
+    const allResults = testIds.length ? await Result.find({ test_id: { $in: testIds } }).lean() : [];
+    const resultsByTest = new Map();
+    for (const r of allResults) {
+      const tid = String(r.test_id);
+      if (!resultsByTest.has(tid)) resultsByTest.set(tid, []);
+      resultsByTest.get(tid).push(r);
+    }
+
+    // Format category helper
+    const formatCategory = (test) => {
+      if (test.subcategory) {
+        const sub = test.subcategory
+          .replace(/[_-]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase());
+        return `${test.module_id || 'CRT'} - ${sub}`;
+      }
+      return test.module_id ? `${test.module_id} Online Test` : 'CRT Assessment';
+    };
+
+    const overviewData = await Promise.all(visibleTests.map(async (test) => {
+      const tid = String(test._id);
+      const results = resultsByTest.get(tid) || [];
+      const totalAttempts = results.length;
+
+      const scores = results
+        .map(r => Number(r.score_percentage ?? r.percentage ?? r.score))
+        .filter(s => typeof s === 'number' && !isNaN(s));
+
+      const highestScore = scores.length ? Math.round(Math.max(...scores) * 10) / 10 : null;
+      const averageScore = scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null;
+
+      // Calculate assigned students from SDMS audience count
+      let totalAssignedStudents = 0;
+      try {
+        totalAssignedStudents = await sdmsService.getExamAudienceCount(test, scope.collegeId, scope.courseId);
+      } catch (e) {
+        totalAssignedStudents = 0;
+      }
+
+      // Unique student attempts
+      const uniqueStudentsAttempted = new Set(
+        results.map(r => r.sdms_student_id || r.user_id).filter(Boolean)
+      ).size;
+      const pendingStudents = Math.max(0, totalAssignedStudents - uniqueStudentsAttempted);
+
+      // College names display
+      const targetCollegeIds = (test.target_college_ids || []).map(Number);
+      const collegeNames = targetCollegeIds.length
+        ? targetCollegeIds.map(id => collegeMap[id] || `College ${id}`)
+        : ['All Colleges'];
+
+      return {
+        ...test,
+        test_id: tid,
+        test_name: test.title,
+        module_name: test.module_id,
+        category: formatCategory(test),
+        question_count: Array.isArray(test.questions) ? test.questions.length : 0,
+        campus_ids: targetCollegeIds.map(String),
+        college_ids: targetCollegeIds,
+        college_names: collegeNames,
+        campus_names: collegeNames,
+        batch_ids: [],
+        total_assigned_students: totalAssignedStudents,
+        pending_students: pendingStudents,
+        total_attempts: totalAttempts,
+        highest_score: highestScore,
+        average_score: averageScore
+      };
+    }));
+
+    return res.json({ success: true, data: overviewData });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

@@ -1,6 +1,30 @@
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const env = require('../config/env');
+function parseIdList(val) {
+  if (val === null || val === undefined || val === '' || val === 'all') return [];
+  if (Array.isArray(val)) {
+    return val.flatMap(v => parseIdList(v));
+  }
+  if (typeof val === 'string') {
+    return val.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n) && n > 0);
+  }
+  const n = Number(val);
+  return (!isNaN(n) && n > 0) ? [n] : [];
+}
+
+function parseStringList(val) {
+  if (val === null || val === undefined || val === '' || val === 'all') return [];
+  if (Array.isArray(val)) {
+    return val.flatMap(v => parseStringList(v));
+  }
+  if (typeof val === 'string') {
+    return val.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  const s = String(val).trim();
+  return s ? [s] : [];
+}
+
 
 class SDMSService {
   constructor() {
@@ -152,9 +176,13 @@ class SDMSService {
     let query = 'SELECT id, college_id, name, code, total_years, semesters_per_year FROM courses WHERE is_active = 1';
     const params = [];
 
-    if (collegeId) {
+    const collegeIds = parseIdList(collegeId);
+    if (collegeIds.length === 1) {
       query += ' AND college_id = ?';
-      params.push(Number(collegeId));
+      params.push(collegeIds[0]);
+    } else if (collegeIds.length > 1) {
+      query += ` AND college_id IN (${collegeIds.map(() => '?').join(', ')})`;
+      params.push(...collegeIds);
     }
     query += ' ORDER BY name ASC';
 
@@ -175,13 +203,22 @@ class SDMSService {
     `;
     const params = [];
 
-    if (courseId) {
+    const courseIds = parseIdList(courseId);
+    if (courseIds.length === 1) {
       query += ' AND cb.course_id = ?';
-      params.push(Number(courseId));
+      params.push(courseIds[0]);
+    } else if (courseIds.length > 1) {
+      query += ` AND cb.course_id IN (${courseIds.map(() => '?').join(', ')})`;
+      params.push(...courseIds);
     }
-    if (collegeId) {
+
+    const collegeIds = parseIdList(collegeId);
+    if (collegeIds.length === 1) {
       query += ' AND c.college_id = ?';
-      params.push(Number(collegeId));
+      params.push(collegeIds[0]);
+    } else if (collegeIds.length > 1) {
+      query += ` AND c.college_id IN (${collegeIds.map(() => '?').join(', ')})`;
+      params.push(...collegeIds);
     }
     query += ' ORDER BY cb.name ASC';
 
@@ -195,28 +232,44 @@ class SDMSService {
   async getYears(collegeId, courseId, branchId) {
     const pool = this.getPool();
     
-    if (courseId) {
-      const [courses] = await pool.query('SELECT total_years FROM courses WHERE id = ?', [Number(courseId)]);
-      if (courses.length > 0 && courses[0].total_years) {
-        const total = Number(courses[0].total_years);
-        return Array.from({ length: total }, (_, i) => i + 1);
+    const courseIds = parseIdList(courseId);
+    if (courseIds.length > 0) {
+      const [courses] = await pool.query(`SELECT total_years FROM courses WHERE id IN (${courseIds.map(() => '?').join(', ')})`, courseIds);
+      if (courses.length > 0) {
+        const maxTotal = Math.max(...courses.map(c => Number(c.total_years) || 4));
+        if (maxTotal > 0) {
+          return Array.from({ length: maxTotal }, (_, i) => i + 1);
+        }
       }
     }
 
     let query = "SELECT DISTINCT current_year as year FROM students WHERE current_year IS NOT NULL AND current_year > 0 AND (student_status = 'Regular' OR LOWER(student_status) = 'regular' OR student_status IS NULL OR student_status = 'Active')";
     const params = [];
 
-    if (collegeId) {
+    const collegeIds = parseIdList(collegeId);
+    if (collegeIds.length === 1) {
       query += ' AND college_id = ?';
-      params.push(Number(collegeId));
+      params.push(collegeIds[0]);
+    } else if (collegeIds.length > 1) {
+      query += ` AND college_id IN (${collegeIds.map(() => '?').join(', ')})`;
+      params.push(...collegeIds);
     }
-    if (courseId) {
+
+    if (courseIds.length === 1) {
       query += ' AND course_id = ?';
-      params.push(Number(courseId));
+      params.push(courseIds[0]);
+    } else if (courseIds.length > 1) {
+      query += ` AND course_id IN (${courseIds.map(() => '?').join(', ')})`;
+      params.push(...courseIds);
     }
-    if (branchId) {
+
+    const branchIds = parseIdList(branchId);
+    if (branchIds.length === 1) {
       query += ' AND branch_id = ?';
-      params.push(Number(branchId));
+      params.push(branchIds[0]);
+    } else if (branchIds.length > 1) {
+      query += ` AND branch_id IN (${branchIds.map(() => '?').join(', ')})`;
+      params.push(...branchIds);
     }
     query += ' ORDER BY year ASC';
 
@@ -244,27 +297,52 @@ class SDMSService {
     `;
     const params = [];
 
-    if (collegeId) {
+    const collegeIds = parseIdList(collegeId);
+    if (collegeIds.length === 1) {
       query += ' AND s.college_id = ?';
-      params.push(Number(collegeId));
+      params.push(collegeIds[0]);
+    } else if (collegeIds.length > 1) {
+      query += ` AND s.college_id IN (${collegeIds.map(() => '?').join(', ')})`;
+      params.push(...collegeIds);
     }
-    if (courseId) {
+
+    const courseIds = parseIdList(courseId);
+    if (courseIds.length === 1) {
       query += ' AND s.course_id = ?';
-      params.push(Number(courseId));
+      params.push(courseIds[0]);
+    } else if (courseIds.length > 1) {
+      query += ` AND s.course_id IN (${courseIds.map(() => '?').join(', ')})`;
+      params.push(...courseIds);
     }
-    if (branchId) {
+
+    const branchIds = parseIdList(branchId);
+    if (branchIds.length === 1) {
       query += ' AND s.branch_id = ?';
-      params.push(Number(branchId));
+      params.push(branchIds[0]);
+    } else if (branchIds.length > 1) {
+      query += ` AND s.branch_id IN (${branchIds.map(() => '?').join(', ')})`;
+      params.push(...branchIds);
     }
-    if (year) {
+
+    const years = parseIdList(year);
+    if (years.length === 1) {
       query += ' AND s.current_year = ?';
-      params.push(Number(year));
+      params.push(years[0]);
+    } else if (years.length > 1) {
+      query += ` AND s.current_year IN (${years.map(() => '?').join(', ')})`;
+      params.push(...years);
     }
-    if (semester) {
-      const semNum = Number(semester);
-      const normalizedSem = (semNum > 2 && year) ? (((semNum - 1) % 2) + 1) : semNum;
+
+    const sems = parseIdList(semester);
+    if (sems.length === 1) {
+      const semNum = sems[0];
+      const normalizedSem = (semNum > 2 && years.length === 1) ? (((semNum - 1) % 2) + 1) : semNum;
       query += ' AND s.current_semester = ?';
       params.push(normalizedSem);
+    } else if (sems.length > 1) {
+      const normalizedSems = [...new Set(sems.map(s => (s > 2 ? (((s - 1) % 2) + 1) : s)))];
+      query += ` AND s.current_semester IN (${normalizedSems.map(() => '?').join(', ')})`;
+      params.push(...normalizedSems);
     }
 
     query += ' ORDER BY s.section ASC';
@@ -790,32 +868,36 @@ class SDMSService {
     }
     const params = [];
 
-    if (collegeId) {
-      whereClause += ' AND s.college_id = ?';
-      params.push(Number(collegeId));
-    }
-    if (courseId) {
-      whereClause += ' AND s.course_id = ?';
-      params.push(Number(courseId));
-    }
-    if (branchId) {
-      whereClause += ' AND s.branch_id = ?';
-      params.push(Number(branchId));
-    }
-    if (year) {
-      whereClause += ' AND s.current_year = ?';
-      params.push(Number(year));
-    }
-    if (semester) {
-      const sNum = Number(semester);
-      const normalizedSem = (sNum > 2 && year) ? (((sNum - 1) % 2) + 1) : sNum;
+    const appendFilter = (field, val, isNum = true) => {
+      const items = isNum ? parseIdList(val) : parseStringList(val);
+      if (items.length === 1) {
+        whereClause += ` AND ${field} = ?`;
+        params.push(items[0]);
+      } else if (items.length > 1) {
+        whereClause += ` AND ${field} IN (${items.map(() => '?').join(', ')})`;
+        params.push(...items);
+      }
+    };
+
+    appendFilter('s.college_id', collegeId, true);
+    appendFilter('s.course_id', courseId, true);
+    appendFilter('s.branch_id', branchId, true);
+    appendFilter('s.current_year', year, true);
+
+    const sems = parseIdList(semester);
+    if (sems.length === 1) {
+      const sNum = sems[0];
+      const years = parseIdList(year);
+      const normalizedSem = (sNum > 2 && years.length === 1) ? (((sNum - 1) % 2) + 1) : sNum;
       whereClause += ' AND s.current_semester = ?';
       params.push(normalizedSem);
+    } else if (sems.length > 1) {
+      const normalizedSems = [...new Set(sems.map(s => (s > 2 ? (((s - 1) % 2) + 1) : s)))];
+      whereClause += ` AND s.current_semester IN (${normalizedSems.map(() => '?').join(', ')})`;
+      params.push(...normalizedSems);
     }
-    if (section) {
-      whereClause += ' AND s.section = ?';
-      params.push(section);
-    }
+
+    appendFilter('s.section', section, false);
     if (search && search.trim()) {
       const sTerm = `%${search.trim()}%`;
       whereClause += ' AND (s.student_name LIKE ? OR s.admission_number LIKE ? OR s.pin_no LIKE ? OR s.email LIKE ? OR s.student_mobile LIKE ?)';
@@ -939,12 +1021,12 @@ class SDMSService {
 
   async getExamAudience(test, collegeId = null, maxStudents = 5000, courseId = null) {
     const filters = {
-      collegeId: collegeId || test.target_college_ids?.[0] || null,
-      courseId: courseId || test.target_course_ids?.[0] || null,
-      branchId: test.target_branch_ids?.[0] || null,
-      year: test.target_years?.[0] || null,
-      semester: test.target_semesters?.[0] || null,
-      section: test.target_sections?.[0] || null,
+      collegeId: collegeId || (test.target_college_ids?.length ? test.target_college_ids : null),
+      courseId: courseId || (test.target_course_ids?.length ? test.target_course_ids : null),
+      branchId: test.target_branch_ids?.length ? test.target_branch_ids : null,
+      year: test.target_years?.length ? test.target_years : null,
+      semester: test.target_semesters?.length ? test.target_semesters : null,
+      section: test.target_sections?.length ? test.target_sections : null,
       page: 1,
       limit: 200,
       includePhoto: false,
@@ -957,6 +1039,23 @@ class SDMSService {
       total: result.total,
       truncated: result.truncated
     };
+  }
+
+  async getExamAudienceCount(test, collegeId = null, courseId = null) {
+    const filters = {
+      collegeId: collegeId || (test.target_college_ids?.length ? test.target_college_ids : null),
+      courseId: courseId || (test.target_course_ids?.length ? test.target_course_ids : null),
+      branchId: test.target_branch_ids?.length ? test.target_branch_ids : null,
+      year: test.target_years?.length ? test.target_years : null,
+      semester: test.target_semesters?.length ? test.target_semesters : null,
+      section: test.target_sections?.length ? test.target_sections : null,
+      page: 1,
+      limit: 1,
+      includePhoto: false,
+      loginEnabledOnly: true
+    };
+    const result = await this.getFilteredStudents(filters);
+    return result.pagination?.total || 0;
   }
 
   async getBatchCount(collegeId = null) {

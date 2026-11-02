@@ -23,8 +23,20 @@ const StudentSidebar = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-    // Generate navigation based on user features
-    const navigationItems = generateNavLinks(user?.role || 'student');
+    // Default standard student navigation links
+    const DEFAULT_STUDENT_NAV = [
+        { name: 'Dashboard', path: '/student', icon: 'Home' },
+        { name: 'Practice Tests', path: '/student/practice', icon: 'Book' },
+        { name: 'CRT Modules', path: '/student/crt', icon: 'Book' },
+        { name: 'Online Tests', path: '/student/exams', icon: 'Calendar' },
+        { name: 'Progress', path: '/student/progress', icon: 'PieChart' },
+        { name: 'Test History', path: '/student/history', icon: 'BarChart2' },
+        { name: 'Profile', path: '/student/profile', icon: 'User' }
+    ];
+
+    // Generate navigation based on user features with guaranteed fallback
+    const generatedItems = generateNavLinks(user?.role || 'student');
+    const navigationItems = (generatedItems && generatedItems.length > 1) ? generatedItems : DEFAULT_STUDENT_NAV;
     
     // Debug logging
     console.log('🔍 User role:', user?.role);

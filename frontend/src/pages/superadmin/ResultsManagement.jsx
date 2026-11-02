@@ -751,6 +751,7 @@ const ResultsManagement = () => {
     const [tests, setTests] = useState([]);
     const [campuses, setCampuses] = useState([]);
     const [batches, setBatches] = useState([]);
+    const [sdmsColleges, setSdmsColleges] = useState([]);
     const [selectedCampusFilter, setSelectedCampusFilter] = useState('all');
     const [selectedBatchFilter, setSelectedBatchFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');

@@ -60,6 +60,13 @@ exports.getGlobalFeatures = async (req, res) => {
     data: {
       role,
       features: {
+        dashboard: { name: 'Dashboard', enabled: true, required: true },
+        practice_tests: { name: 'Practice Tests', enabled: true, required: true },
+        crt_modules: { name: 'CRT Modules', enabled: true, required: true },
+        online_tests: { name: 'Online Tests', enabled: true, required: true },
+        progress_tracking: { name: 'Progress Tracking', enabled: true, required: true },
+        test_history: { name: 'Test History', enabled: true, required: true },
+        profile: { name: 'Profile', enabled: true, required: true },
         test_taking: { name: 'Test Taking', enabled: true, required: true },
         speaking_evaluation: { name: 'Speaking AI Evaluation', enabled: true, required: true },
         batch_management: { name: 'Batch Management', enabled: true, required: false }

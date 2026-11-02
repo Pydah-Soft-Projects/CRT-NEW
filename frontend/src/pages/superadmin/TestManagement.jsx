@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -16,13 +17,16 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   Eye,
   Bell,
   BookOpen,
   ArrowRight,
   HelpCircle,
-  Layers
+  Layers,
+  Check
 } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -64,15 +68,279 @@ const MODULE_OPTIONS = [
   }
 ];
 
+
+/**
+ * Modern MultiSelectDropdown component with search, select-all, badges, and responsive dropdown.
+ */
+function MultiSelectDropdown({
+  label,
+  options = [],
+  selectedValues = [],
+  onChange,
+  placeholder = 'Select...',
+  allLabel = 'All Options',
+  loading = false,
+  error = '',
+  disabled = false,
+  idKey = 'id',
+  nameKey = 'name',
+  codeKey = 'code'
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [openUpward, setOpenUpward] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close when clicked outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Determine whether to open upward or downward
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 280 && rect.top > spaceBelow) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
+    }
+  }, [isOpen]);
+
+  // Normalize options to { id, name, code }
+  const normalizedOptions = useMemo(() => {
+    return options.map(opt => {
+      if (typeof opt === 'object' && opt !== null) {
+        return {
+          id: opt[idKey] ?? opt.id ?? opt.value ?? opt.name,
+          name: opt[nameKey] ?? opt.name ?? opt.label ?? String(opt[idKey]),
+          code: opt[codeKey] ?? opt.code ?? ''
+        };
+      }
+      return {
+        id: opt,
+        name: String(opt),
+        code: ''
+      };
+    });
+  }, [options, idKey, nameKey, codeKey]);
+
+  // Filter options by search
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm.trim()) return normalizedOptions;
+    const term = searchTerm.toLowerCase();
+    return normalizedOptions.filter(opt =>
+      opt.name.toLowerCase().includes(term) || (opt.code && opt.code.toLowerCase().includes(term))
+    );
+  }, [normalizedOptions, searchTerm]);
+
+  const toggleOption = (id) => {
+    const isSelected = selectedValues.some(v => String(v) === String(id));
+    let next;
+    if (isSelected) {
+      next = selectedValues.filter(v => String(v) !== String(id));
+    } else {
+      next = [...selectedValues, id];
+    }
+    onChange(next);
+  };
+
+  const handleSelectAll = () => {
+    onChange([]);
+    setIsOpen(false);
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange([]);
+  };
+
+  // Label to show on button
+  const displayLabel = useMemo(() => {
+    if (selectedValues.length === 0) {
+      return allLabel;
+    }
+    if (selectedValues.length === 1) {
+      const match = normalizedOptions.find(o => String(o.id) === String(selectedValues[0]));
+      return match ? match.name : `${selectedValues[0]}`;
+    }
+    if (selectedValues.length === 2) {
+      const names = selectedValues
+        .map(v => normalizedOptions.find(o => String(o.id) === String(v))?.name || v)
+        .join(', ');
+      return names;
+    }
+    return `${selectedValues.length} Selected`;
+  }, [selectedValues, normalizedOptions, allLabel]);
+
+  return (
+    <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`} ref={dropdownRef}>
+      {label && (
+        <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+          <span>{label}</span>
+          {selectedValues.length > 0 && (
+            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+              {selectedValues.length} selected
+            </span>
+          )}
+        </label>
+      )}
+
+      {/* Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled || loading}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2 text-sm bg-white border rounded-xl flex items-center justify-between gap-2 text-left transition-all ${
+          disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200' :
+          isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm' :
+          selectedValues.length > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200 hover:border-slate-300'
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className={`truncate text-sm ${selectedValues.length === 0 ? 'text-slate-600 font-medium' : 'text-slate-900 font-semibold'}`}>
+            {loading ? 'Loading...' : displayLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {selectedValues.length > 0 && !disabled && (
+            <span
+              onClick={handleClear}
+              title="Reset to All"
+              className="p-0.5 rounded-md hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className={`absolute z-50 w-full min-w-[240px] bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 space-y-1 animate-in fade-in ${
+          openUpward ? 'bottom-full mb-1.5 slide-in-from-bottom-1' : 'top-full mt-1.5 slide-in-from-top-1'
+        }`}>
+          {/* Search box if options > 4 */}
+          {normalizedOptions.length > 4 && (
+            <div className="px-2 pb-1.5">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder={`Search ${label || 'options'}...`}
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Quick Select Buttons */}
+          <div className="flex items-center justify-between px-3 py-1 border-b border-slate-100 text-[11px] font-semibold text-slate-500">
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              className="hover:text-indigo-600 transition-colors"
+            >
+              Select All ({allLabel})
+            </button>
+            {selectedValues.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-rose-600 hover:text-rose-700 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Options List */}
+          <div className="max-h-56 overflow-y-auto px-1 space-y-0.5">
+            {/* "All" Option */}
+            <div
+              onClick={handleSelectAll}
+              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                selectedValues.length === 0
+                  ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                  : 'hover:bg-slate-50 text-slate-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.length === 0}
+                onChange={handleSelectAll}
+                className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+              />
+              <span className="flex-1">{allLabel}</span>
+              {selectedValues.length === 0 && (
+                <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-full">
+                  Default
+                </span>
+              )}
+            </div>
+
+            {filteredOptions.length === 0 ? (
+              <p className="text-center py-3 text-xs text-slate-400">No matching options</p>
+            ) : (
+              filteredOptions.map(opt => {
+                const isChecked = selectedValues.some(v => String(v) === String(opt.id));
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => toggleOption(opt.id)}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                      isChecked
+                        ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleOption(opt.id)}
+                      className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+                    />
+                    <span className="flex-1 truncate">{opt.name}</span>
+                    {opt.code && (
+                      <span className="text-[10px] text-slate-400 uppercase font-mono">
+                        {opt.code}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TestManagement() {
+  const location = useLocation();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterModule, setFilterModule] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
 
-  // Modal States
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Inline Create Test view state (opened by button or /tests/create route)
+  const [isCreateOpen, setIsCreateOpen] = useState(() => {
+    return Boolean(location.pathname?.endsWith('/create'));
+  });
   const [previewTest, setPreviewTest] = useState(null);
 
   // Fetch Tests
@@ -153,9 +421,53 @@ export default function TestManagement() {
     return { total: tests.length, active, upcoming, totalQuestions };
   }, [tests]);
 
+  // When in test creation mode, render dedicated full-window page view (No clipping, no overflow-hidden)
+  if (isCreateOpen) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-6 lg:p-8 w-full">
+        <div className="w-full space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 rounded-full border border-indigo-100">
+                  Online Exam Creator
+                </span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Create Online Test
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Configure, target, and publish online assessments with multi-select SDMS audience filters.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsCreateOpen(false)}
+              className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl font-medium border border-slate-200 transition-all hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span>Back to Tests</span>
+            </button>
+          </div>
+
+          {/* Full-width Inline Wizard */}
+          <CreateTestInlineWizard
+            onClose={() => setIsCreateOpen(false)}
+            onTestCreated={(newTest) => {
+              setTests(prev => [newTest, ...prev]);
+              setIsCreateOpen(false);
+              toast.success('Test published successfully and added to list!');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-6 lg:p-8 w-full">
+      <div className="w-full space-y-6 md:space-y-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -169,13 +481,13 @@ export default function TestManagement() {
               Online Test Management
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              Create, configure, and schedule CRT & Versant assessments in a streamlined 3-step modal.
+              Create, configure, and schedule CRT & Versant assessments with multi-select SDMS audience targeting.
             </p>
           </div>
 
           <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-5 py-3 rounded-xl font-medium shadow-md shadow-indigo-100 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-indigo-100"
           >
             <Plus className="w-5 h-5" />
             <span>Create Online Test</span>
@@ -398,18 +710,7 @@ export default function TestManagement() {
 
       </div>
 
-      {/* 3-Step Create Online Test Modal */}
-      <AnimatePresence>
-        {isCreateModalOpen && (
-          <CreateTestWizardModal
-            onClose={() => setIsCreateModalOpen(false)}
-            onTestCreated={(newTest) => {
-              setTests(prev => [newTest, ...prev]);
-              setIsCreateModalOpen(false);
-            }}
-          />
-        )}
-      </AnimatePresence>
+
 
       {/* Preview Questions Modal */}
       <AnimatePresence>
@@ -425,9 +726,9 @@ export default function TestManagement() {
 }
 
 /**
- * Single 3-Step Wizard Modal for Online Test Creation
+ * Single 3-Step Wizard Component for Online Test Creation (Inline View)
  */
-function CreateTestWizardModal({ onClose, onTestCreated }) {
+function CreateTestInlineWizard({ onClose, onTestCreated }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
@@ -450,19 +751,22 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
     return formatDateTimeLocal(nextWeek);
   });
 
-  // Audience targeting
+  // Audience targeting options & multi-selection states
   const [colleges, setColleges] = useState([]);
   const [courses, setCourses] = useState([]);
   const [branches, setBranches] = useState([]);
   const [years, setYears] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [sections, setSections] = useState([]);
-  const [selectedCollege, setSelectedCollege] = useState('all');
-  const [selectedCourse, setSelectedCourse] = useState('all');
-  const [selectedBranch, setSelectedBranch] = useState('all');
-  const [selectedYear, setSelectedYear] = useState('all');
-  const [selectedSemester, setSelectedSemester] = useState('all');
-  const [selectedSection, setSelectedSection] = useState('all');
+
+  // Multi-selection states (Empty array means "All")
+  const [selectedColleges, setSelectedColleges] = useState([]);
+  const [selectedCourses, setSelectedCourses] = useState([]);
+  const [selectedBranches, setSelectedBranches] = useState([]);
+  const [selectedYears, setSelectedYears] = useState([]);
+  const [selectedSemesters, setSelectedSemesters] = useState([]);
+  const [selectedSections, setSelectedSections] = useState([]);
+
   const [targetStudentCount, setTargetStudentCount] = useState(null);
   const [audienceLoading, setAudienceLoading] = useState(false);
   const [audienceError, setAudienceError] = useState('');
@@ -478,7 +782,7 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
   // STEP 3 STATE: Review & Notifications
   const [notifyStudents, setNotifyStudents] = useState(true);
 
-  // Load the authoritative SDMS hierarchy used to target exam audiences.
+  // Load the authoritative SDMS colleges on mount
   useEffect(() => {
     async function fetchColleges() {
       try {
@@ -492,109 +796,107 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
     fetchColleges();
   }, []);
 
+  // Fetch courses when selected colleges change
   useEffect(() => {
-    setCourses([]);
-    setBranches([]);
-    setYears([]);
-    setSemesters([]);
-    setSections([]);
-    setSelectedCourse('all');
-    setSelectedBranch('all');
-    setSelectedYear('all');
-    setSelectedSemester('all');
-    setSelectedSection('all');
-    if (selectedCollege === 'all') return;
-
-    api.get('/student/sdms/courses', { params: { college_id: selectedCollege } })
-      .then(response => setCourses(response.data?.data || []))
+    const params = {};
+    if (selectedColleges.length > 0) {
+      params.college_ids = selectedColleges.join(',');
+    }
+    api.get('/student/sdms/courses', { params })
+      .then(response => {
+        const loadedCourses = response.data?.data || [];
+        setCourses(loadedCourses);
+        // prune any selected courses not in new list if specific colleges picked
+        if (selectedColleges.length > 0) {
+          const validIds = new Set(loadedCourses.map(c => Number(c.id)));
+          setSelectedCourses(prev => prev.filter(id => validIds.has(Number(id))));
+        }
+      })
       .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS courses.'));
-  }, [selectedCollege]);
+  }, [selectedColleges]);
 
+  // Fetch branches when selected courses or colleges change
   useEffect(() => {
-    setBranches([]);
-    setYears([]);
-    setSemesters([]);
-    setSections([]);
-    setSelectedBranch('all');
-    setSelectedYear('all');
-    setSelectedSemester('all');
-    setSelectedSection('all');
-    if (selectedCourse === 'all') return;
+    const params = {};
+    if (selectedColleges.length > 0) params.college_ids = selectedColleges.join(',');
+    if (selectedCourses.length > 0) params.course_ids = selectedCourses.join(',');
 
-    api.get('/student/sdms/branches', {
-      params: {
-        college_id: selectedCollege === 'all' ? undefined : selectedCollege,
-        course_id: selectedCourse
-      }
-    })
-      .then(response => setBranches(response.data?.data || []))
+    api.get('/student/sdms/branches', { params })
+      .then(response => {
+        const loadedBranches = response.data?.data || [];
+        setBranches(loadedBranches);
+        if (selectedCourses.length > 0) {
+          const validIds = new Set(loadedBranches.map(b => Number(b.id)));
+          setSelectedBranches(prev => prev.filter(id => validIds.has(Number(id))));
+        }
+      })
       .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS branches.'));
-  }, [selectedCollege, selectedCourse]);
+  }, [selectedColleges, selectedCourses]);
 
+  // Fetch years when selected branches, courses, or colleges change
   useEffect(() => {
-    setYears([]);
-    setSemesters([]);
-    setSections([]);
-    setSelectedYear('all');
-    setSelectedSemester('all');
-    setSelectedSection('all');
-    const params = {
-      college_id: selectedCollege === 'all' ? undefined : selectedCollege,
-      course_id: selectedCourse === 'all' ? undefined : selectedCourse,
-      branch_id: selectedBranch === 'all' ? undefined : selectedBranch
-    };
+    const params = {};
+    if (selectedColleges.length > 0) params.college_ids = selectedColleges.join(',');
+    if (selectedCourses.length > 0) params.course_ids = selectedCourses.join(',');
+    if (selectedBranches.length > 0) params.branch_ids = selectedBranches.join(',');
+
     api.get('/student/sdms/years', { params })
-      .then(response => setYears(response.data?.data || []))
+      .then(response => {
+        const loadedYears = response.data?.data || [];
+        setYears(loadedYears.map(Number));
+      })
       .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS years.'));
-  }, [selectedCollege, selectedCourse, selectedBranch]);
+  }, [selectedColleges, selectedCourses, selectedBranches]);
 
+  // Fetch semesters and sections when years change
   useEffect(() => {
-    setSemesters([]);
-    setSections([]);
-    setSelectedSemester('all');
-    setSelectedSection('all');
-    if (selectedYear === 'all') return;
+    const params = {};
+    if (selectedColleges.length > 0) params.college_ids = selectedColleges.join(',');
+    if (selectedCourses.length > 0) params.course_ids = selectedCourses.join(',');
+    if (selectedBranches.length > 0) params.branch_ids = selectedBranches.join(',');
+    if (selectedYears.length > 0) params.years = selectedYears.join(',');
 
-    const params = {
-      college_id: selectedCollege === 'all' ? undefined : selectedCollege,
-      course_id: selectedCourse === 'all' ? undefined : selectedCourse,
-      branch_id: selectedBranch === 'all' ? undefined : selectedBranch,
-      year: selectedYear
-    };
     Promise.all([
       api.get('/student/sdms/semesters', { params }),
       api.get('/student/sdms/sections', { params })
     ])
       .then(([semesterResponse, sectionResponse]) => {
-        setSemesters(semesterResponse.data?.data || []);
-        setSections(sectionResponse.data?.data || []);
+        setSemesters(semesterResponse.data?.data || [1, 2]);
+        setSections(sectionResponse.data?.data || ['A', 'B', 'C', 'D']);
       })
       .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS semester and section options.'));
-  }, [selectedCollege, selectedCourse, selectedBranch, selectedYear]);
+  }, [selectedColleges, selectedCourses, selectedBranches, selectedYears]);
 
+  // Calculate real-time SDMS student count based on active multi-selections
   useEffect(() => {
+    let active = true;
     async function calcStudentCount() {
       try {
         setAudienceLoading(true);
         setAudienceError('');
         const res = await getStudentCount({
-          college_id: selectedCollege === 'all' ? undefined : selectedCollege,
-          course_id: selectedCourse === 'all' ? undefined : selectedCourse,
-          branch_id: selectedBranch === 'all' ? undefined : selectedBranch,
-          year: selectedYear === 'all' ? undefined : selectedYear,
-          semester: selectedSemester === 'all' ? undefined : selectedSemester,
-          section: selectedSection === 'all' ? undefined : selectedSection
+          college_ids: selectedColleges,
+          course_ids: selectedCourses,
+          branch_ids: selectedBranches,
+          years: selectedYears,
+          semesters: selectedSemesters,
+          sections: selectedSections
         });
-        setTargetStudentCount(res.data?.count ?? 0);
+        if (active) {
+          setTargetStudentCount(res.data?.count ?? 0);
+        }
       } catch (err) {
-        setTargetStudentCount(null);
-        setAudienceError(err.response?.data?.message || 'Unable to count the selected SDMS students.');
+        if (active) {
+          setTargetStudentCount(null);
+          setAudienceError(err.response?.data?.message || 'Unable to count the selected SDMS students.');
+        }
       } finally {
-        setAudienceLoading(false);
+        if (active) setAudienceLoading(false);
       }
     }
     calcStudentCount();
-  }, [selectedCollege, selectedCourse, selectedBranch, selectedYear, selectedSemester, selectedSection]);
+    return () => { active = false; };
+  }, [selectedColleges, selectedCourses, selectedBranches, selectedYears, selectedSemesters, selectedSections]);
 
   // Update default title when module/topic changes
   const handleModuleChange = (newMod) => {
@@ -697,11 +999,10 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
       toast.error('Please upload a .csv, .xlsx, or .xls file');
     }
 
-    // Reset input
     e.target.value = '';
   };
 
-  // Row Parser Helper (Supports both MCQ and Speaking Sentences)
+  // Row Parser Helper (MCQ & Speaking questions)
   const parseRowsToQuestions = (rows) => {
     const result = [];
     const isSpeakingTest = String(moduleId || '').toUpperCase().includes('SPEAKING');
@@ -778,7 +1079,7 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
       return;
     }
     if (questions.length === 0) {
-      toast.error('Please add or upload at least 1 question');
+      toast.error('Please add or upload at least 1 question in Step 2');
       setCurrentStep(2);
       return;
     }
@@ -794,12 +1095,12 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
         startDateTime: new Date(startDateTime),
         endDateTime: new Date(endDateTime),
         test_type: 'online_exam',
-        target_college_ids: selectedCollege === 'all' ? [] : [Number(selectedCollege)],
-        target_course_ids: selectedCourse === 'all' ? [] : [Number(selectedCourse)],
-        target_branch_ids: selectedBranch === 'all' ? [] : [Number(selectedBranch)],
-        target_years: selectedYear === 'all' ? [] : [Number(selectedYear)],
-        target_semesters: selectedSemester === 'all' ? [] : [Number(selectedSemester)],
-        target_sections: selectedSection === 'all' ? [] : [selectedSection],
+        target_college_ids: selectedColleges.map(Number),
+        target_course_ids: selectedCourses.map(Number),
+        target_branch_ids: selectedBranches.map(Number),
+        target_years: selectedYears.map(Number),
+        target_semesters: selectedSemesters.map(Number),
+        target_sections: selectedSections.map(String),
         questions: questions,
         notify_students: notifyStudents
       };
@@ -817,697 +1118,745 @@ function CreateTestWizardModal({ onClose, onTestCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        className="bg-white w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
-      >
-        {/* Modal Top Bar */}
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/75">
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col mb-6 transition-all">
+      {/* Inline Top Header Bar */}
+      <div className="px-6 py-5 border-b border-slate-200 rounded-t-3xl flex items-center justify-between bg-gradient-to-r from-slate-50 via-white to-indigo-50/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+            <Sparkles className="w-5 h-5" />
+          </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
               <h2 className="text-xl font-bold text-slate-900">Create Online Test</h2>
+              <span className="px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full">
+                Inline Form
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Complete the 3 simple steps to schedule and publish the online assessment.
+              Complete the 3 simple steps to schedule and publish the online assessment with multi-select filters.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
-        {/* 3-Step Wizard Navigation Pills */}
-        <div className="px-6 py-3 bg-white border-b border-slate-100 grid grid-cols-3 gap-2 text-xs font-semibold">
-          <button
-            onClick={() => setCurrentStep(1)}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
-              currentStep === 1
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-            }`}
+        <button
+          onClick={onClose}
+          type="button"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-semibold transition-colors"
+          title="Close inline editor"
+        >
+          <X className="w-4 h-4" />
+          <span>Close Form</span>
+        </button>
+      </div>
+
+      {/* 3-Step Wizard Navigation Pills */}
+      <div className="px-6 py-3 bg-white border-b border-slate-100 grid grid-cols-3 gap-2 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setCurrentStep(1)}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
+            currentStep === 1
+              ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+          }`}
+        >
+          <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">1</span>
+          <span>Test & Audience</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (!title.trim()) {
+              toast.error('Please enter a test title');
+              return;
+            }
+            setCurrentStep(2);
+          }}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
+            currentStep === 2
+              ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+          }`}
+        >
+          <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">2</span>
+          <span>Questions & Preview</span>
+          {questions.length > 0 && (
+            <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+              {questions.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (questions.length === 0) {
+              toast.error('Add questions in Step 2 before reviewing');
+              return;
+            }
+            setCurrentStep(3);
+          }}
+          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
+            currentStep === 3
+              ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+          }`}
+        >
+          <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">3</span>
+          <span>Review & Publish</span>
+        </button>
+      </div>
+
+      {/* Wizard Body */}
+      <div className="p-6 md:p-8 space-y-6">
+        
+        {/* STEP 1: TEST & AUDIENCE DETAILS */}
+        {currentStep === 1 && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
           >
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">1</span>
-            <span>Test & Audience</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (!title.trim()) {
-                toast.error('Please enter a test title');
-                return;
-              }
-              setCurrentStep(2);
-            }}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
-              currentStep === 2
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">2</span>
-            <span>Questions & Preview</span>
-            {questions.length > 0 && (
-              <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                {questions.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => {
-              if (questions.length === 0) {
-                toast.error('Add questions in Step 2 before reviewing');
-                return;
-              }
-              setCurrentStep(3);
-            }}
-            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
-              currentStep === 3
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">3</span>
-            <span>Review & Publish</span>
-          </button>
-        </div>
-
-        {/* Modal Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-          
-          {/* STEP 1: TEST & AUDIENCE DETAILS */}
-          {currentStep === 1 && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              {/* Module & Topic Selection */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Select Module & Assessment Topic
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                  {MODULE_OPTIONS.map(mod => {
-                    const isSelected = moduleId === mod.id;
-                    return (
-                      <div
-                        key={mod.id}
-                        onClick={() => handleModuleChange(mod.id)}
-                        className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
-                          isSelected
-                            ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                      >
-                        <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                          <Layers className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-900 text-sm">{mod.name}</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">{mod.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Subcategories / Topics Pills */}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <span className="text-xs font-medium text-slate-400 mr-1">Topic:</span>
-                  {MODULE_OPTIONS.find(m => m.id === moduleId)?.topics.map(topic => (
-                    <button
-                      key={topic.id}
-                      type="button"
-                      onClick={() => handleTopicChange(topic.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                        subcategory === topic.id
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            {/* Module & Topic Selection */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Select Module & Assessment Topic
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                {MODULE_OPTIONS.map(mod => {
+                  const isSelected = moduleId === mod.id;
+                  return (
+                    <div
+                      key={mod.id}
+                      onClick={() => handleModuleChange(mod.id)}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      {topic.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* General Test Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Test Title <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    placeholder="e.g. TCS NQT Quantitative Aptitude Assessment"
-                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Instructions / Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder="Brief instructions or notes for the exam takers..."
-                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Duration (Minutes)
-                  </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="number"
-                      min="5"
-                      max="300"
-                      value={duration}
-                      onChange={e => setDuration(Math.max(1, parseInt(e.target.value) || 30))}
-                      className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Exam Start Date & Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={startDateTime}
-                    onChange={e => setStartDateTime(e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Exam Expiry / End Date & Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={endDateTime}
-                    onChange={e => setEndDateTime(e.target.value)}
-                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* Target Students / Audience */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <Users className="w-4 h-4 text-indigo-600" />
-                      Target Students from SDMS
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Choose the SDMS college and optional academic filters for this exam.
-                    </p>
-                  </div>
-
-                  {/* Real-time Student Count Badge */}
-                  <div className="bg-indigo-100/70 border border-indigo-200 text-indigo-800 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                    <span>🎯</span>
-                    <span>
-                      {audienceLoading
-                        ? 'Counting SDMS students...'
-                        : targetStudentCount === null
-                          ? 'Student count unavailable'
-                          : `${targetStudentCount} SDMS students`}
-                    </span>
-                  </div>
-                </div>
-
-                {audienceError && (
-                  <p className="text-sm text-red-600" role="alert">{audienceError}</p>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">SDMS College</label>
-                    <select
-                      value={selectedCollege}
-                      onChange={e => setSelectedCollege(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Colleges</option>
-                      {colleges.map(college => (
-                        <option key={college.id} value={college.id}>{college.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Course</label>
-                    <select
-                      value={selectedCourse}
-                      onChange={e => setSelectedCourse(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Courses</option>
-                      {courses.map(course => (
-                        <option key={course.id} value={course.id}>{course.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Branch</label>
-                    <select
-                      value={selectedBranch}
-                      onChange={e => setSelectedBranch(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Branches</option>
-                      {branches.map(branch => (
-                        <option key={branch.id} value={branch.id}>{branch.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Year</label>
-                    <select
-                      value={selectedYear}
-                      onChange={e => setSelectedYear(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Years</option>
-                      {years.map(year => (
-                        <option key={year} value={year}>Year {year}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Semester</label>
-                    <select
-                      value={selectedSemester}
-                      onChange={e => setSelectedSemester(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Semesters</option>
-                      {semesters.map(semester => (
-                        <option key={semester} value={semester}>Semester {semester}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Section</label>
-                    <select
-                      value={selectedSection}
-                      onChange={e => setSelectedSection(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    >
-                      <option value="all">All Sections</option>
-                      {sections.map(section => (
-                        <option key={section} value={section}>{section}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 2: QUESTIONS UPLOAD & QUESTIONS SHOWING */}
-          {currentStep === 2 && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              {/* Question Add Action Bar */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                    {questions.length}
-                  </span>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900">Questions Loaded</h4>
-                    <p className="text-xs text-slate-500">
-                      {questions.length === 0
-                        ? 'No questions loaded yet. Use the actions on the right.'
-                        : 'Review questions below before proceeding to final review.'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                  {/* Auto-pull 25 Questions */}
-                  <button
-                    type="button"
-                    onClick={handleAutoPullBank}
-                    disabled={isLoadingBank}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{isLoadingBank ? 'Pulling 25...' : '⚡ Auto-Pull 25 from Bank'}</span>
-                  </button>
-
-                  {/* CSV Template */}
-                  <button
-                    type="button"
-                    onClick={handleDownloadSampleCsv}
-                    className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
-                    title="Download Sample CSV Format"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Template</span>
-                  </button>
-
-                  {/* Upload CSV/Excel */}
-                  <label className="inline-flex items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer shadow-sm transition-all">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Upload CSV/Excel</span>
-                    <input
-                      type="file"
-                      accept=".csv, .xlsx, .xls"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {/* Add Manual Question Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setShowManualForm(!showManualForm)}
-                    className="inline-flex items-center justify-center gap-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Manual</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Manual Question Inline Form */}
-              <AnimatePresence>
-                {showManualForm && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3 overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h5 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
-                        Add Custom Question
-                      </h5>
-                      <button
-                        onClick={() => setShowManualForm(false)}
-                        className="text-slate-400 hover:text-slate-600 text-xs"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    <input
-                      type="text"
-                      placeholder="Enter question text here..."
-                      value={manualQText}
-                      onChange={e => setManualQText(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    />
-
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {manualOptions.map((opt, oIdx) => (
-                        <input
-                          key={oIdx}
-                          type="text"
-                          placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
-                          value={opt}
-                          onChange={e => {
-                            const newOpts = [...manualOptions];
-                            newOpts[oIdx] = e.target.value;
-                            setManualOptions(newOpts);
-                          }}
-                          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none"
-                        />
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 pt-1">
-                      <input
-                        type="text"
-                        placeholder="Correct Answer (Exact text or Option)"
-                        value={manualCorrectAns}
-                        onChange={e => setManualCorrectAns(e.target.value)}
-                        className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddManualQuestion}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
-                      >
-                        Save Question
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Questions List & Showing */}
-              {questions.length === 0 ? (
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center space-y-3">
-                  <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
-                    <Sparkles className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-slate-800 text-sm">No Questions Loaded Yet</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Click <strong>"Auto-Pull 25 from Bank"</strong> to load 25 curated questions in one click, or upload your own CSV/Excel file.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleAutoPullBank}
-                    className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Auto-Pull 25 Questions</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-                  {questions.map((q, idx) => (
-                    <div
-                      key={q.id || idx}
-                      className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2.5 flex-1">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                            {idx + 1}
-                          </span>
-                          <div className="space-y-2 flex-1">
-                            <p className="text-sm font-semibold text-slate-900 leading-snug">
-                              {q.text}
-                            </p>
-                            {Array.isArray(q.options) && q.options.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                                {q.options.map((opt, oIdx) => {
-                                  const isCorrect = String(opt).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();
-                                  return (
-                                    <div
-                                      key={oIdx}
-                                      className={`px-2.5 py-1 rounded-lg text-xs flex items-center justify-between ${
-                                        isCorrect
-                                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
-                                          : 'bg-slate-50 text-slate-600 border border-slate-100'
-                                      }`}
-                                    >
-                                      <span>{opt}</span>
-                                      {isCorrect && (
-                                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 ml-1" />
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveQuestion(idx)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Remove Question"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{mod.name}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{mod.description}</p>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+
+              {/* Subcategories / Topics Pills */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs font-medium text-slate-400 mr-1">Topic:</span>
+                {MODULE_OPTIONS.find(m => m.id === moduleId)?.topics.map(topic => (
+                  <button
+                    key={topic.id}
+                    type="button"
+                    onClick={() => handleTopicChange(topic.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      subcategory === topic.id
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {topic.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* General Test Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Test Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. TCS NQT Quantitative Aptitude Assessment"
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
+                />
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Instructions / Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Brief instructions or notes for the exam takers..."
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Duration (Minutes)
+                </label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="number"
+                    min="5"
+                    max="300"
+                    value={duration}
+                    onChange={e => setDuration(Math.max(1, parseInt(e.target.value) || 30))}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Exam Start Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startDateTime}
+                  onChange={e => setStartDateTime(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Exam Expiry / End Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={endDateTime}
+                  onChange={e => setEndDateTime(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            {/* Target Students / Audience (Multi-Select Enabled) */}
+            <div className="bg-slate-50 p-5 pb-8 rounded-2xl border border-slate-200 space-y-4 relative z-20">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    Target Students from SDMS
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Select multiple SDMS colleges, courses, branches, years, semesters, or sections for this exam.
+                  </p>
+                </div>
+
+                {/* Real-time Student Count Badge */}
+                <div className="bg-indigo-100/70 border border-indigo-200 text-indigo-800 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-sm">
+                  <span>🎯</span>
+                  <span>
+                    {audienceLoading
+                      ? 'Counting SDMS students...'
+                      : targetStudentCount === null
+                        ? 'Student count unavailable'
+                        : `${targetStudentCount} SDMS students`}
+                  </span>
+                </div>
+              </div>
+
+              {audienceError && (
+                <p className="text-sm text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-100" role="alert">
+                  {audienceError}
+                </p>
+              )}
+
+              {/* Multi-selection dropdown grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+                <MultiSelectDropdown
+                  label="SDMS College"
+                  allLabel="All Colleges"
+                  options={colleges}
+                  selectedValues={selectedColleges}
+                  onChange={setSelectedColleges}
+                />
+
+                <MultiSelectDropdown
+                  label="Course"
+                  allLabel="All Courses"
+                  options={courses}
+                  selectedValues={selectedCourses}
+                  onChange={setSelectedCourses}
+                />
+
+                <MultiSelectDropdown
+                  label="Branch"
+                  allLabel="All Branches"
+                  options={branches}
+                  selectedValues={selectedBranches}
+                  onChange={setSelectedBranches}
+                />
+
+                <MultiSelectDropdown
+                  label="Year"
+                  allLabel="All Years"
+                  options={years.map(y => ({ id: y, name: `Year ${y}` }))}
+                  selectedValues={selectedYears}
+                  onChange={setSelectedYears}
+                />
+
+                <MultiSelectDropdown
+                  label="Semester"
+                  allLabel="All Semesters"
+                  options={semesters.map(s => ({ id: s, name: `Semester ${s}` }))}
+                  selectedValues={selectedSemesters}
+                  onChange={setSelectedSemesters}
+                />
+
+                <MultiSelectDropdown
+                  label="Section"
+                  allLabel="All Sections"
+                  options={sections.map(sec => ({ id: sec, name: `Section ${sec}` }))}
+                  selectedValues={selectedSections}
+                  onChange={setSelectedSections}
+                />
+              </div>
+
+              {/* Active Audience Badges Summary */}
+              {(selectedColleges.length > 0 || selectedCourses.length > 0 || selectedBranches.length > 0 || selectedYears.length > 0 || selectedSemesters.length > 0 || selectedSections.length > 0) && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Filtered by:</span>
+                  {selectedColleges.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      <span>{selectedColleges.length} Colleges</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-indigo-900" onClick={() => setSelectedColleges([])} />
+                    </span>
+                  )}
+                  {selectedCourses.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                      <span>{selectedCourses.length} Courses</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-blue-900" onClick={() => setSelectedCourses([])} />
+                    </span>
+                  )}
+                  {selectedBranches.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                      <span>{selectedBranches.length} Branches</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-purple-900" onClick={() => setSelectedBranches([])} />
+                    </span>
+                  )}
+                  {selectedYears.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                      <span>Years: {selectedYears.join(', ')}</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-amber-900" onClick={() => setSelectedYears([])} />
+                    </span>
+                  )}
+                  {selectedSemesters.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      <span>Semesters: {selectedSemesters.join(', ')}</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-emerald-900" onClick={() => setSelectedSemesters([])} />
+                    </span>
+                  )}
+                  {selectedSections.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                      <span>Sections: {selectedSections.join(', ')}</span>
+                      <X className="w-3 h-3 cursor-pointer hover:text-rose-900" onClick={() => setSelectedSections([])} />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedColleges([]);
+                      setSelectedCourses([]);
+                      setSelectedBranches([]);
+                      setSelectedYears([]);
+                      setSelectedSemesters([]);
+                      setSelectedSections([]);
+                    }}
+                    className="text-[11px] text-slate-500 hover:text-rose-600 font-semibold underline ml-1"
+                  >
+                    Reset all filters
+                  </button>
                 </div>
               )}
-            </motion.div>
-          )}
+            </div>
+          </motion.div>
+        )}
 
-          {/* STEP 3: REVIEW & NOTIFICATION */}
-          {currentStep === 3 && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              {/* Summary Card */}
-              <div className="bg-gradient-to-br from-indigo-50/70 to-blue-50/70 p-6 rounded-2xl border border-indigo-100 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-600 text-white">
-                    {moduleId} • {subcategory}
-                  </span>
-                  <span className="text-xs text-indigo-700 font-semibold flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {duration} Minutes
-                  </span>
-                </div>
-
+        {/* STEP 2: QUESTIONS UPLOAD & QUESTIONS SHOWING */}
+        {currentStep === 2 && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            {/* Question Add Action Bar */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                  {questions.length}
+                </span>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-                  {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs">
-                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
-                    <span className="text-slate-400 block mb-0.5">Start Date</span>
-                    <strong className="text-slate-800">{new Date(startDateTime).toLocaleString()}</strong>
-                  </div>
-                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
-                    <span className="text-slate-400 block mb-0.5">End Date</span>
-                    <strong className="text-slate-800">{new Date(endDateTime).toLocaleString()}</strong>
-                  </div>
-                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
-                    <span className="text-slate-400 block mb-0.5">Enrolled Audience</span>
-                    <strong className="text-indigo-600">{targetStudentCount} Students</strong>
-                  </div>
-                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
-                    <span className="text-slate-400 block mb-0.5">Questions Count</span>
-                    <strong className="text-emerald-600">{questions.length} Questions</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notification Settings */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="notify-students-check"
-                  checked={notifyStudents}
-                  onChange={e => setNotifyStudents(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                />
-                <label htmlFor="notify-students-check" className="cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-bold text-slate-900">
-                      Send Test Notification to Enrolled Students
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    When checked, an in-app exam alert will be broadcast to the {targetStudentCount} targeted students.
-                    The exam will appear automatically in their <strong>Online Exams</strong> dashboard.
+                  <h4 className="text-sm font-bold text-slate-900">Questions Loaded</h4>
+                  <p className="text-xs text-slate-500">
+                    {questions.length === 0
+                      ? 'No questions loaded yet. Use the actions on the right.'
+                      : 'Review questions below before proceeding to final review.'}
                   </p>
-                </label>
+                </div>
               </div>
 
-              {/* Notice */}
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  Once published, students will be able to take this assessment during the scheduled window. You can monitor responses and scores from Campus Reports.
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                {/* Auto-pull 25 Questions */}
+                <button
+                  type="button"
+                  onClick={handleAutoPullBank}
+                  disabled={isLoadingBank}
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{isLoadingBank ? 'Pulling 25...' : '⚡ Auto-Pull 25 from Bank'}</span>
+                </button>
+
+                {/* CSV Template */}
+                <button
+                  type="button"
+                  onClick={handleDownloadSampleCsv}
+                  className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                  title="Download Sample CSV Format"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Template</span>
+                </button>
+
+                {/* Upload CSV/Excel */}
+                <label className="inline-flex items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-3.5 py-2 rounded-xl text-xs font-semibold cursor-pointer shadow-sm transition-all">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload CSV/Excel</span>
+                  <input
+                    type="file"
+                    accept=".csv, .xlsx, .xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Add Manual Question Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowManualForm(!showManualForm)}
+                  className="inline-flex items-center justify-center gap-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Manual</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Manual Question Inline Form */}
+            <AnimatePresence>
+              {showManualForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                      Add Custom Question
+                    </h5>
+                    <button
+                      onClick={() => setShowManualForm(false)}
+                      className="text-slate-400 hover:text-slate-600 text-xs"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Enter question text here..."
+                    value={manualQText}
+                    onChange={e => setManualQText(e.target.value)}
+                    className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {manualOptions.map((opt, oIdx) => (
+                      <input
+                        key={oIdx}
+                        type="text"
+                        placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
+                        value={opt}
+                        onChange={e => {
+                          const newOpts = [...manualOptions];
+                          newOpts[oIdx] = e.target.value;
+                          setManualOptions(newOpts);
+                        }}
+                        className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Correct Answer (Exact text or Option)"
+                      value={manualCorrectAns}
+                      onChange={e => setManualCorrectAns(e.target.value)}
+                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddManualQuestion}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
+                    >
+                      Save Question
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Questions List & Showing */}
+            {questions.length === 0 ? (
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center space-y-3">
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-800 text-sm">No Questions Loaded Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Click <strong>"Auto-Pull 25 from Bank"</strong> to load 25 curated questions in one click, or upload your own CSV/Excel file.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAutoPullBank}
+                  className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Auto-Pull 25 Questions</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {questions.map((q, idx) => (
+                  <div
+                    key={q.id || idx}
+                    className="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5 flex-1">
+                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <div className="space-y-2 flex-1">
+                          <p className="text-sm font-semibold text-slate-900 leading-snug">
+                            {q.text}
+                          </p>
+                          {Array.isArray(q.options) && q.options.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                              {q.options.map((opt, oIdx) => {
+                                const isCorrect = String(opt).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();
+                                return (
+                                  <div
+                                    key={oIdx}
+                                    className={`px-2.5 py-1 rounded-lg text-xs flex items-center justify-between ${
+                                      isCorrect
+                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium'
+                                        : 'bg-slate-50 text-slate-600 border border-slate-100'
+                                    }`}
+                                  >
+                                    <span>{opt}</span>
+                                    {isCorrect && (
+                                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 ml-1" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveQuestion(idx)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                        title="Remove Question"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* STEP 3: REVIEW & NOTIFICATION */}
+        {currentStep === 3 && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            {/* Summary Card */}
+            <div className="bg-gradient-to-br from-indigo-50/70 to-blue-50/70 p-6 rounded-2xl border border-indigo-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-600 text-white">
+                  {moduleId} • {subcategory}
+                </span>
+                <span className="text-xs text-indigo-700 font-semibold flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {duration} Minutes
                 </span>
               </div>
-            </motion.div>
-          )}
 
-        </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+                {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
+              </div>
 
-        {/* Modal Bottom Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          {currentStep > 1 ? (
-            <button
-              type="button"
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/80 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-200/80 transition-colors"
-            >
-              Cancel
-            </button>
-          )}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs">
+                <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
+                  <span className="text-slate-400 block mb-0.5">Start Date</span>
+                  <strong className="text-slate-800">{new Date(startDateTime).toLocaleString()}</strong>
+                </div>
+                <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
+                  <span className="text-slate-400 block mb-0.5">End Date</span>
+                  <strong className="text-slate-800">{new Date(endDateTime).toLocaleString()}</strong>
+                </div>
+                <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
+                  <span className="text-slate-400 block mb-0.5">Target Audience</span>
+                  <strong className="text-indigo-600">{targetStudentCount ?? 0} Students</strong>
+                </div>
+                <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
+                  <span className="text-slate-400 block mb-0.5">Questions Count</span>
+                  <strong className="text-emerald-600">{questions.length} Questions</strong>
+                </div>
+              </div>
 
-          {currentStep < 3 ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (currentStep === 1) {
-                  if (!title.trim()) {
-                    toast.error('Please enter a test title');
-                    return;
-                  }
-                  setCurrentStep(2);
-                } else if (currentStep === 2) {
-                  if (questions.length === 0) {
-                    toast.error('Please add or pull at least 1 question');
-                    return;
-                  }
-                  setCurrentStep(3);
+              {/* Target Filters Breakdown in Summary */}
+              <div className="bg-white/70 p-3.5 rounded-xl border border-indigo-100 text-xs space-y-1">
+                <span className="font-bold text-slate-700 block mb-1">Audience Scope:</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
+                  <div>Colleges: <strong className="text-slate-800">{selectedColleges.length > 0 ? `${selectedColleges.length} Selected` : 'All Colleges'}</strong></div>
+                  <div>Courses: <strong className="text-slate-800">{selectedCourses.length > 0 ? `${selectedCourses.length} Selected` : 'All Courses'}</strong></div>
+                  <div>Branches: <strong className="text-slate-800">{selectedBranches.length > 0 ? `${selectedBranches.length} Selected` : 'All Branches'}</strong></div>
+                  <div>Academic Years: <strong className="text-slate-800">{selectedYears.length > 0 ? selectedYears.map(y => `Year ${y}`).join(', ') : 'All Years'}</strong></div>
+                  <div>Semesters: <strong className="text-slate-800">{selectedSemesters.length > 0 ? selectedSemesters.map(s => `Sem ${s}`).join(', ') : 'All Semesters'}</strong></div>
+                  <div>Sections: <strong className="text-slate-800">{selectedSections.length > 0 ? selectedSections.join(', ') : 'All Sections'}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification Settings */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="notify-students-check"
+                checked={notifyStudents}
+                onChange={e => setNotifyStudents(e.target.checked)}
+                className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+              />
+              <label htmlFor="notify-students-check" className="cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-bold text-slate-900">
+                    Send Test Notification to Enrolled Students
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  When checked, an in-app exam alert will be broadcast to the {targetStudentCount ?? 0} targeted students.
+                  The exam will appear automatically in their <strong>Online Exams</strong> dashboard.
+                </p>
+              </label>
+            </div>
+
+            {/* Notice */}
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Once published, students will be able to take this assessment during the scheduled window. You can monitor responses and scores from Campus Reports.
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+      </div>
+
+      {/* Inline Bottom Footer Actions */}
+      <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-3xl flex items-center justify-between relative z-10">
+        {currentStep > 1 ? (
+          <button
+            type="button"
+            onClick={() => setCurrentStep(currentStep - 1)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/80 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-200/80 transition-colors"
+          >
+            Cancel
+          </button>
+        )}
+
+        {currentStep < 3 ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (currentStep === 1) {
+                if (!title.trim()) {
+                  toast.error('Please enter a test title');
+                  return;
                 }
-              }}
-              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all"
-            >
-              <span>Next Step</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handlePublishTest}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-200 transition-all disabled:opacity-50"
-            >
-              {submitting ? (
-                <>
-                  <LoadingSpinner />
-                  <span>Publishing Test...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Publish Online Test</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </motion.div>
+                setCurrentStep(2);
+              } else if (currentStep === 2) {
+                if (questions.length === 0) {
+                  toast.error('Please add or pull at least 1 question');
+                  return;
+                }
+                setCurrentStep(3);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all"
+          >
+            <span>Next Step</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handlePublishTest}
+            disabled={submitting}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-200 transition-all disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <LoadingSpinner />
+                <span>Publishing Test...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>Publish Online Test</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
+
+// Keep backward compatible alias
+const CreateTestWizardModal = CreateTestInlineWizard;
+
 
 /**
  * Preview Test Modal

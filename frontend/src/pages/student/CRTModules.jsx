@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import clsx from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import api, { getAutoPracticeQuestions } from '../../services/api';
+import { getAutoPracticeQuestions, submitPracticeTestResult } from '../../services/api';
 import {
   BrainCircuit,
   BookOpen,
@@ -16,7 +15,13 @@ import {
   ArrowRight,
   RotateCcw,
   Layers,
-  Award
+  Award,
+  Filter,
+  CheckCircle2,
+  Sliders,
+  Settings2,
+  X,
+  PlayCircle
 } from 'lucide-react';
 
 const CRT_CATEGORIES = [
@@ -25,152 +30,318 @@ const CRT_CATEGORIES = [
     name: 'Quantitative Aptitude',
     icon: '🧮',
     color: 'from-blue-600 to-indigo-600',
-    description: 'Master arithmetic, percentages, speed-distance, work-time, and permutations.'
+    description: 'Master arithmetic, percentages, speed-distance, work-time, and permutations.',
+    topics: [
+      { id: 'numbers', name: 'Numbers & Divisibility', desc: 'HCF, LCM, prime factors, divisibility rules and remainder theorems' },
+      { id: 'percentages', name: 'Percentages, Profit & Loss', desc: 'Discounts, cost price, selling price, profit percentage and margins' },
+      { id: 'work_time', name: 'Time, Work & Pipes', desc: 'Man-hours, alternating days, pipe cisterns and efficiency equations' },
+      { id: 'speed_distance', name: 'Speed, Distance & Trains', desc: 'Relative speed, trains crossing platforms, boats and streams' },
+      { id: 'ratio_proportion', name: 'Ratio, Proportion & Averages', desc: 'Mixtures, allegories, partnerships and weighted average questions' },
+      { id: 'all', name: 'All Aptitude Topics', desc: 'Comprehensive practice across all quantitative aptitude concepts' }
+    ]
   },
   {
     id: 'reasoning',
     name: 'Logical Reasoning',
     icon: '🧩',
     color: 'from-emerald-600 to-teal-600',
-    description: 'Sharpen syllogisms, blood relations, series completion, coding-decoding, and puzzles.'
+    description: 'Sharpen syllogisms, blood relations, series completion, coding-decoding, and puzzles.',
+    topics: [
+      { id: 'syllogisms', name: 'Syllogisms & Deductions', desc: 'Venn diagrams, statement-conclusion and deductive logic' },
+      { id: 'blood_relations', name: 'Blood Relations', desc: 'Family trees, coded relations and pointing puzzle problems' },
+      { id: 'series', name: 'Number & Letter Series', desc: 'Alternating patterns, arithmetic leaps and alphabetical sequences' },
+      { id: 'coding_decoding', name: 'Coding & Decoding', desc: 'Shift ciphers, matrix coding and conditional deciphering' },
+      { id: 'direction_puzzles', name: 'Direction Sense & Seating Puzzles', desc: 'Compass angles, linear arrangements and circular seating puzzles' },
+      { id: 'all', name: 'All Reasoning Topics', desc: 'Comprehensive practice across analytical and logical reasoning' }
+    ]
   },
   {
     id: 'technical',
     name: 'Technical & CS',
     icon: '⚙️',
     color: 'from-purple-600 to-violet-600',
-    description: 'Practice core computer science, data structures, algorithms, DBMS, and OOP concepts.'
+    description: 'Practice core computer science, data structures, algorithms, DBMS, and OOP concepts.',
+    topics: [
+      { id: 'data_structures', name: 'Data Structures & Arrays', desc: 'Arrays, linked lists, stacks, queues, trees and traversal algorithms' },
+      { id: 'oop', name: 'OOP Concepts & Principles', desc: 'Polymorphism, inheritance, encapsulation and abstraction questions' },
+      { id: 'dbms_sql', name: 'DBMS & SQL Queries', desc: 'Relational algebra, normalization, joins, indexing and SQL syntax' },
+      { id: 'algorithms', name: 'Algorithms & Complexity', desc: 'Sorting, searching, Big-O analysis and recursion logic' },
+      { id: 'os_networks', name: 'Operating Systems & Networks', desc: 'Process scheduling, deadlocks, TCP/IP, OSI layers and protocols' },
+      { id: 'all', name: 'All Technical Topics', desc: 'Comprehensive practice across programming and computer science core' }
+    ]
   }
 ];
 
+const DIFFICULTY_LEVELS = [
+  { id: 1, name: 'Level 1: Fundamentals', shortName: 'Level 1', desc: 'Core concept mastery and standard problem solving' },
+  { id: 2, name: 'Level 2: Intermediate', shortName: 'Level 2', desc: 'Multi-step problems and competitive campus questions' },
+  { id: 3, name: 'Level 3: Advanced', shortName: 'Level 3', desc: 'Complex problem solving and placement benchmarks' }
+];
+
 export default function CRTModules() {
-  const [view, setView] = useState('main'); // 'main', 'taking_module', 'result'
-  const [currentCategory, setCurrentCategory] = useState(null);
+  const [selectedModuleId, setSelectedModuleId] = useState('aptitude');
+  const [view, setView] = useState('topics'); // 'topics', 'test_list', 'taking_module', 'result'
+  
+  // Selected configuration
+  const [activeTopic, setActiveTopic] = useState(null);
+  const [activeLevel, setActiveLevel] = useState(1);
+  const [questionCount, setQuestionCount] = useState(() => {
+    const saved = localStorage.getItem('student_practice_question_count');
+    return saved ? parseInt(saved, 10) : 15;
+  });
+
+  // Modal State
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [pendingTopic, setPendingTopic] = useState(null);
+  const [pendingLevel, setPendingLevel] = useState(1);
+
+  // Test Taking State
+  const [currentTestNumber, setCurrentTestNumber] = useState(1);
+  const [completedTests, setCompletedTests] = useState({}); // { [key]: score }
   const [questions, setQuestions] = useState([]);
   const [moduleResult, setModuleResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const { error: showError, success } = useNotification();
-  const { user } = useAuth();
 
-  // Start 25-question practice test automatically
-  const handleStartPractice = async (category) => {
+  const currentCategory = CRT_CATEGORIES.find(c => c.id === selectedModuleId) || CRT_CATEGORIES[0];
+
+  // 1. When student clicks a topic or level: open question count popup
+  const handleSelectTopicAndLevel = (topic, level = 1) => {
+    setPendingTopic(topic);
+    setPendingLevel(level);
+    setShowConfigModal(true);
+  };
+
+  // 2. When student confirms question count in popup: save to settings and show tests
+  const handleConfirmSettings = (count) => {
+    setQuestionCount(count);
+    localStorage.setItem('student_practice_question_count', String(count));
+    setActiveTopic(pendingTopic);
+    setActiveLevel(pendingLevel);
+    setShowConfigModal(false);
+    setView('test_list');
+  };
+
+  // 3. Launch Practice Test (1, 2, 3...)
+  const handleLaunchPracticeTest = async (testNumber) => {
     try {
       setLoading(true);
-      setCurrentCategory(category);
-      const res = await getAutoPracticeQuestions('CRT', category.id, 25);
+      setCurrentTestNumber(testNumber);
+
+      const queryTopic = activeTopic.id === 'all' ? currentCategory.id : activeTopic.id;
+      // Requests questions from DB with testNumber offset and previous questions excluded
+      const res = await getAutoPracticeQuestions('CRT', queryTopic, questionCount, activeLevel, testNumber);
       const loadedQuestions = res?.data?.questions || [];
+      
       if (loadedQuestions.length === 0) {
-        showError('No questions available at the moment. Please try again.');
+        showError('No questions available in the question bank for this topic & level yet. Please try another selection.');
         return;
       }
       setQuestions(loadedQuestions);
       setView('taking_module');
     } catch (err) {
       console.error('Error starting CRT practice:', err);
-      showError('Failed to load practice questions.');
+      showError('Failed to load practice questions from database.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFinishTest = (result) => {
-    setModuleResult(result);
-    setView('result');
+  // 4. Submit practice test
+  const handleFinishTest = async (result) => {
+    try {
+      setLoading(true);
+      await submitPracticeTestResult({
+        module_id: 'CRT',
+        subcategory: activeTopic?.id || currentCategory.id,
+        topic: activeTopic?.id || currentCategory.id,
+        level: activeLevel || 1,
+        test_number: currentTestNumber,
+        answers: result.answers,
+        questions: result.questions,
+        time_taken_seconds: result.timeTakenSeconds || 0
+      });
+
+      // Update completed state
+      const testKey = `${currentCategory.id}_${activeTopic?.id}_${activeLevel}_${currentTestNumber}`;
+      setCompletedTests(prev => ({
+        ...prev,
+        [testKey]: result.score
+      }));
+
+      success(`Practice Test ${currentTestNumber} submitted and saved to history!`);
+    } catch (err) {
+      console.error('Failed to save practice test result:', err);
+    } finally {
+      setLoading(false);
+      setModuleResult(result);
+      setView('result');
+    }
   };
 
-  const handleBackToMain = () => {
-    setView('main');
-    setCurrentCategory(null);
+  const handleBackToTopics = () => {
+    setView('topics');
+    setQuestions([]);
+    setModuleResult(null);
+  };
+
+  const handleBackToTestList = () => {
+    setView('test_list');
     setQuestions([]);
     setModuleResult(null);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-2.5 sm:p-4 md:p-6 w-full max-w-full overflow-x-hidden">
+      <div className="max-w-4xl mx-auto w-full">
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3">
+          <div className="py-20 flex flex-col items-center justify-center gap-2">
             <LoadingSpinner />
-            <p className="text-sm text-slate-500 font-medium">Assembling 25 practice questions...</p>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">Connecting to question bank...</p>
           </div>
+        ) : view === 'topics' ? (
+          <CRTTopicsWithLevelsView
+            categories={CRT_CATEGORIES}
+            selectedModuleId={selectedModuleId}
+            onSelectModule={setSelectedModuleId}
+            onSelectTopicAndLevel={handleSelectTopicAndLevel}
+          />
+        ) : view === 'test_list' && activeTopic ? (
+          <CRTTestsListView
+            category={currentCategory}
+            topic={activeTopic}
+            level={activeLevel}
+            questionCount={questionCount}
+            completedTests={completedTests}
+            onBack={handleBackToTopics}
+            onOpenSettings={() => handleSelectTopicAndLevel(activeTopic, activeLevel)}
+            onLaunchTest={handleLaunchPracticeTest}
+          />
         ) : view === 'taking_module' ? (
           <CRTTestTakingView
             category={currentCategory}
+            topic={activeTopic}
+            level={activeLevel}
+            testNumber={currentTestNumber}
             questions={questions}
             onSubmit={handleFinishTest}
-            onBack={handleBackToMain}
+            onBack={handleBackToTestList}
           />
         ) : view === 'result' ? (
           <CRTResultView
             category={currentCategory}
+            topic={activeTopic}
+            level={activeLevel}
+            testNumber={currentTestNumber}
             result={moduleResult}
-            onRetake={() => handleStartPractice(currentCategory)}
-            onBack={handleBackToMain}
+            onRetake={() => handleLaunchPracticeTest(currentTestNumber)}
+            onNextTest={() => handleLaunchPracticeTest(currentTestNumber + 1)}
+            onBack={handleBackToTestList}
           />
-        ) : (
-          <CRTMainView
-            categories={CRT_CATEGORIES}
-            onStartPractice={handleStartPractice}
-          />
-        )}
+        ) : null}
+
+        {/* Modal: Question Count Setting Popup */}
+        <AnimatePresence>
+          {showConfigModal && pendingTopic && (
+            <QuestionCountModal
+              topic={pendingTopic}
+              level={pendingLevel}
+              initialCount={questionCount}
+              onClose={() => setShowConfigModal(false)}
+              onConfirm={handleConfirmSettings}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 }
 
 /**
- * Main View: Select CRT Category to auto-start 25 questions
+ * View 1: Topics with all Levels displayed clearly
  */
-function CRTMainView({ categories, onStartPractice }) {
+function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule, onSelectTopicAndLevel }) {
+  const currentCategory = categories.find(c => c.id === selectedModuleId) || categories[0];
+
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-700 via-blue-600 to-indigo-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Campus Recruitment Training</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-            CRT Practice Modules
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-slate-200">
+        <div>
+          <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+            CRT Practice Tests
           </h1>
-          <p className="text-indigo-100 text-sm md:text-base mt-2">
-            Dynamic 25-question adaptive assessments automatically drawn from the Question Bank. Select any topic to begin practicing immediately.
+          <p className="text-xs text-slate-500">
+            Select a topic and difficulty level to take automated practice tests.
           </p>
         </div>
       </div>
 
-      {/* Category Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {categories.map(cat => (
-          <motion.div
-            key={cat.id}
-            whileHover={{ y: -4 }}
-            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+      {/* Module Tabs (Aptitude, Reasoning, Technical) */}
+      <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-xl overflow-x-auto">
+        {categories.map(cat => {
+          const isActive = cat.id === selectedModuleId;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onSelectModule(cat.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <span>{cat.icon}</span>
+              <span>{cat.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Topics Grid with all levels shown for each topic */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-1">
+        {currentCategory.topics.map(topic => (
+          <div
+            key={topic.id}
+            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow hover:border-indigo-200 transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} text-white flex items-center justify-center text-2xl shadow-md`}>
-                  {cat.icon}
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">
-                  25 Questions
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  {topic.name}
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                  3 Levels
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{cat.name}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                {cat.description}
+              <p className="text-[11px] text-slate-500 leading-snug mb-3">
+                {topic.desc}
               </p>
             </div>
 
-            <button
-              onClick={() => onStartPractice(cat)}
-              className="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-indigo-600 text-white py-3 px-4 rounded-xl font-semibold text-sm transition-colors shadow-sm"
-            >
-              <span>Start 25-Q Practice</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </motion.div>
+            {/* Clickable Level Badges for this Topic */}
+            <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Choose Level to Start:
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {DIFFICULTY_LEVELS.map(lvl => (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    onClick={() => onSelectTopicAndLevel(topic, lvl.id)}
+                    className="py-1.5 px-2 rounded-lg border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/70 text-slate-700 hover:text-indigo-700 text-center transition-all group"
+                  >
+                    <span className="text-xs font-bold block">{lvl.shortName}</span>
+                    <span className="text-[9px] text-slate-400 group-hover:text-indigo-600 block truncate">
+                      {lvl.id === 1 ? 'Basic' : lvl.id === 2 ? 'Medium' : 'Advanced'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </motion.div>
@@ -178,12 +349,236 @@ function CRTMainView({ categories, onStartPractice }) {
 }
 
 /**
- * 25-Question Test Taking Interface
+ * Modal Popup: Ask student how many questions per test they want & store to settings
  */
-function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
+function QuestionCountModal({ topic, level, initialCount, onClose, onConfirm }) {
+  const [count, setCount] = useState(initialCount || 15);
+  const [customInput, setCustomInput] = useState('');
+  const presets = [5, 10, 15, 20, 25];
+
+  const levelObj = DIFFICULTY_LEVELS.find(l => l.id === level) || DIFFICULTY_LEVELS[0];
+
+  const handleCustomChange = (e) => {
+    const val = e.target.value;
+    setCustomInput(val);
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num >= 5 && num <= 50) {
+      setCount(num);
+    }
+  };
+
+  const handlePresetSelect = (c) => {
+    setCount(c);
+    setCustomInput('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 sm:p-6 w-full max-w-md space-y-4"
+      >
+        {/* Modal Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+              Practice Test Settings
+            </span>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+              {topic.name}
+            </h2>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 inline-block mt-1">
+              {levelObj.name}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Question Count Selection */}
+        <div className="space-y-2 pt-1">
+          <label className="text-xs sm:text-sm font-bold text-slate-800 block">
+            How many questions per test would you like to take?
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {presets.map(cnt => {
+              const isSelected = count === cnt && customInput === '';
+              return (
+                <button
+                  key={cnt}
+                  type="button"
+                  onClick={() => handlePresetSelect(cnt)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  {cnt} Qs
+                </button>
+              );
+            })}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-slate-400">custom:</span>
+              <input
+                type="number"
+                min="5"
+                max="50"
+                placeholder="Qty"
+                value={customInput}
+                onChange={handleCustomChange}
+                className="w-16 px-2.5 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Estimated duration: ~{count} minutes ({count} questions from bank without repetition).
+          </p>
+        </div>
+
+        {/* Modal Actions */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(count)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
+          >
+            <span>Save Settings & Show Tests</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/**
+ * View 2: Practice Tests List (Practice Test 1, 2, 3...) for chosen Topic & Level
+ */
+function CRTTestsListView({
+  category,
+  topic,
+  level,
+  questionCount,
+  completedTests,
+  onBack,
+  onOpenSettings,
+  onLaunchTest
+}) {
+  const tests = [1, 2, 3, 4, 5];
+  const levelObj = DIFFICULTY_LEVELS.find(l => l.id === level) || DIFFICULTY_LEVELS[0];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          <span>All Topics</span>
+        </button>
+
+        {/* Edit Setting Button */}
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all"
+        >
+          <Settings2 className="w-3.5 h-3.5" />
+          <span>{questionCount} Qs / Test (Edit Setting)</span>
+        </button>
+      </div>
+
+      {/* Topic Header Card */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+            {category.name}
+          </span>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">
+            {topic.name}
+          </h2>
+          <span className="text-xs font-semibold text-slate-500">
+            {levelObj.name} • {questionCount} questions per test
+          </span>
+        </div>
+        <div className="text-[11px] text-slate-400 font-medium bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl w-fit">
+          Questions are drawn dynamically and do not repeat across tests
+        </div>
+      </div>
+
+      {/* Practice Tests 1, 2, 3, 4, 5 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {tests.map(testNum => {
+          const testKey = `${category.id}_${topic.id}_${level}_${testNum}`;
+          const prevScore = completedTests[testKey];
+          const isDone = prevScore !== undefined;
+
+          return (
+            <div
+              key={testNum}
+              className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-indigo-200 shadow-sm transition-all flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-slate-900">
+                    Practice Test {testNum}
+                  </span>
+                  {isDone && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      {prevScore}% Score
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {questionCount} Questions • Level {level} • ~{questionCount} mins
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onLaunchTest(testNum)}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                  isDone
+                    ? 'bg-slate-100 hover:bg-indigo-50 text-indigo-700 border border-slate-200'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100'
+                }`}
+              >
+                <span>{isDone ? 'Retake' : 'Start Test'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Question Test Taking Interface (Mobile Responsive)
+ */
+function CRTTestTakingView({ category, topic, level, testNumber, questions, onSubmit, onBack }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
+  const totalQuestions = questions.length;
+  const initialDuration = Math.max(totalQuestions * 75, 5 * 60);
+  const [timeLeft, setTimeLeft] = useState(initialDuration);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -197,7 +592,7 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [answers]);
+  }, [answers, questions]);
 
   const formatTimer = (sec) => {
     const mins = Math.floor(sec / 60);
@@ -206,7 +601,7 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
   };
 
   const currentQ = questions[currentIndex];
-  const qId = currentQ?._id || currentQ?.id || currentIndex;
+  const qId = currentQ?._id || currentQ?.id || currentQ?.question_id || currentIndex;
 
   const handleSelectOption = (opt) => {
     setAnswers(prev => ({
@@ -218,7 +613,7 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
   const handleSubmitTest = () => {
     let correctCount = 0;
     questions.forEach((q, idx) => {
-      const id = q._id || q.id || idx;
+      const id = q._id || q.id || q.question_id || idx;
       const userAns = answers[id];
       if (userAns && q.correct_answer && String(userAns).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase()) {
         correctCount++;
@@ -227,6 +622,7 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
 
     const total = questions.length;
     const score = Math.round((correctCount / total) * 100);
+    const timeTaken = initialDuration - timeLeft;
 
     onSubmit({
       score,
@@ -234,59 +630,71 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
       correctCount,
       totalQuestions: total,
       answers,
-      questions
+      questions,
+      timeTakenSeconds: Math.max(0, timeTaken)
     });
   };
 
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Top Header */}
-      <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              if (window.confirm('Are you sure you want to exit this test session?')) {
+              if (window.confirm('Are you sure you want to exit this practice session?')) {
                 onBack();
               }
             }}
-            className="p-2 rounded-xl text-slate-500 hover:bg-slate-100"
+            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 text-slate-600" />
           </button>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{category?.name} Practice</h2>
-            <p className="text-xs text-slate-500">
-              Answered {answeredCount} of {questions.length} questions
-            </p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 block">
+              {topic?.name} • Practice Test {testNumber}
+            </span>
+            <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+              Q{currentIndex + 1} of {questions.length}
+            </h2>
           </div>
         </div>
 
-        {/* Timer */}
-        <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-sm font-bold border border-indigo-100">
-          <Clock className="w-4 h-4 animate-spin" />
-          <span>{formatTimer(timeLeft)}</span>
+        {/* Timer & Progress */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
+            <span className="font-mono text-xs font-bold text-slate-800">
+              {formatTimer(timeLeft)}
+            </span>
+          </div>
+
+          <div className="text-xs font-semibold text-slate-600">
+            Answered: <strong className="text-indigo-600">{answeredCount}</strong>/{questions.length}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Question Content Box */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+      {/* Main Question Card + Navigator */}
+      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4">
+        {/* Question Area */}
+        <div className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
-                Question {currentIndex + 1} of {questions.length}
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                Question {currentIndex + 1}
               </span>
-              <span className="text-xs text-slate-400 font-medium">Multiple Choice</span>
+              <span className="text-[10px] text-slate-400 font-medium">Multiple Choice</span>
             </div>
 
-            <h3 className="text-lg md:text-xl font-bold text-slate-900 leading-relaxed">
-              {currentQ?.text}
+            <h3 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 leading-snug">
+              {currentQ?.question || currentQ?.text}
             </h3>
 
-            {/* Options */}
-            <div className="space-y-3 pt-2">
+            {/* Options with A, B, C, D */}
+            <div className="space-y-2 pt-1">
               {currentQ?.options?.map((opt, oIdx) => {
                 const isSelected = answers[qId] === opt;
                 return (
@@ -294,67 +702,72 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
                     key={oIdx}
                     type="button"
                     onClick={() => handleSelectOption(opt)}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
+                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between ${
                       isSelected
                         ? 'border-indigo-600 bg-indigo-50/70 text-indigo-950 font-semibold shadow-sm'
                         : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                         isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
                       }`}>
                         {String.fromCharCode(65 + oIdx)}
                       </span>
-                      <span className="text-sm">{opt}</span>
+                      <span className="text-xs sm:text-sm break-words">{opt}</span>
                     </div>
-                    {isSelected && <CheckCircle className="w-5 h-5 text-indigo-600" />}
+                    {isSelected && <CheckCircle className="w-4 h-4 text-indigo-600 shrink-0 ml-2" />}
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            {/* Controls */}
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+          {/* Action Row */}
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={currentIndex === 0}
+              onClick={() => setCurrentIndex(prev => prev - 1)}
+              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors"
+            >
+              Previous
+            </button>
+
+            {currentIndex === questions.length - 1 ? (
               <button
                 type="button"
-                disabled={currentIndex === 0}
-                onClick={() => setCurrentIndex(prev => prev - 1)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 disabled:opacity-40"
+                onClick={handleSubmitTest}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all"
               >
-                Previous
+                Submit Practice Test
               </button>
-
-              {currentIndex === questions.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={handleSubmitTest}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-200"
-                >
-                  Submit Practice Test
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setCurrentIndex(prev => prev + 1)}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200"
-                >
-                  Next Question
-                </button>
-              )}
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCurrentIndex(prev => prev + 1)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
+              >
+                Next Question
+              </button>
+            )}
           </div>
         </div>
 
-        {/* 25-Question Navigator Palette */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4 h-fit">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Question Palette (25 Qs)
-          </h4>
+        {/* Question Palette Sidebar */}
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 h-fit">
+          <div className="flex items-center justify-between">
+            <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              Questions ({questions.length})
+            </h4>
+            <span className="text-xs text-indigo-600 font-bold">
+              {answeredCount}/{questions.length}
+            </span>
+          </div>
 
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
             {questions.map((q, idx) => {
-              const id = q._id || q.id || idx;
+              const id = q._id || q.id || q.question_id || idx;
               const isAnswered = answers[id] !== undefined;
               const isCurrent = idx === currentIndex;
 
@@ -363,7 +776,7 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
                   key={idx}
                   type="button"
                   onClick={() => setCurrentIndex(idx)}
-                  className={`w-9 h-9 rounded-xl font-bold text-xs transition-all flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-lg font-bold text-xs transition-all flex items-center justify-center ${
                     isCurrent
                       ? 'ring-2 ring-indigo-600 bg-indigo-600 text-white'
                       : isAnswered
@@ -377,23 +790,12 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
             })}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></span>
-              <span>Answered ({answeredCount})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-slate-100 border border-slate-300"></span>
-              <span>Unanswered ({questions.length - answeredCount})</span>
-            </div>
-          </div>
-
           <button
             type="button"
             onClick={handleSubmitTest}
-            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold transition-all"
+            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold transition-all"
           >
-            Finish & Submit
+            Submit Test
           </button>
         </div>
       </div>
@@ -404,106 +806,113 @@ function CRTTestTakingView({ category, questions, onSubmit, onBack }) {
 /**
  * Result & Feedback Screen
  */
-function CRTResultView({ category, result, onRetake, onBack }) {
+function CRTResultView({ category, topic, level, testNumber, result, onRetake, onNextTest, onBack }) {
   const isPassed = (result?.score || 0) >= 60;
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 max-w-3xl mx-auto">
-      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl text-center space-y-6">
-        <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl ${
+    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4 max-w-2xl mx-auto">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl border border-slate-200 shadow-md text-center space-y-4">
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full mx-auto flex items-center justify-center text-2xl ${
           isPassed ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
         }`}>
-          {isPassed ? <Award className="w-10 h-10" /> : <RotateCcw className="w-10 h-10" />}
+          {isPassed ? <Award className="w-8 h-8" /> : <RotateCcw className="w-8 h-8" />}
         </div>
 
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Practice Result • {category?.name}
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {topic?.name} • Practice Test {testNumber}
           </span>
-          <h2 className="text-3xl font-extrabold text-slate-900 mt-1">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
             {isPassed ? 'Outstanding Performance!' : 'Keep Practicing!'}
           </h2>
-          <p className="text-slate-500 text-sm mt-1">
-            {isPassed
-              ? 'You demonstrated strong proficiency across the assessment topics.'
-              : 'Review your incorrect answers below to strengthen your understanding.'}
-          </p>
+          <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Saved to your database test history!</span>
+          </div>
         </div>
 
         {/* Score Ring / Metric */}
-        <div className="flex items-center justify-center gap-8 py-4">
+        <div className="flex items-center justify-center gap-6 py-2">
           <div>
-            <div className={`text-5xl font-black ${isPassed ? 'text-emerald-600' : 'text-slate-900'}`}>
+            <div className={`text-3xl sm:text-4xl font-black ${isPassed ? 'text-emerald-600' : 'text-slate-900'}`}>
               {result.score}%
             </div>
-            <span className="text-xs text-slate-400 font-semibold uppercase">Overall Score</span>
+            <span className="text-[10px] text-slate-400 font-semibold uppercase">Score</span>
           </div>
 
-          <div className="h-12 w-px bg-slate-200"></div>
+          <div className="h-10 w-px bg-slate-200"></div>
 
           <div>
-            <div className="text-5xl font-black text-slate-900">
+            <div className="text-3xl sm:text-4xl font-black text-slate-900">
               {result.correctCount} / {result.totalQuestions}
             </div>
-            <span className="text-xs text-slate-400 font-semibold uppercase">Correct Answers</span>
+            <span className="text-[10px] text-slate-400 font-semibold uppercase">Correct</span>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-center gap-3 pt-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
           <button
             onClick={onRetake}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md shadow-indigo-200 transition-all"
+            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all"
           >
-            <RotateCcw className="w-4 h-4" />
-            <span>Retake 25 Questions</span>
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Retake Test {testNumber}</span>
+          </button>
+
+          <button
+            onClick={onNextTest}
+            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all"
+          >
+            <span>Next: Practice Test {testNumber + 1}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={onBack}
-            className="px-6 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors"
           >
-            Back to Modules
+            Back to Tests List
           </button>
         </div>
       </div>
 
       {/* Answer Key & Explanation Review */}
       {Array.isArray(result?.questions) && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            Detailed Review ({result.questions.length} Questions)
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Review ({result.questions.length} Questions)
           </h3>
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {result.questions.map((q, idx) => {
-              const qId = q._id || q.id || idx;
+              const qId = q._id || q.id || q.question_id || idx;
               const userAns = result.answers?.[qId];
               const isCorrect = userAns && String(userAns).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();
 
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-2xl border text-left space-y-2 ${
-                    isCorrect ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40'
+                  className={`p-3 rounded-xl border text-left space-y-1.5 ${
+                    isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-rose-200 bg-rose-50/30'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-bold text-slate-900">
-                      Q{idx + 1}. {q.text}
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">
+                      Q{idx + 1}. {q.question || q.text}
                     </p>
                     {isCorrect ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-bold bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
-                        <CheckCircle className="w-3.5 h-3.5" /> Correct
+                      <span className="inline-flex items-center gap-1 text-emerald-700 text-[10px] font-bold bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
+                        <CheckCircle className="w-3 h-3" /> Correct
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-rose-700 text-xs font-bold bg-rose-100 px-2 py-0.5 rounded-full shrink-0">
-                        <XCircle className="w-3.5 h-3.5" /> Incorrect
+                      <span className="inline-flex items-center gap-1 text-rose-700 text-[10px] font-bold bg-rose-100 px-1.5 py-0.5 rounded-full shrink-0">
+                        <XCircle className="w-3 h-3" /> Incorrect
                       </span>
                     )}
                   </div>
 
-                  <div className="text-xs space-y-1 text-slate-700">
+                  <div className="text-[11px] space-y-0.5 text-slate-700">
                     <div>
                       <span className="text-slate-500">Your Answer: </span>
                       <strong className={isCorrect ? 'text-emerald-700' : 'text-rose-700'}>
@@ -515,7 +924,7 @@ function CRTResultView({ category, result, onRetake, onBack }) {
                       <strong className="text-emerald-700">{q.correct_answer}</strong>
                     </div>
                     {q.explanation && (
-                      <div className="text-slate-500 pt-1 text-[11px] italic">
+                      <div className="text-slate-500 pt-0.5 text-[10px] italic">
                         💡 {q.explanation}
                       </div>
                     )}

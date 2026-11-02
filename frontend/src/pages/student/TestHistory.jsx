@@ -122,48 +122,51 @@ const TestHistory = () => {
             Test History
           </h1>
           <p className="text-sm sm:text-base text-gray-600 max-w-2xl">
-            Track your progress and review detailed results from all completed tests
+            Track your progress and review detailed results from your completed online exams
           </p>
         </div>
       </motion.div>
 
       <div className="space-y-8">
-        {results.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 sm:p-12 text-center"
-          >
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-              No Tests Completed Yet
-            </h3>
-            <p className="text-sm sm:text-base text-gray-500 max-w-md mx-auto">
-              Start taking tests to see your progress and detailed results here.
-            </p>
-          </motion.div>
-        ) : (
-          <>
-            {/* Online Tests Section */}
-            {results.filter(testGroup => testGroup.test_type === 'online').length > 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Award className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                      Online Exams
-                    </h2>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      {results.filter(testGroup => testGroup.test_type === 'online').length} exam{results.filter(testGroup => testGroup.test_type === 'online').length !== 1 ? 's' : ''} completed
-                    </p>
-                  </div>
+        {(() => {
+          const onlineExams = results.filter(testGroup => testGroup.test_type === 'online');
+          if (onlineExams.length === 0) {
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 sm:p-12 text-center"
+              >
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-gray-400" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {results.filter(testGroup => testGroup.test_type === 'online').map((testGroup) => (
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                  No Online Exams Completed Yet
+                </h3>
+                <p className="text-sm sm:text-base text-gray-500 max-w-md mx-auto">
+                  Complete your assigned online exams to see your progress and detailed results here.
+                </p>
+              </motion.div>
+            );
+          }
+
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Award className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                    Online Exams
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    {onlineExams.length} exam{onlineExams.length !== 1 ? 's' : ''} completed
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                {onlineExams.map((testGroup) => (
                     <motion.div
                       key={testGroup.test_id}
                       initial={{ opacity: 0, y: 20 }}
@@ -332,208 +335,10 @@ const TestHistory = () => {
                       )}
                     </motion.div>
                   ))}
-                </div>
-                    </div>
-            )}
-
-            {/* Practice Tests Section */}
-            {results.filter(testGroup => testGroup.test_type === 'practice').length > 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                      Practice Modules
-                    </h2>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      {results.filter(testGroup => testGroup.test_type === 'practice').length} module{results.filter(testGroup => testGroup.test_type === 'practice').length !== 1 ? 's' : ''} completed
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {results.filter(testGroup => testGroup.test_type === 'practice').map((testGroup) => (
-                    <motion.div
-                      key={testGroup.test_id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 aspect-square flex flex-col group"
-                    >
-                      {/* Test Card Content */}
-                      <div className="p-5 flex flex-col h-full relative">
-                        {/* Header with Module Badge */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center space-x-2">
-                            {getModuleIcon(testGroup.module_name)}
-                            <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                              {testGroup.module_name}
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleTestExpansion(testGroup.test_id);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            {expandedTests.has(testGroup.test_id) ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Test Name */}
-                        <div className="mb-4 flex-1">
-                          <h3 className="text-lg font-bold text-gray-900 leading-tight overflow-hidden" style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {testGroup.test_name}
-                          </h3>
-                        </div>
-
-                        {/* Score Display - Centered and Prominent */}
-                        <div className="text-center mb-4">
-                          {(() => {
-                            // Use percentage from latest attempt if available (for technical tests with partial credit)
-                            const latestAttempt = testGroup.attempts && testGroup.attempts.length > 0 ? testGroup.attempts[0] : null;
-                            const score = latestAttempt?.percentage !== undefined 
-                              ? latestAttempt.percentage 
-                              : (() => {
-                                  const correctAnswers = testGroup.latest_correct_answers || 0;
-                                  const totalQuestions = testGroup.total_questions || 0;
-                                  return totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
-                                })();
-                            const correctAnswers = testGroup.latest_correct_answers || 0;
-                            const totalQuestions = testGroup.total_questions || 0;
-                            return (
-                              <div className="space-y-1">
-                                <div className={`text-3xl font-bold ${getScoreColor(score)}`}>
-                                  {score.toFixed(1)}%
-                                </div>
-                                <div className="text-xs text-gray-600 font-medium">
-                                  {correctAnswers} of {totalQuestions} correct
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Footer Info */}
-                        <div className="mt-auto space-y-3">
-                          {/* Stats Row */}
-                          <div className="flex items-center justify-between text-xs text-gray-600">
-                            <div className="flex items-center space-x-1">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="font-medium">{testGroup.attempt_count} attempt{testGroup.attempt_count !== 1 ? 's' : ''}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="h-3 w-3" />
-                              <span className="font-medium">{new Date(testGroup.latest_submitted_at).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Action Button */}
-                          <button
-                            onClick={() => {
-                              if (testGroup.attempts && testGroup.attempts.length > 0) {
-                                viewAttemptDetails(testGroup.attempts[0]);
-                              }
-                            }}
-                            className="w-full py-2 px-3 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold rounded-lg transition-colors group-hover:bg-green-100"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Expanded Attempts - Only shown when arrow is clicked */}
-                      {expandedTests.has(testGroup.test_id) && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="border-t border-gray-200 bg-gray-50"
-                        >
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="text-sm font-bold text-gray-800">
-                                All Attempts ({testGroup.attempts.length})
-                              </h4>
-                              <div className="text-xs text-gray-500">
-                                Click any attempt to view details
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {testGroup.attempts.map((attempt, index) => (
-                                <motion.div
-                                  key={attempt._id}
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ delay: index * 0.05 }}
-                                  className="p-3 bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-green-300 transition-all duration-200 cursor-pointer group"
-                                  onClick={() => viewAttemptDetails(attempt)}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                      <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                                        <span className="text-xs font-bold text-green-600">
-                                          {index + 1}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs font-semibold text-gray-900">
-                                          Attempt #{index + 1}
-                                        </div>
-                                        <div className="text-xs text-gray-500 flex items-center">
-                                          <Calendar className="h-3 w-3 mr-1" />
-                                          {new Date(attempt.end_time || attempt.submitted_at).toLocaleDateString()}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="text-right">
-                                      {(() => {
-                                        // Use percentage from attempt if available (for technical tests with partial credit)
-                                        const score = attempt.percentage !== undefined 
-                                          ? attempt.percentage 
-                                          : (() => {
-                                              const correctAnswers = attempt.correct_answers || 0;
-                                              const totalQuestions = attempt.total_questions || 0;
-                                              return totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
-                                            })();
-                                        const correctAnswers = attempt.correct_answers || 0;
-                                        const totalQuestions = attempt.total_questions || 0;
-                                        return (
-                                          <div className="space-y-1">
-                                            <div className={`text-sm font-bold ${getScoreColor(score)}`}>
-                                              {score.toFixed(1)}%
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                              {correctAnswers}/{totalQuestions}
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
               </div>
-            )}
-          </>
-        )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Attempt Details Modal */}

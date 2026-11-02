@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate:sdms-attempt-indexes": "node src/scripts/migrateSdmsExamAttemptIndexes.js"
+    "migrate:sdms-attempt-indexes": "node src/scripts/migrateSdmsExamAttemptIndexes.js",
+    "seed:questions": "node src/scripts/seedQuestionsToDb.js"
   },
   "keywords": [
     "versant",
