@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Role = require('../models/Role');
 const hrmsService = require('../services/hrms.service');
+const sdmsService = require('../services/sdms.service');
 
 const PORTAL_PAGES = [
   { id: 'dashboard', name: 'Dashboard', path: '/superadmin/dashboard', description: 'Overview statistics and system health' },
@@ -160,9 +161,59 @@ exports.getUsers = async (req, res) => {
       User.countDocuments(query)
     ]);
 
+    // Build SDMS lookup maps for friendly display
+    let collegeMap = {};
+    let courseMap = {};
+    let branchMap = {};
+    try {
+      const [colleges, courses, branches] = await Promise.all([
+        sdmsService.getColleges().catch(() => []),
+        sdmsService.getCourses().catch(() => []),
+        sdmsService.getBranches().catch(() => [])
+      ]);
+      if (Array.isArray(colleges)) colleges.forEach(c => { collegeMap[c.id] = c.name; });
+      if (Array.isArray(courses)) courses.forEach(c => { courseMap[c.id] = c.name || c.code; });
+      if (Array.isArray(branches)) branches.forEach(b => { branchMap[b.id] = b.code || b.name; });
+    } catch (e) {
+      // Ignore lookup errors
+    }
+
+    const enrichedUsers = users.map(u => {
+      const collegeIds = (Array.isArray(u.sdms_college_ids) && u.sdms_college_ids.length > 0)
+        ? u.sdms_college_ids
+        : (u.sdms_college_id ? [u.sdms_college_id] : []);
+      const courseIds = (Array.isArray(u.sdms_course_ids) && u.sdms_course_ids.length > 0)
+        ? u.sdms_course_ids
+        : (u.sdms_course_id ? [u.sdms_course_id] : []);
+      const branchIds = (Array.isArray(u.sdms_branch_ids) && u.sdms_branch_ids.length > 0)
+        ? u.sdms_branch_ids
+        : (u.sdms_branch_id ? [u.sdms_branch_id] : []);
+      const years = (Array.isArray(u.sdms_years) && u.sdms_years.length > 0)
+        ? u.sdms_years
+        : (u.sdms_year ? [u.sdms_year] : []);
+
+      const collegeNames = collegeIds.map(id => collegeMap[id] || `College ${id}`);
+      const courseNames = courseIds.map(id => courseMap[id] || `Course ${id}`);
+      const branchNames = branchIds.map(id => branchMap[id] || `Branch ${id}`);
+
+      return {
+        ...u,
+        sdms_college_ids: collegeIds,
+        sdms_course_ids: courseIds,
+        sdms_branch_ids: branchIds,
+        sdms_years: years,
+        sdms_college_name: collegeNames.join(', '),
+        sdms_course_name: courseNames.join(', '),
+        sdms_branch_name: branchNames.join(', '),
+        sdms_college_names: collegeNames,
+        sdms_course_names: courseNames,
+        sdms_branch_names: branchNames
+      };
+    });
+
     return res.json({
       success: true,
-      data: users,
+      data: enrichedUsers,
       pagination: {
         total,
         page: parseInt(page, 10),
@@ -180,7 +231,20 @@ exports.getUsers = async (req, res) => {
  */
 exports.linkHRMSUser = async (req, res) => {
   try {
-    const { emp_no, role_id, custom_permissions = {}, role_name } = req.body;
+    const {
+      emp_no,
+      role_id,
+      custom_permissions = {},
+      role_name,
+      sdms_college_ids,
+      sdms_course_ids,
+      sdms_branch_ids,
+      sdms_years,
+      sdms_college_id,
+      sdms_course_id,
+      sdms_branch_id,
+      sdms_year
+    } = req.body;
 
     if (!emp_no) {
       return res.status(400).json({ success: false, message: 'Employee number (emp_no) is required' });
@@ -205,6 +269,36 @@ exports.linkHRMSUser = async (req, res) => {
       } else {
         finalRoleKey = role_name;
       }
+    }
+
+    const parseNumArray = (arr, single) => {
+      if (Array.isArray(arr) && arr.length > 0) {
+        return arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+      }
+      if (single !== undefined && single !== null && single !== '') {
+        const n = Number(single);
+        return Number.isSafeInteger(n) && n > 0 ? [n] : [];
+      }
+      return [];
+    };
+
+    const collegeIds = parseNumArray(sdms_college_ids, sdms_college_id);
+    const courseIds = parseNumArray(sdms_course_ids, sdms_course_id);
+    const branchIds = parseNumArray(sdms_branch_ids, sdms_branch_id);
+    const years = parseNumArray(sdms_years, sdms_year);
+
+    // Role-specific SDMS validations
+    if (finalRoleKey === 'campus_admin' && collegeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campus Admin role requires at least one College selection.'
+      });
+    }
+    if (finalRoleKey === 'course_admin' && (collegeIds.length === 0 || courseIds.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Course Admin role requires both College and Course selections.'
+      });
     }
 
     // Merge role permissions and custom overrides
@@ -232,6 +326,14 @@ exports.linkHRMSUser = async (req, res) => {
       user.department_name = employee.department_name;
       user.designation_name = employee.designation_name;
       user.phone_number = employee.phone_number || user.phone_number;
+      user.sdms_college_ids = collegeIds;
+      user.sdms_course_ids = courseIds;
+      user.sdms_branch_ids = branchIds;
+      user.sdms_years = years;
+      user.sdms_college_id = collegeIds[0] || null;
+      user.sdms_course_id = courseIds[0] || null;
+      user.sdms_branch_id = branchIds[0] || null;
+      user.sdms_year = years[0] || null;
       user.status = 'active';
       user.updated_at = new Date();
       await user.save();
@@ -248,6 +350,14 @@ exports.linkHRMSUser = async (req, res) => {
         department_name: employee.department_name,
         designation_name: employee.designation_name,
         phone_number: employee.phone_number,
+        sdms_college_ids: collegeIds,
+        sdms_course_ids: courseIds,
+        sdms_branch_ids: branchIds,
+        sdms_years: years,
+        sdms_college_id: collegeIds[0] || null,
+        sdms_course_id: courseIds[0] || null,
+        sdms_branch_id: branchIds[0] || null,
+        sdms_year: years[0] || null,
         status: 'active'
       });
       await user.save();
@@ -277,8 +387,14 @@ exports.updateUser = async (req, res) => {
       role,
       permissions,
       status,
+      sdms_college_ids,
+      sdms_course_ids,
+      sdms_branch_ids,
+      sdms_years,
       sdms_college_id: sdmsCollegeId,
-      sdms_course_id: sdmsCourseId
+      sdms_course_id: sdmsCourseId,
+      sdms_branch_id: sdmsBranchId,
+      sdms_year: sdmsYear
     } = req.body;
 
     const user = await User.findById(id);
@@ -286,14 +402,50 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    let targetRole = user.role;
     if (role_id) {
       const roleDoc = await Role.findById(role_id);
       if (roleDoc) {
         user.role_id = roleDoc._id;
         user.role = roleDoc.key || roleDoc.name.toLowerCase().replace(/\s+/g, '_');
+        targetRole = user.role;
       }
     } else if (role) {
       user.role = role;
+      targetRole = role;
+    }
+
+    const parseNumArray = (arr, single) => {
+      if (Array.isArray(arr)) {
+        return arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+      }
+      if (single !== undefined && single !== null && single !== '') {
+        const n = Number(single);
+        return Number.isSafeInteger(n) && n > 0 ? [n] : [];
+      }
+      return null;
+    };
+
+    const parsedCollegeIds = parseNumArray(sdms_college_ids, sdmsCollegeId);
+    const parsedCourseIds = parseNumArray(sdms_course_ids, sdmsCourseId);
+    const parsedBranchIds = parseNumArray(sdms_branch_ids, sdmsBranchId);
+    const parsedYears = parseNumArray(sdms_years, sdmsYear);
+
+    const effectiveCollegeIds = parsedCollegeIds !== null ? parsedCollegeIds : (user.sdms_college_ids?.length ? user.sdms_college_ids : (user.sdms_college_id ? [user.sdms_college_id] : []));
+    const effectiveCourseIds = parsedCourseIds !== null ? parsedCourseIds : (user.sdms_course_ids?.length ? user.sdms_course_ids : (user.sdms_course_id ? [user.sdms_course_id] : []));
+
+    // Validations based on target role
+    if (targetRole === 'campus_admin' && effectiveCollegeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Campus Admin role requires at least one College selection.'
+      });
+    }
+    if (targetRole === 'course_admin' && (effectiveCollegeIds.length === 0 || effectiveCourseIds.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Course Admin role requires both College and Course selections.'
+      });
     }
 
     if (permissions !== undefined) {
@@ -304,20 +456,21 @@ exports.updateUser = async (req, res) => {
       user.status = status;
     }
 
-    for (const [field, value] of [
-      ['sdms_college_id', sdmsCollegeId],
-      ['sdms_course_id', sdmsCourseId]
-    ]) {
-      if (value === undefined) continue;
-      if (value === null || value === '') {
-        user[field] = null;
-        continue;
-      }
-      const numericId = Number(value);
-      if (!Number.isSafeInteger(numericId) || numericId <= 0) {
-        return res.status(400).json({ success: false, message: `${field} must be a positive integer or empty.` });
-      }
-      user[field] = numericId;
+    if (parsedCollegeIds !== null) {
+      user.sdms_college_ids = parsedCollegeIds;
+      user.sdms_college_id = parsedCollegeIds[0] || null;
+    }
+    if (parsedCourseIds !== null) {
+      user.sdms_course_ids = parsedCourseIds;
+      user.sdms_course_id = parsedCourseIds[0] || null;
+    }
+    if (parsedBranchIds !== null) {
+      user.sdms_branch_ids = parsedBranchIds;
+      user.sdms_branch_id = parsedBranchIds[0] || null;
+    }
+    if (parsedYears !== null) {
+      user.sdms_years = parsedYears;
+      user.sdms_year = parsedYears[0] || null;
     }
 
     user.updated_at = new Date();

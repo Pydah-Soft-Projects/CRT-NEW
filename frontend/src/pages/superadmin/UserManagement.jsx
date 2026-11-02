@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -27,12 +27,290 @@ import {
   AlertCircle,
   HelpCircle,
   ChevronRight,
+  ChevronDown,
   ExternalLink
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+
+const YEAR_OPTIONS = [
+  { id: 1, name: '1st Year' },
+  { id: 2, name: '2nd Year' },
+  { id: 3, name: '3rd Year' },
+  { id: 4, name: '4th Year' },
+  { id: 5, name: '5th Year' },
+  { id: 6, name: '6th Year' }
+];
+
+const formatYearBadge = (yr) => {
+  const n = Number(yr);
+  if (n === 1) return '1st Year';
+  if (n === 2) return '2nd Year';
+  if (n === 3) return '3rd Year';
+  if (!isNaN(n) && n > 0) return `${n}th Year`;
+  return String(yr);
+};
+
+function MultiSelectDropdown({
+  label,
+  options = [],
+  selectedValues = [],
+  onChange,
+  placeholder = 'Select...',
+  allLabel = 'All Options',
+  loading = false,
+  error = '',
+  disabled = false,
+  idKey = 'id',
+  nameKey = 'name',
+  codeKey = 'code'
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [openUpward, setOpenUpward] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close when clicked outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Determine whether to open upward or downward
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 280 && rect.top > spaceBelow) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
+    }
+  }, [isOpen]);
+
+  // Normalize options to { id, name, code }
+  const normalizedOptions = useMemo(() => {
+    return options.map(opt => {
+      if (typeof opt === 'object' && opt !== null) {
+        return {
+          id: opt[idKey] ?? opt.id ?? opt.value ?? opt.name,
+          name: opt[nameKey] ?? opt.name ?? opt.label ?? String(opt[idKey]),
+          code: opt[codeKey] ?? opt.code ?? ''
+        };
+      }
+      return {
+        id: opt,
+        name: String(opt),
+        code: ''
+      };
+    });
+  }, [options, idKey, nameKey, codeKey]);
+
+  // Filter options by search
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm.trim()) return normalizedOptions;
+    const term = searchTerm.toLowerCase();
+    return normalizedOptions.filter(opt =>
+      opt.name.toLowerCase().includes(term) || (opt.code && opt.code.toLowerCase().includes(term))
+    );
+  }, [normalizedOptions, searchTerm]);
+
+  const toggleOption = (id) => {
+    const numId = Number(id);
+    const useId = Number.isSafeInteger(numId) ? numId : id;
+    const isSelected = selectedValues.some(v => String(v) === String(useId));
+    let next;
+    if (isSelected) {
+      next = selectedValues.filter(v => String(v) !== String(useId));
+    } else {
+      next = [...selectedValues, useId];
+    }
+    onChange(next);
+  };
+
+  const handleSelectAll = () => {
+    onChange([]);
+    setIsOpen(false);
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange([]);
+  };
+
+  // Label to show on button
+  const displayLabel = useMemo(() => {
+    if (!selectedValues || selectedValues.length === 0) {
+      return allLabel;
+    }
+    if (selectedValues.length === 1) {
+      const match = normalizedOptions.find(o => String(o.id) === String(selectedValues[0]));
+      return match ? match.name : `${selectedValues[0]}`;
+    }
+    if (selectedValues.length === 2) {
+      const names = selectedValues
+        .map(v => normalizedOptions.find(o => String(o.id) === String(v))?.name || v)
+        .join(', ');
+      return names;
+    }
+    return `${selectedValues.length} Selected`;
+  }, [selectedValues, normalizedOptions, allLabel]);
+
+  return (
+    <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`} ref={dropdownRef}>
+      {label && (
+        <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+          <span>{label}</span>
+          {selectedValues && selectedValues.length > 0 && (
+            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+              {selectedValues.length} selected
+            </span>
+          )}
+        </label>
+      )}
+
+      {/* Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled || loading}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2 text-sm bg-white border rounded-xl flex items-center justify-between gap-2 text-left transition-all ${
+          disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200' :
+          isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm' :
+          selectedValues && selectedValues.length > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200 hover:border-slate-300'
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className={`truncate text-sm ${!selectedValues || selectedValues.length === 0 ? 'text-slate-600 font-medium' : 'text-slate-900 font-semibold'}`}>
+            {loading ? 'Loading...' : displayLabel}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {selectedValues && selectedValues.length > 0 && !disabled && (
+            <span
+              onClick={handleClear}
+              title="Reset to All"
+              className="p-0.5 rounded-md hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+        </div>
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className={`absolute z-50 w-full min-w-[240px] bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 space-y-1 animate-in fade-in ${
+          openUpward ? 'bottom-full mb-1.5 slide-in-from-bottom-1' : 'top-full mt-1.5 slide-in-from-top-1'
+        }`}>
+          {/* Search box if options > 4 */}
+          {normalizedOptions.length > 4 && (
+            <div className="px-2 pb-1.5">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder={`Search options...`}
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Quick Select Buttons */}
+          <div className="flex items-center justify-between px-3 py-1 border-b border-slate-100 text-[11px] font-semibold text-slate-500">
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              className="hover:text-indigo-600 transition-colors"
+            >
+              Select All ({allLabel})
+            </button>
+            {selectedValues && selectedValues.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-rose-600 hover:text-rose-700 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Options List */}
+          <div className="max-h-56 overflow-y-auto px-1 space-y-0.5">
+            {/* "All" Option */}
+            <div
+              onClick={handleSelectAll}
+              className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                !selectedValues || selectedValues.length === 0
+                  ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                  : 'hover:bg-slate-50 text-slate-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={!selectedValues || selectedValues.length === 0}
+                onChange={handleSelectAll}
+                className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+              />
+              <span className="flex-1 font-medium">{allLabel}</span>
+              {(!selectedValues || selectedValues.length === 0) && (
+                <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-full">
+                  Default
+                </span>
+              )}
+            </div>
+
+            {filteredOptions.length === 0 ? (
+              <p className="text-center py-3 text-xs text-slate-400">No matching options</p>
+            ) : (
+              filteredOptions.map(opt => {
+                const isChecked = selectedValues.some(v => String(v) === String(opt.id));
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => toggleOption(opt.id)}
+                    className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
+                      isChecked
+                        ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleOption(opt.id)}
+                      className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+                    />
+                    <span className="flex-1 truncate">{opt.name}</span>
+                    {opt.code && (
+                      <span className="text-[10px] text-slate-400 uppercase font-mono">
+                        {opt.code}
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PORTAL_PAGES = [
   { id: 'dashboard', name: 'Dashboard', path: '/superadmin/dashboard', description: 'Overview statistics and quick system actions' },
@@ -96,8 +374,23 @@ const UserManagement = () => {
   const [editUserRoleId, setEditUserRoleId] = useState('');
   const [editUserPermissions, setEditUserPermissions] = useState({});
   const [editUserStatus, setEditUserStatus] = useState('active');
-  const [editSdmsCollegeId, setEditSdmsCollegeId] = useState('');
-  const [editSdmsCourseId, setEditSdmsCourseId] = useState('');
+  const [editSdmsCollegeIds, setEditSdmsCollegeIds] = useState([]);
+  const [editSdmsCourseIds, setEditSdmsCourseIds] = useState([]);
+  const [editSdmsBranchIds, setEditSdmsBranchIds] = useState([]);
+  const [editSdmsYears, setEditSdmsYears] = useState([]);
+
+  // Link User Modal SDMS state
+  const [linkSdmsCollegeIds, setLinkSdmsCollegeIds] = useState([]);
+  const [linkSdmsCourseIds, setLinkSdmsCourseIds] = useState([]);
+  const [linkSdmsBranchIds, setLinkSdmsBranchIds] = useState([]);
+  const [linkSdmsYears, setLinkSdmsYears] = useState([]);
+
+  // SDMS Institutional catalogs & filters
+  const [sdmsColleges, setSdmsColleges] = useState([]);
+  const [sdmsCourses, setSdmsCourses] = useState([]);
+  const [sdmsBranches, setSdmsBranches] = useState([]);
+  const [userCollegeFilter, setUserCollegeFilter] = useState('');
+  const [userCourseFilter, setUserCourseFilter] = useState('');
 
   // Initial data loading
   useEffect(() => {
@@ -111,12 +404,35 @@ const UserManagement = () => {
         fetchSummary(),
         fetchUsers(),
         fetchRoles(),
-        fetchHrmsDepartments()
+        fetchHrmsDepartments(),
+        fetchSdmsCatalog()
       ]);
     } catch (err) {
       console.error('Initial load error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSdmsCatalog = async () => {
+    try {
+      const [collegesRes, coursesRes, branchesRes] = await Promise.allSettled([
+        api.get('/student/sdms/colleges'),
+        api.get('/student/sdms/courses'),
+        api.get('/student/sdms/branches')
+      ]);
+
+      if (collegesRes.status === 'fulfilled' && collegesRes.value?.data?.data) {
+        setSdmsColleges(Array.isArray(collegesRes.value.data.data) ? collegesRes.value.data.data : []);
+      }
+      if (coursesRes.status === 'fulfilled' && coursesRes.value?.data?.data) {
+        setSdmsCourses(Array.isArray(coursesRes.value.data.data) ? coursesRes.value.data.data : []);
+      }
+      if (branchesRes.status === 'fulfilled' && branchesRes.value?.data?.data) {
+        setSdmsBranches(Array.isArray(branchesRes.value.data.data) ? branchesRes.value.data.data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching SDMS catalog:', err);
     }
   };
 
@@ -237,6 +553,54 @@ const UserManagement = () => {
     return () => clearTimeout(timer);
   }, [linkSearchQuery, showLinkModal]);
 
+  // Cascading options for Link Modal
+  const linkAvailableCourses = useMemo(() => {
+    if (!linkSdmsCollegeIds || linkSdmsCollegeIds.length === 0) return sdmsCourses;
+    const colSet = new Set(linkSdmsCollegeIds.map(Number));
+    return sdmsCourses.filter(c => colSet.has(Number(c.college_id)));
+  }, [sdmsCourses, linkSdmsCollegeIds]);
+
+  const linkAvailableBranches = useMemo(() => {
+    if (!linkSdmsCourseIds || linkSdmsCourseIds.length === 0) {
+      if (!linkSdmsCollegeIds || linkSdmsCollegeIds.length === 0) return sdmsBranches;
+      const colSet = new Set(linkSdmsCollegeIds.map(Number));
+      const validCourseIds = new Set(sdmsCourses.filter(c => colSet.has(Number(c.college_id))).map(c => Number(c.id)));
+      return sdmsBranches.filter(b => validCourseIds.has(Number(b.course_id)));
+    }
+    const courseSet = new Set(linkSdmsCourseIds.map(Number));
+    return sdmsBranches.filter(b => courseSet.has(Number(b.course_id)));
+  }, [sdmsBranches, sdmsCourses, linkSdmsCourseIds, linkSdmsCollegeIds]);
+
+  // Cascading options for Edit Modal
+  const editAvailableCourses = useMemo(() => {
+    if (!editSdmsCollegeIds || editSdmsCollegeIds.length === 0) return sdmsCourses;
+    const colSet = new Set(editSdmsCollegeIds.map(Number));
+    return sdmsCourses.filter(c => colSet.has(Number(c.college_id)));
+  }, [sdmsCourses, editSdmsCollegeIds]);
+
+  const editAvailableBranches = useMemo(() => {
+    if (!editSdmsCourseIds || editSdmsCourseIds.length === 0) {
+      if (!editSdmsCollegeIds || editSdmsCollegeIds.length === 0) return sdmsBranches;
+      const colSet = new Set(editSdmsCollegeIds.map(Number));
+      const validCourseIds = new Set(sdmsCourses.filter(c => colSet.has(Number(c.college_id))).map(c => Number(c.id)));
+      return sdmsBranches.filter(b => validCourseIds.has(Number(b.course_id)));
+    }
+    const courseSet = new Set(editSdmsCourseIds.map(Number));
+    return sdmsBranches.filter(b => courseSet.has(Number(b.course_id)));
+  }, [sdmsBranches, sdmsCourses, editSdmsCourseIds, editSdmsCollegeIds]);
+
+  const resetLinkForm = () => {
+    setSelectedHrmsEmp(null);
+    setLinkSearchQuery('');
+    setLinkSearchResults([]);
+    setSelectedRoleId('');
+    setCustomPermissions({});
+    setLinkSdmsCollegeIds([]);
+    setLinkSdmsCourseIds([]);
+    setLinkSdmsBranchIds([]);
+    setLinkSdmsYears([]);
+  };
+
   // When a role is selected in the Link Modal, populate permissions default
   const handleSelectRoleInLinkModal = (roleId) => {
     setSelectedRoleId(roleId);
@@ -248,6 +612,7 @@ const UserManagement = () => {
 
   // Open Link Modal with pre-selected HRMS employee
   const openLinkModalForEmployee = (emp) => {
+    resetLinkForm();
     setSelectedHrmsEmp(emp);
     setLinkSearchQuery(emp.emp_no);
     setLinkSearchResults([]);
@@ -261,7 +626,7 @@ const UserManagement = () => {
     setShowLinkModal(true);
   };
 
-  // Submit link HRMS user
+  // Submit link HRMS user with scope validations
   const handleSaveLinkUser = async () => {
     if (!selectedHrmsEmp) {
       toast.error('Please select an HRMS employee to link');
@@ -272,19 +637,35 @@ const UserManagement = () => {
       return;
     }
 
+    const chosenRole = roles.find(r => r._id === selectedRoleId);
+    const chosenRoleKey = chosenRole?.key || '';
+
+    // Institutional Scope Validations
+    if (chosenRoleKey === 'campus_admin' && linkSdmsCollegeIds.length === 0) {
+      toast.error('At least one College selection is required for Campus Admin.');
+      return;
+    }
+    if (chosenRoleKey === 'course_admin' && (linkSdmsCollegeIds.length === 0 || linkSdmsCourseIds.length === 0)) {
+      toast.error('Both College and Course selections are required for Course Admin.');
+      return;
+    }
+
     setSavingUser(true);
     try {
       const res = await api.post('/user-management/users/link-hrms', {
         emp_no: selectedHrmsEmp.emp_no,
         role_id: selectedRoleId,
-        custom_permissions: customPermissions
+        custom_permissions: customPermissions,
+        sdms_college_ids: linkSdmsCollegeIds,
+        sdms_course_ids: linkSdmsCourseIds,
+        sdms_branch_ids: linkSdmsBranchIds,
+        sdms_years: linkSdmsYears
       });
 
       if (res.data.success) {
         toast.success(res.data.message || 'User linked successfully!');
         setShowLinkModal(false);
-        setSelectedHrmsEmp(null);
-        setLinkSearchQuery('');
+        resetLinkForm();
         fetchUsers();
         fetchSummary();
         if (activeTab === 'hrms_directory') {
@@ -400,22 +781,46 @@ const UserManagement = () => {
     setEditUserRoleId(user.role_id?._id || user.role_id || '');
     setEditUserPermissions(JSON.parse(JSON.stringify(user.permissions || user.role_id?.permissions || {})));
     setEditUserStatus(user.status || 'active');
-    setEditSdmsCollegeId(user.sdms_college_id ?? '');
-    setEditSdmsCourseId(user.sdms_course_id ?? '');
+
+    const cIds = user.sdms_college_ids?.length ? user.sdms_college_ids : (user.sdms_college_id ? [user.sdms_college_id] : []);
+    const coIds = user.sdms_course_ids?.length ? user.sdms_course_ids : (user.sdms_course_id ? [user.sdms_course_id] : []);
+    const bIds = user.sdms_branch_ids?.length ? user.sdms_branch_ids : (user.sdms_branch_id ? [user.sdms_branch_id] : []);
+    const yList = user.sdms_years?.length ? user.sdms_years : (user.sdms_year ? [user.sdms_year] : []);
+
+    setEditSdmsCollegeIds(cIds.map(Number));
+    setEditSdmsCourseIds(coIds.map(Number));
+    setEditSdmsBranchIds(bIds.map(Number));
+    setEditSdmsYears(yList.map(Number));
+
     setShowEditUserModal(true);
   };
 
-  // Save Edit User
+  // Save Edit User with scope validations
   const handleSaveEditUser = async () => {
     if (!editingUser) return;
+
+    const chosenRole = roles.find(r => r._id === editUserRoleId);
+    const chosenRoleKey = chosenRole?.key || editingUser.role || '';
+
+    // Institutional Scope Validations
+    if (chosenRoleKey === 'campus_admin' && editSdmsCollegeIds.length === 0) {
+      toast.error('College selection is required for Campus Admin.');
+      return;
+    }
+    if (chosenRoleKey === 'course_admin' && (editSdmsCollegeIds.length === 0 || editSdmsCourseIds.length === 0)) {
+      toast.error('Both College and Course selections are required for Course Admin.');
+      return;
+    }
 
     try {
       const res = await api.put(`/user-management/users/${editingUser._id}`, {
         role_id: editUserRoleId,
         permissions: editUserPermissions,
         status: editUserStatus,
-        sdms_college_id: editSdmsCollegeId === '' ? null : Number(editSdmsCollegeId),
-        sdms_course_id: editSdmsCourseId === '' ? null : Number(editSdmsCourseId)
+        sdms_college_ids: editSdmsCollegeIds,
+        sdms_course_ids: editSdmsCourseIds,
+        sdms_branch_ids: editSdmsBranchIds,
+        sdms_years: editSdmsYears
       });
 
       if (res.data.success) {
@@ -515,28 +920,27 @@ const UserManagement = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-2xl p-6 text-white shadow-xl">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
-              <Users className="h-6 w-6 text-blue-200" />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
+              <Users className="h-5 w-5" />
             </span>
-            <span className="text-xs uppercase tracking-wider font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">
-              Live HRMS Database Integration
+            <span className="text-xs uppercase tracking-wider font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+              User & Access Administration
             </span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">User & Role Management</h1>
-          <p className="text-blue-100 text-sm mt-1 max-w-2xl">
-            Link HRMS employees via Employee Number (<span className="font-mono bg-blue-900/50 px-1 py-0.5 rounded">emp_no</span>). Employees authenticate with their existing HRMS database passwords. Configure custom roles with granular read & write page permissions.
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">User & Role Management</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage portal users, custom roles, permissions, and SDMS organizational assignments.
           </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => {
-              setSelectedHrmsEmp(null);
-              setLinkSearchQuery('');
+              resetLinkForm();
               const defaultRole = roles.find(r => r.key === 'evaluator') || roles[0];
               if (defaultRole) {
                 setSelectedRoleId(defaultRole._id);
@@ -544,16 +948,16 @@ const UserManagement = () => {
               }
               setShowLinkModal(true);
             }}
-            className="flex items-center gap-2 bg-white text-blue-700 font-semibold px-4 py-2.5 rounded-xl shadow-lg hover:bg-blue-50 transition transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition text-sm active:scale-95"
           >
             <UserPlus className="h-4 w-4" />
             Link HRMS User
           </button>
           <button
             onClick={() => openRoleModal(null)}
-            className="flex items-center gap-2 bg-indigo-900/60 hover:bg-indigo-900/90 text-white border border-white/20 font-semibold px-4 py-2.5 rounded-xl transition text-sm"
+            className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition text-sm active:scale-95"
           >
-            <Shield className="h-4 w-4" />
+            <Shield className="h-4 w-4 text-gray-500" />
             Create Role
           </button>
         </div>
@@ -670,7 +1074,7 @@ const UserManagement = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
               <select
                 value={userRoleFilter}
                 onChange={(e) => { setUserRoleFilter(e.target.value); setUserPage(1); }}
@@ -681,6 +1085,30 @@ const UserManagement = () => {
                   <option key={r._id} value={r.key}>{r.name}</option>
                 ))}
               </select>
+
+              <select
+                value={userCollegeFilter}
+                onChange={(e) => { setUserCollegeFilter(e.target.value); setUserCourseFilter(''); }}
+                className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+              >
+                <option value="">All Colleges</option>
+                {sdmsColleges.map(c => (
+                  <option key={c.id} value={String(c.id)}>{c.name}</option>
+                ))}
+              </select>
+
+              {userCollegeFilter && (
+                <select
+                  value={userCourseFilter}
+                  onChange={(e) => setUserCourseFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                >
+                  <option value="">All Courses</option>
+                  {sdmsCourses.filter(c => Number(c.college_id) === Number(userCollegeFilter)).map(c => (
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+                </select>
+              )}
 
               <select
                 value={userStatusFilter}
@@ -710,6 +1138,7 @@ const UserManagement = () => {
                   <th className="py-3.5 px-4">User</th>
                   <th className="py-3.5 px-4">Employee No</th>
                   <th className="py-3.5 px-4">Department & Role</th>
+                  <th className="py-3.5 px-4">Institutional Scope</th>
                   <th className="py-3.5 px-4">Page Permissions</th>
                   <th className="py-3.5 px-4">Auth Source</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -717,16 +1146,48 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {users.length === 0 ? (
+                {users
+                  .filter(u => {
+                    if (userCollegeFilter) {
+                      const userColIds = (u.sdms_college_ids && u.sdms_college_ids.length > 0)
+                        ? u.sdms_college_ids.map(String)
+                        : (u.sdms_college_id ? [String(u.sdms_college_id)] : []);
+                      if (userColIds.length > 0 && !userColIds.includes(String(userCollegeFilter))) return false;
+                    }
+                    if (userCourseFilter) {
+                      const userCoIds = (u.sdms_course_ids && u.sdms_course_ids.length > 0)
+                        ? u.sdms_course_ids.map(String)
+                        : (u.sdms_course_id ? [String(u.sdms_course_id)] : []);
+                      if (userCoIds.length > 0 && !userCoIds.includes(String(userCourseFilter))) return false;
+                    }
+                    return true;
+                  })
+                  .length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-12 text-center text-gray-500">
+                    <td colSpan="8" className="py-12 text-center text-gray-500">
                       <Users className="h-10 w-10 text-gray-300 mx-auto mb-2" />
                       <p className="font-medium text-gray-700">No portal users found</p>
                       <p className="text-xs text-gray-400 mt-1">Try clearing filters or link an employee from HRMS</p>
                     </td>
                   </tr>
                 ) : (
-                  users.map((u) => {
+                  users
+                    .filter(u => {
+                      if (userCollegeFilter) {
+                        const userColIds = (u.sdms_college_ids && u.sdms_college_ids.length > 0)
+                          ? u.sdms_college_ids.map(String)
+                          : (u.sdms_college_id ? [String(u.sdms_college_id)] : []);
+                        if (userColIds.length > 0 && !userColIds.includes(String(userCollegeFilter))) return false;
+                      }
+                      if (userCourseFilter) {
+                        const userCoIds = (u.sdms_course_ids && u.sdms_course_ids.length > 0)
+                          ? u.sdms_course_ids.map(String)
+                          : (u.sdms_course_id ? [String(u.sdms_course_id)] : []);
+                        if (userCoIds.length > 0 && !userCoIds.includes(String(userCourseFilter))) return false;
+                      }
+                      return true;
+                    })
+                    .map((u) => {
                     // Count granted pages
                     const effectivePerms = u.permissions || u.role_id?.permissions || {};
                     const readCount = PORTAL_PAGES.filter(p => effectivePerms[p.id]?.read || effectivePerms[p.id] === 'read' || effectivePerms[p.id] === 'write').length;
@@ -767,6 +1228,60 @@ const UserManagement = () => {
                               </p>
                             )}
                           </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          {u.role === 'superadmin' ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                              <Building2 className="h-3 w-3" />
+                              All Colleges (Global)
+                            </span>
+                          ) : (u.sdms_college_name || u.sdms_college_id || (u.sdms_college_ids && u.sdms_college_ids.length > 0)) ? (
+                            <div className="text-xs space-y-1 max-w-[240px]">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Building2 className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                                {(() => {
+                                  const names = u.sdms_college_names?.length ? u.sdms_college_names : (u.sdms_college_name ? [u.sdms_college_name] : []);
+                                  if (names.length === 0) return <span className="font-semibold text-gray-900">Assigned College</span>;
+                                  if (names.length <= 2) {
+                                    return names.map((cn, i) => (
+                                      <span key={i} className="font-semibold text-gray-900 bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded text-[11px] truncate max-w-[190px]" title={cn}>
+                                        {cn}
+                                      </span>
+                                    ));
+                                  }
+                                  return (
+                                    <span className="font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded text-[11px]" title={names.join(', ')}>
+                                      {names[0]} +{names.length - 1} more
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+
+                              {(u.sdms_course_names?.length > 0 || u.sdms_course_name) && (
+                                <div className="text-[11px] text-gray-600 flex items-center gap-1 flex-wrap pl-5">
+                                  <span className="font-medium text-gray-700">
+                                    {u.sdms_course_names?.length ? u.sdms_course_names.join(', ') : u.sdms_course_name}
+                                  </span>
+                                  {(u.sdms_branch_names?.length > 0 || u.sdms_branch_name) && (
+                                    <span className="text-gray-400">• {u.sdms_branch_names?.length ? u.sdms_branch_names.join(', ') : u.sdms_branch_name}</span>
+                                  )}
+                                </div>
+                              )}
+
+                              {(u.sdms_years?.length > 0 || u.sdms_year) && (
+                                <div className="flex items-center gap-1 flex-wrap pl-5 pt-0.5">
+                                  {(u.sdms_years?.length ? u.sdms_years : [u.sdms_year]).map((yr, idx) => (
+                                    <span key={idx} className="bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded text-[10px]">
+                                      {formatYearBadge(yr)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Unassigned (Global)</span>
+                          )}
                         </td>
 
                         <td className="py-3.5 px-4">
@@ -1236,11 +1751,70 @@ const UserManagement = () => {
                 </select>
               </div>
 
-              {/* Step 3: Granular Page Permissions Matrix */}
+              {/* Step 3: SDMS Institutional Scope & Assignment */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-700" />
+                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                      3. SDMS Institutional Assignment & Scope
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium">
+                    {selectedRoleId && roles.find(r => r._id === selectedRoleId)?.key === 'campus_admin' ? (
+                      <span className="text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">College required for Campus Admin</span>
+                    ) : selectedRoleId && roles.find(r => r._id === selectedRoleId)?.key === 'course_admin' ? (
+                      <span className="text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">College & Course required for Course Admin</span>
+                    ) : (
+                      <span className="text-blue-700">Optional for Faculty / Evaluator</span>
+                    )}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <MultiSelectDropdown
+                    label={`College / Campus ${roles.find(r => r._id === selectedRoleId)?.key === 'campus_admin' || roles.find(r => r._id === selectedRoleId)?.key === 'course_admin' ? '*' : ''}`}
+                    options={sdmsColleges}
+                    selectedValues={linkSdmsCollegeIds}
+                    onChange={(next) => setLinkSdmsCollegeIds(next)}
+                    placeholder="Select Colleges..."
+                    allLabel="All Colleges (Unrestricted)"
+                  />
+
+                  <MultiSelectDropdown
+                    label={`Course ${roles.find(r => r._id === selectedRoleId)?.key === 'course_admin' ? '*' : ''}`}
+                    options={linkAvailableCourses}
+                    selectedValues={linkSdmsCourseIds}
+                    onChange={(next) => setLinkSdmsCourseIds(next)}
+                    placeholder="Select Courses..."
+                    allLabel="All Courses"
+                  />
+
+                  <MultiSelectDropdown
+                    label="Branch / Specialization"
+                    options={linkAvailableBranches}
+                    selectedValues={linkSdmsBranchIds}
+                    onChange={(next) => setLinkSdmsBranchIds(next)}
+                    placeholder="Select Branches..."
+                    allLabel="All Branches"
+                  />
+
+                  <MultiSelectDropdown
+                    label="Year Wise Access"
+                    options={YEAR_OPTIONS}
+                    selectedValues={linkSdmsYears}
+                    onChange={(next) => setLinkSdmsYears(next)}
+                    placeholder="Select Years..."
+                    allLabel="All Years (1st to 6th Year)"
+                  />
+                </div>
+              </div>
+
+              {/* Step 4: Granular Page Permissions Matrix */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    3. Page Read & Write Permissions
+                    4. Page Read & Write Permissions
                   </label>
                   <div className="flex items-center gap-2 text-xs">
                     <button
@@ -1390,37 +1964,6 @@ const UserManagement = () => {
                     rows="2"
                     className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-900">SDMS reporting scope</p>
-                <p className="mt-1 text-xs text-blue-800">
-                  Assign a college to Campus Admins and a course to Course Admins. These IDs are available in the SDMS directory.
-                </p>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="text-xs font-bold text-gray-700">
-                    SDMS College ID
-                    <input
-                      type="number"
-                      min="1"
-                      value={editSdmsCollegeId}
-                      onChange={(event) => setEditSdmsCollegeId(event.target.value)}
-                      className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-2 text-sm font-normal"
-                      placeholder="Required for Campus Admin"
-                    />
-                  </label>
-                  <label className="text-xs font-bold text-gray-700">
-                    SDMS Course ID
-                    <input
-                      type="number"
-                      min="1"
-                      value={editSdmsCourseId}
-                      onChange={(event) => setEditSdmsCourseId(event.target.value)}
-                      className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-2 text-sm font-normal"
-                      placeholder="Required for Course Admin"
-                    />
-                  </label>
                 </div>
               </div>
 
@@ -1581,6 +2124,74 @@ const UserManagement = () => {
                     <option value="active">Active (Permitted)</option>
                     <option value="inactive">Inactive (Suspended)</option>
                   </select>
+                </div>
+              </div>
+
+              {/* SDMS Institutional Assignment & Scope */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-700" />
+                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                      SDMS Institutional Assignment & Scope
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium">
+                    {(() => {
+                      const curRole = roles.find(r => r._id === editUserRoleId)?.key || editingUser?.role;
+                      if (curRole === 'campus_admin') {
+                        return <span className="text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">College required for Campus Admin</span>;
+                      }
+                      if (curRole === 'course_admin') {
+                        return <span className="text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">College & Course required for Course Admin</span>;
+                      }
+                      return <span className="text-blue-700">Optional for Faculty / Evaluator</span>;
+                    })()}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <MultiSelectDropdown
+                    label={`College / Campus ${(() => {
+                      const curRole = roles.find(r => r._id === editUserRoleId)?.key || editingUser?.role;
+                      return curRole === 'campus_admin' || curRole === 'course_admin' ? '*' : '';
+                    })()}`}
+                    options={sdmsColleges}
+                    selectedValues={editSdmsCollegeIds}
+                    onChange={(next) => setEditSdmsCollegeIds(next)}
+                    placeholder="Select Colleges..."
+                    allLabel="All Colleges (Unrestricted)"
+                  />
+
+                  <MultiSelectDropdown
+                    label={`Course ${(() => {
+                      const curRole = roles.find(r => r._id === editUserRoleId)?.key || editingUser?.role;
+                      return curRole === 'course_admin' ? '*' : '';
+                    })()}`}
+                    options={editAvailableCourses}
+                    selectedValues={editSdmsCourseIds}
+                    onChange={(next) => setEditSdmsCourseIds(next)}
+                    placeholder="Select Courses..."
+                    allLabel="All Courses"
+                  />
+
+                  <MultiSelectDropdown
+                    label="Branch / Specialization"
+                    options={editAvailableBranches}
+                    selectedValues={editSdmsBranchIds}
+                    onChange={(next) => setEditSdmsBranchIds(next)}
+                    placeholder="Select Branches..."
+                    allLabel="All Branches"
+                  />
+
+                  <MultiSelectDropdown
+                    label="Year Wise Access"
+                    options={YEAR_OPTIONS}
+                    selectedValues={editSdmsYears}
+                    onChange={(next) => setEditSdmsYears(next)}
+                    placeholder="Select Years..."
+                    allLabel="All Years (1st to 6th Year)"
+                  />
                 </div>
               </div>
 
