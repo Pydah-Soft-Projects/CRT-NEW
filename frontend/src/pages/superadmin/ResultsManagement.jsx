@@ -797,23 +797,41 @@ const ResultsManagement = () => {
 
     const fetchFilterData = async () => {
         try {
-            const [campusRes, batchRes] = await Promise.all([
+            const [campusRes, batchRes, sdmsCollegesRes] = await Promise.allSettled([
                 api.get('/campus-management/'),
-                api.get('/batch-management/')
+                api.get('/batch-management/'),
+                api.get('/student/sdms/colleges')
             ]);
 
-            // Super admin campus list
-            if (campusRes?.data?.data) {
-                setCampuses(campusRes.data.data);
-            } else if (Array.isArray(campusRes?.data)) {
-                setCampuses(campusRes.data);
+            const loadedCampuses = [];
+
+            if (sdmsCollegesRes.status === 'fulfilled' && sdmsCollegesRes.value?.data?.data) {
+                const colleges = sdmsCollegesRes.value.data.data;
+                if (Array.isArray(colleges)) {
+                    loadedCampuses.push(...colleges);
+                    setSdmsColleges(colleges);
+                }
             }
 
-            // Batch list
-            if (batchRes?.data?.data) {
-                setBatches(batchRes.data.data);
-            } else if (Array.isArray(batchRes?.data)) {
-                setBatches(batchRes.data);
+            if (campusRes.status === 'fulfilled') {
+                const data = campusRes.value?.data?.data || campusRes.value?.data;
+                if (Array.isArray(data)) {
+                    data.forEach(c => {
+                        const cid = String(c.id || c._id || c.campus_id);
+                        if (!loadedCampuses.some(existing => String(existing.id || existing._id || existing.campus_id) === cid)) {
+                            loadedCampuses.push(c);
+                        }
+                    });
+                }
+            }
+
+            setCampuses(loadedCampuses);
+
+            if (batchRes.status === 'fulfilled') {
+                const data = batchRes.value?.data?.data || batchRes.value?.data;
+                if (Array.isArray(data)) {
+                    setBatches(data);
+                }
             }
         } catch (err) {
             console.error('Error fetching campuses/batches for filters:', err);
@@ -844,10 +862,16 @@ const ResultsManagement = () => {
             if (!campus) return;
             const id = campus.id || campus._id || campus.campus_id;
             if (!id) return;
-            map[String(id)] = campus.name || campus.campus_name || campus.label || 'Unnamed Campus';
+            map[String(id)] = campus.name || campus.college_name || campus.campus_name || campus.label || 'Unnamed Campus';
+        });
+        sdmsColleges.forEach(col => {
+            if (!col) return;
+            const id = col.id || col._id;
+            if (!id) return;
+            map[String(id)] = col.name || col.college_name || map[String(id)];
         });
         return map;
-    }, [campuses]);
+    }, [campuses, sdmsColleges]);
 
     const batchMap = React.useMemo(() => {
         const map = {};
@@ -860,6 +884,44 @@ const ResultsManagement = () => {
         return map;
     }, [batches]);
 
+    const getCampusDisplay = (test) => {
+        if (Array.isArray(test.college_names) && test.college_names.length > 0) {
+            return test.college_names.join(', ');
+        }
+        if (Array.isArray(test.campus_names) && test.campus_names.length > 0) {
+            return test.campus_names.join(', ');
+        }
+        if (test.college_name) return test.college_name;
+        if (test.campus_name) return test.campus_name;
+        if (Array.isArray(test.target_colleges) && test.target_colleges.length > 0) {
+            return test.target_colleges.join(', ');
+        }
+        if (Array.isArray(test.campus_ids) && test.campus_ids.length > 0) {
+            const mapped = test.campus_ids
+                .filter(id => id !== 'all')
+                .map(id => campusMap[String(id)] || (String(id).length < 6 ? `College ${id}` : id))
+                .filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        if (Array.isArray(test.target_college_ids) && test.target_college_ids.length > 0) {
+            const mapped = test.target_college_ids.map(id => campusMap[String(id)] || `College ${id}`).filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        return 'All Colleges';
+    };
+
+    const getBatchDisplay = (test) => {
+        if (Array.isArray(test.batch_names) && test.batch_names.length > 0) {
+            return test.batch_names.join(', ');
+        }
+        if (test.batch_name) return test.batch_name;
+        if (Array.isArray(test.batch_ids) && test.batch_ids.length > 0) {
+            const mapped = test.batch_ids.map(id => batchMap[String(id)]).filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        return '-';
+    };
+
     // Apply campus / batch filters and ensure latest tests appear first
     const filteredAndSortedTests = React.useMemo(() => {
         const filtered = tests.filter(test => {
@@ -867,16 +929,22 @@ const ResultsManagement = () => {
             const matchesSearch = !searchTerm || 
                 (test.test_name && test.test_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            const campusIds = test.campus_ids || [];
+            const campusIds = test.campus_ids || test.target_college_ids || [];
+            const collegeNames = test.college_names || test.campus_names || [];
             const batchIds = test.batch_ids || [];
 
             const matchesCampus =
                 selectedCampusFilter === 'all' ||
-                (Array.isArray(campusIds) && campusIds.includes(selectedCampusFilter));
+                campusIds.includes('all') ||
+                campusIds.length === 0 ||
+                collegeNames.includes('All Colleges') ||
+                (Array.isArray(campusIds) && campusIds.map(String).includes(String(selectedCampusFilter))) ||
+                (campusMap[String(selectedCampusFilter)] && collegeNames.includes(campusMap[String(selectedCampusFilter)]));
 
             const matchesBatch =
                 selectedBatchFilter === 'all' ||
-                (Array.isArray(batchIds) && batchIds.includes(selectedBatchFilter));
+                batchIds.length === 0 ||
+                (Array.isArray(batchIds) && batchIds.map(String).includes(String(selectedBatchFilter)));
 
             return matchesSearch && matchesCampus && matchesBatch;
         });
@@ -893,12 +961,16 @@ const ResultsManagement = () => {
         const ids = new Set();
 
         tests.forEach(test => {
-            const campusIds = test.campus_ids || [];
+            const campusIds = test.campus_ids || test.target_college_ids || [];
+            const collegeNames = test.college_names || test.campus_names || [];
             const batchIds = test.batch_ids || [];
 
             const matchesCampus =
                 selectedCampusFilter === 'all' ||
-                (Array.isArray(campusIds) && campusIds.includes(selectedCampusFilter));
+                campusIds.includes('all') ||
+                campusIds.length === 0 ||
+                (Array.isArray(campusIds) && campusIds.map(String).includes(String(selectedCampusFilter))) ||
+                (campusMap[String(selectedCampusFilter)] && collegeNames.includes(campusMap[String(selectedCampusFilter)]));
 
             if (!matchesCampus || !Array.isArray(batchIds)) return;
 
@@ -906,7 +978,7 @@ const ResultsManagement = () => {
         });
 
         return Array.from(ids);
-    }, [tests, selectedCampusFilter]);
+    }, [tests, selectedCampusFilter, campusMap]);
 
     const handleTestClick = async (testId) => {
         const test = tests.find(t => t.test_id === testId);
@@ -1564,12 +1636,8 @@ const ResultsManagement = () => {
                 'S. No': index + 1,
                 'Test Name': test.test_name,
                 'Category': test.category,
-                'Campus': Array.isArray(test.campus_ids) && test.campus_ids.length > 0
-                    ? test.campus_ids.map(id => campusMap[String(id)] || 'Unknown').join(', ')
-                    : '-',
-                'Batch': Array.isArray(test.batch_ids) && test.batch_ids.length > 0
-                    ? test.batch_ids.map(id => batchMap[String(id)] || 'Unknown').join(', ')
-                    : '-',
+                'Campus / College': getCampusDisplay(test),
+                'Batch': getBatchDisplay(test),
                 'Total Students': typeof test.total_assigned_students === 'number'
                     ? test.total_assigned_students
                     : 0,
@@ -1701,7 +1769,7 @@ const ResultsManagement = () => {
                                             Category
                                         </th>
                                         <th className="px-2 sm:px-3 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40 min-w-[120px]">
-                                            <span className="block mb-1">Campus</span>
+                                            <span className="block mb-1">Campus / College</span>
                                             <select
                                                 value={selectedCampusFilter}
                                                 onChange={(e) => setSelectedCampusFilter(e.target.value)}
@@ -1710,7 +1778,7 @@ const ResultsManagement = () => {
                                                 <option value="all">All</option>
                                                 {campuses.map((campus) => {
                                                     const id = campus.id || campus._id || campus.campus_id;
-                                                    const name = campus.name || campus.campus_name || 'Unnamed Campus';
+                                                    const name = campus.name || campus.college_name || campus.campus_name || 'Unnamed Campus';
                                                     return (
                                                         <option key={id} value={String(id)}>
                                                             {name}
@@ -1785,18 +1853,10 @@ const ResultsManagement = () => {
                                                     {test.category}
                                                 </td>
                                                 <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                                    {Array.isArray(test.campus_ids) && test.campus_ids.length > 0
-                                                        ? test.campus_ids
-                                                            .map((id) => campusMap[String(id)] || 'Unknown')
-                                                            .join(', ')
-                                                        : '-'}
+                                                    {getCampusDisplay(test)}
                                                 </td>
                                                 <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                                    {Array.isArray(test.batch_ids) && test.batch_ids.length > 0
-                                                        ? test.batch_ids
-                                                            .map((id) => batchMap[String(id)] || 'Unknown')
-                                                            .join(', ')
-                                                        : '-'}
+                                                    {getBatchDisplay(test)}
                                                 </td>
                                                 <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                                                     {typeof test.total_assigned_students === 'number'

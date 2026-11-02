@@ -801,6 +801,44 @@ const CourseReports = () => {
         return map;
     }, [campuses]);
 
+    const getCampusDisplay = (test) => {
+        if (Array.isArray(test.college_names) && test.college_names.length > 0) {
+            return test.college_names.join(', ');
+        }
+        if (Array.isArray(test.campus_names) && test.campus_names.length > 0) {
+            return test.campus_names.join(', ');
+        }
+        if (test.college_name) return test.college_name;
+        if (test.campus_name) return test.campus_name;
+        if (Array.isArray(test.target_colleges) && test.target_colleges.length > 0) {
+            return test.target_colleges.join(', ');
+        }
+        if (Array.isArray(test.campus_ids) && test.campus_ids.length > 0) {
+            const mapped = test.campus_ids
+                .filter(id => id !== 'all')
+                .map(id => campusMap[String(id).trim()] || (String(id).length < 6 ? `College ${id}` : id))
+                .filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        if (Array.isArray(test.target_college_ids) && test.target_college_ids.length > 0) {
+            const mapped = test.target_college_ids.map(id => campusMap[String(id)] || `College ${id}`).filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        return 'All Colleges';
+    };
+
+    const getBatchDisplay = (test) => {
+        if (Array.isArray(test.batch_names) && test.batch_names.length > 0) {
+            return test.batch_names.join(', ');
+        }
+        if (test.batch_name) return test.batch_name;
+        if (Array.isArray(test.batch_ids) && test.batch_ids.length > 0) {
+            const mapped = test.batch_ids.map(id => batchMap[String(id).trim()]).filter(Boolean);
+            if (mapped.length > 0) return mapped.join(', ');
+        }
+        return '-';
+    };
+
     // Apply batch filter and search, ensure latest tests appear first
     const filteredAndSortedTests = useMemo(() => {
         const filtered = tests.filter(test => {
@@ -1298,60 +1336,10 @@ const CourseReports = () => {
                                                             {test.category}
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                                            {Array.isArray(test.campus_ids) && test.campus_ids.length > 0
-                                                                ? (() => {
-                                                                    const campusNames = test.campus_ids
-                                                                        .map((id) => {
-                                                                            const idStr = String(id).trim();
-                                                                            const name = campusMap[idStr];
-                                                                            if (!name && Object.keys(campusMap).length > 0) {
-                                                                                console.log('Campus not found in map:', {
-                                                                                    id,
-                                                                                    idStr,
-                                                                                    idType: typeof id,
-                                                                                    mapKeys: Object.keys(campusMap).slice(0, 3),
-                                                                                    testCampusIds: test.campus_ids
-                                                                                });
-                                                                            }
-                                                                            return name;
-                                                                        })
-                                                                        .filter(Boolean); // Remove undefined/null values
-                                                                    
-                                                                    return campusNames.length > 0 
-                                                                        ? campusNames.join(', ')
-                                                                        : test.campus_ids.length > 0 
-                                                                            ? 'Unknown' 
-                                                                            : '-';
-                                                                })()
-                                                                : '-'}
+                                                            {getCampusDisplay(test)}
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                                                            {Array.isArray(test.batch_ids) && test.batch_ids.length > 0
-                                                                ? (() => {
-                                                                    const batchNames = test.batch_ids
-                                                                        .map((id) => {
-                                                                            const idStr = String(id).trim();
-                                                                            const name = batchMap[idStr];
-                                                                            if (!name && Object.keys(batchMap).length > 0) {
-                                                                                console.log('Batch not found in map:', {
-                                                                                    id,
-                                                                                    idStr,
-                                                                                    idType: typeof id,
-                                                                                    mapKeys: Object.keys(batchMap).slice(0, 3),
-                                                                                    testBatchIds: test.batch_ids
-                                                                                });
-                                                                            }
-                                                                            return name;
-                                                                        })
-                                                                        .filter(Boolean); // Remove undefined/null values
-                                                                    
-                                                                    return batchNames.length > 0 
-                                                                        ? batchNames.join(', ')
-                                                                        : test.batch_ids.length > 0 
-                                                                            ? 'Unknown' 
-                                                                            : '-';
-                                                                })()
-                                                                : '-'}
+                                                            {getBatchDisplay(test)}
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                                                             {typeof test.total_assigned_students === 'number'

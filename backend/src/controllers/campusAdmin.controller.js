@@ -125,15 +125,27 @@ exports.getOnlineTestOverview = async (req, res) => {
       }
     }
 
-    // Get all SDMS colleges map for friendly display
+    // Get all SDMS colleges, courses, and branches map for friendly display
     let collegeMap = {};
+    let courseMap = {};
+    let branchMap = {};
     try {
-      const colleges = await sdmsService.getColleges();
+      const [colleges, courses, branches] = await Promise.all([
+        sdmsService.getColleges().catch(() => []),
+        sdmsService.getCourses().catch(() => []),
+        sdmsService.getBranches().catch(() => [])
+      ]);
       if (Array.isArray(colleges)) {
         colleges.forEach(c => { collegeMap[c.id] = c.name; });
       }
+      if (Array.isArray(courses)) {
+        courses.forEach(c => { courseMap[c.id] = c.name || c.code; });
+      }
+      if (Array.isArray(branches)) {
+        branches.forEach(b => { branchMap[b.id] = b.code || b.name; });
+      }
     } catch (e) {
-      // Ignore college fetch errors
+      // Ignore lookup fetch errors
     }
 
     // Fetch all results for visible tests
@@ -187,7 +199,41 @@ exports.getOnlineTestOverview = async (req, res) => {
       const targetCollegeIds = (test.target_college_ids || []).map(Number);
       const collegeNames = targetCollegeIds.length
         ? targetCollegeIds.map(id => collegeMap[id] || `College ${id}`)
-        : ['All Colleges'];
+        : (Array.isArray(test.target_colleges) && test.target_colleges.length ? test.target_colleges : ['All Colleges']);
+
+      // Batch / Target audience details display
+      const targetCourseIds = (test.target_course_ids || []).map(Number);
+      const targetBranchIds = (test.target_branch_ids || []).map(Number);
+      const targetYears = (test.target_years || []).map(Number);
+      const targetSemesters = (test.target_semesters || []).map(Number);
+      const targetSections = (test.target_sections || []).filter(Boolean);
+
+      const batchParts = [];
+      if (Array.isArray(test.target_batch_ids) && test.target_batch_ids.length > 0) {
+        batchParts.push(...test.target_batch_ids.map(b => b.name || String(b)));
+      }
+      if (targetCourseIds.length > 0) {
+        batchParts.push(...targetCourseIds.map(id => courseMap[id] || `Course ${id}`));
+      }
+      if (targetBranchIds.length > 0) {
+        batchParts.push(...targetBranchIds.map(id => branchMap[id] || `Branch ${id}`));
+      }
+      if (targetYears.length > 0) {
+        batchParts.push(`Year ${targetYears.join(', ')}`);
+      }
+      if (targetSemesters.length > 0) {
+        batchParts.push(`Sem ${targetSemesters.join(', ')}`);
+      }
+      if (targetSections.length > 0) {
+        batchParts.push(`Sec ${targetSections.join(', ')}`);
+      }
+
+      const batchNames = batchParts.length > 0 ? [batchParts.join(' - ')] : ['All Batches'];
+      const batchIds = (test.target_batch_ids && test.target_batch_ids.length > 0)
+        ? test.target_batch_ids.map(String)
+        : (targetBranchIds.length > 0
+          ? targetBranchIds.map(String)
+          : (targetCourseIds.length > 0 ? targetCourseIds.map(String) : []));
 
       return {
         ...test,
@@ -196,11 +242,12 @@ exports.getOnlineTestOverview = async (req, res) => {
         module_name: test.module_id,
         category: formatCategory(test),
         question_count: Array.isArray(test.questions) ? test.questions.length : 0,
-        campus_ids: targetCollegeIds.map(String),
+        campus_ids: targetCollegeIds.length ? targetCollegeIds.map(String) : ['all'],
         college_ids: targetCollegeIds,
         college_names: collegeNames,
         campus_names: collegeNames,
-        batch_ids: [],
+        batch_ids: batchIds,
+        batch_names: batchNames,
         total_assigned_students: totalAssignedStudents,
         pending_students: pendingStudents,
         total_attempts: totalAttempts,
