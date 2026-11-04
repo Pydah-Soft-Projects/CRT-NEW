@@ -108,6 +108,7 @@ function AppContent() {
             <Route path="dashboard" element={<CampusAdminDashboard />} />
             <Route path="students" element={<CampusStudentManagement />} />
             <Route path="tests" element={<TestManagement />} />
+            <Route path="progress-tracking" element={<ProgressTracking />} />
             <Route path="results" element={<Navigate to="/campus-admin/reports" replace />} />
             <Route path="reports" element={<CampusReports />} />
             <Route path="profile" element={<SuperAdminProfile />} />
@@ -119,6 +120,7 @@ function AppContent() {
             <Route path="dashboard" element={<CourseAdminDashboard />} />
             <Route path="students" element={<CourseStudentManagement />} />
             <Route path="tests" element={<TestManagement />} />
+            <Route path="progress-tracking" element={<ProgressTracking />} />
             <Route path="results" element={<Navigate to="/course-admin/reports" replace />} />
             <Route path="reports" element={<CourseReports />} />
             <Route path="progress" element={<StudentProgress />} />

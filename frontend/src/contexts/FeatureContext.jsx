@@ -64,6 +64,7 @@ export const FeatureProvider = ({ children }) => {
         dashboard: { name: 'Dashboard', description: 'Main dashboard view', required: true },
         student_management: { name: 'Student Management', description: 'Manage students in campus', required: false },
         test_management: { name: 'Test Management', description: 'Create and manage tests', required: false },
+        progress_tracking: { name: 'Progress Tracking', description: 'Track student module progress', required: false },
         reports: { name: 'Reports', description: 'View campus reports and analytics', required: false },
         profile: { name: 'Profile', description: 'Manage admin profile and settings', required: false }
       },
@@ -71,6 +72,7 @@ export const FeatureProvider = ({ children }) => {
         dashboard: { name: 'Dashboard', description: 'Main dashboard view', required: true },
         student_management: { name: 'Student Management', description: 'Manage students in course', required: false },
         test_management: { name: 'Test Management', description: 'Create and manage tests', required: false },
+        progress_tracking: { name: 'Progress Tracking', description: 'Track student module progress', required: false },
         reports: { name: 'Reports', description: 'View course reports and analytics', required: false },
         profile: { name: 'Profile', description: 'Manage admin profile and settings', required: false }
       }
@@ -121,6 +123,7 @@ export const FeatureProvider = ({ children }) => {
         { name: 'Dashboard', path: '/campus-admin/dashboard', icon: 'LayoutDashboard', feature: 'dashboard', required: true },
         { name: 'Students', path: '/campus-admin/students', icon: 'GraduationCap', feature: 'student_management' },
         { name: 'Tests', path: '/campus-admin/tests', icon: 'FilePlus', feature: 'test_management' },
+        { name: 'Progress Tracking', path: '/campus-admin/progress-tracking', icon: 'Activity', feature: 'progress_tracking' },
         { name: 'Reports', path: '/campus-admin/reports', icon: 'BarChart', feature: 'reports' },
         { name: 'Profile', path: '/campus-admin/profile', icon: 'User', feature: 'profile' }
       ],
@@ -128,6 +131,7 @@ export const FeatureProvider = ({ children }) => {
         { name: 'Dashboard', path: '/course-admin/dashboard', icon: 'LayoutDashboard', feature: 'dashboard', required: true },
         { name: 'Students', path: '/course-admin/students', icon: 'GraduationCap', feature: 'student_management' },
         { name: 'Tests', path: '/course-admin/tests', icon: 'FilePlus', feature: 'test_management' },
+        { name: 'Progress Tracking', path: '/course-admin/progress-tracking', icon: 'Activity', feature: 'progress_tracking' },
         { name: 'Reports', path: '/course-admin/reports', icon: 'BarChart', feature: 'reports' },
         { name: 'Profile', path: '/course-admin/profile', icon: 'User', feature: 'profile' }
       ]

@@ -216,6 +216,22 @@ const CampusAdminDashboard = () => {
             </Link>
 
             <Link
+              to="/campus-admin/progress-tracking"
+              className="flex items-center p-3.5 rounded-xl border border-slate-200 hover:border-teal-400 bg-slate-50/60 hover:bg-teal-50/50 transition group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm mr-3.5 group-hover:scale-105 transition-transform">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                  Progress Tracking
+                </h4>
+                <p className="text-xs text-slate-500 truncate">Student module analytics & behavior</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+
+            <Link
               to="/campus-admin/reports"
               className="flex items-center p-3.5 rounded-xl border border-slate-200 hover:border-purple-400 bg-slate-50/60 hover:bg-purple-50/50 transition group"
             >

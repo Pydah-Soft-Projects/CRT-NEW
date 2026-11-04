@@ -37,7 +37,7 @@ const CourseAdminSidebar = () => {
       console.error('Failed to fetch permissions:', err)
       // Use default permissions for course admin
       setUserPermissions({
-        modules: ['dashboard', 'batch_management', 'student_management', 'test_management', 'results_management', 'reports'],
+        modules: ['dashboard', 'batch_management', 'student_management', 'test_management', 'results_management', 'progress_tracking', 'reports'],
         can_create_campus: false,
         can_create_course: false,
         can_create_batch: true,
@@ -82,6 +82,7 @@ const CourseAdminSidebar = () => {
         'batch_management': 'batch_management',
         'student_management': 'student_management',
         'test_management': 'test_management',
+        'progress_tracking': 'progress_tracking',
         'reports': 'reports'
       }
       

@@ -5,7 +5,7 @@ import api from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 
-const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test }) => {
+const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePath = '/superadmin' }) => {
   const [attemptDetails, setAttemptDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const { error } = useNotification();
@@ -26,7 +26,8 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test }) => {
   const fetchAttemptDetails = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/superadmin/practice-attempt-details/${attempt.attempt_id}`);
+      const targetId = attempt.attempt_id || attempt._id;
+      const response = await api.get(`${basePath || '/superadmin'}/practice-attempt-details/${targetId}`);
       if (response.data.success) {
         setAttemptDetails(response.data.data);
       } else {

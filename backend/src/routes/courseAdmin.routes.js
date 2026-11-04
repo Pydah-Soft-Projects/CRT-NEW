@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const courseAdminController = require('../controllers/courseAdmin.controller');
 const campusAdminController = require('../controllers/campusAdmin.controller');
+const progressTrackingController = require('../controllers/progressTracking.controller');
 const authenticateToken = require('../middleware/auth.middleware');
 const authorizeRoles = require('../middleware/role.middleware');
 const requireSdmsAssignment = require('../middleware/sdmsScope.middleware');
@@ -21,5 +22,11 @@ router.get(
   requireSdmsAssignment,
   campusAdminController.getStudentOnlineTestAttempts
 );
+
+// Progress tracking routes
+router.get('/practice-tests-by-module', requireSdmsAssignment, progressTrackingController.getPracticeTestsByModule);
+router.get('/test-assigned-students/:testId', requireSdmsAssignment, progressTrackingController.getTestAssignedStudents);
+router.get('/student-test-progress/:studentId/:testId', requireSdmsAssignment, progressTrackingController.getStudentTestProgress);
+router.get('/practice-attempt-details/:attemptId', requireSdmsAssignment, progressTrackingController.getPracticeAttemptDetails);
 
 module.exports = router;

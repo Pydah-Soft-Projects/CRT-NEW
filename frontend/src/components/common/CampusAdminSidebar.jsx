@@ -56,7 +56,7 @@ const CampusAdminSidebar = () => {
 
     // Use default permissions for campus admin since we're using FeatureContext
     setUserPermissions({
-      modules: ['dashboard', 'course_management', 'batch_management', 'student_management', 'test_management', 'results_management', 'reports'],
+      modules: ['dashboard', 'course_management', 'batch_management', 'student_management', 'test_management', 'results_management', 'progress_tracking', 'reports'],
       can_create_campus: false,
       can_create_course: true,
       can_create_batch: true,

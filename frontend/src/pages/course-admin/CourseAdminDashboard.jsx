@@ -218,17 +218,33 @@ const CourseAdminDashboard = () => {
             </Link>
 
             <Link
+              to="/course-admin/progress-tracking"
+              className="flex items-center p-3.5 rounded-xl border border-slate-200 hover:border-teal-400 bg-slate-50/60 hover:bg-teal-50/50 transition group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm mr-3.5 group-hover:scale-105 transition-transform">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                  Progress Tracking
+                </h4>
+                <p className="text-xs text-slate-500 truncate">Student module analytics & behavior</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+
+            <Link
               to="/course-admin/reports"
               className="flex items-center p-3.5 rounded-xl border border-slate-200 hover:border-purple-400 bg-slate-50/60 hover:bg-purple-50/50 transition group"
             >
               <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm mr-3.5 group-hover:scale-105 transition-transform">
-                <Activity className="w-5 h-5" />
+                <BarChart className="w-5 h-5" />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <h4 className="text-sm font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
-                  Reports & Progress
+                  Course Reports
                 </h4>
-                <p className="text-xs text-slate-500 truncate">Course analytics & student progress</p>
+                <p className="text-xs text-slate-500 truncate">Detailed exam performance & attempts</p>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400 ml-2 group-hover:translate-x-1 transition-transform" />
             </Link>
