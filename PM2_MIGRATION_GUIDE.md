@@ -20,7 +20,7 @@ This guide details the migration of **CRT-NEW** from pure Docker to a **hybrid P
 > - **CRT Backend** runs on host port **`5000`** under PM2.
 > - **CRT Frontend** runs on host port **`3000`** under PM2 (`pm2 serve`).
 > - **CRT Speech AI** runs on `127.0.0.1:8001` in Docker.
-> - **MongoDB** runs on `127.0.0.1:27017` in Docker.
+> - **MongoDB** connects directly to **MongoDB Atlas Cloud** (`teampydah.y4zj6wh.mongodb.net/crt1`), so no local database container is needed!
 > - **Nginx** listens on public port **`80`** (and `443` if SSL) and routes traffic seamlessly to Frontend, Backend, and WebSockets.
 
 ---
@@ -38,8 +38,8 @@ Public Traffic (Internet)
                                   │
                    ┌──────────────┴──────────────┐
                    ▼                             ▼
-       [ Docker: crt-mongodb ]        [ Docker: crt-ai-server ]
-           127.0.0.1:27017                 127.0.0.1:8001
+      [ MongoDB Atlas Cloud DB ]      [ Docker: crt-ai-server ]
+       teampydah.y4zj6wh.mongodb.net          127.0.0.1:8001
 ```
 
 ---
@@ -76,13 +76,6 @@ mkdir -p logs
 
 ### Step 3.3: Configure Environment Files
 
-Create the root `.env` (used by Docker for MongoDB and AI Server):
-```bash
-cp env.example .env
-nano .env
-```
-Ensure `MONGO_ROOT_PASSWORD` is set.
-
 Create the backend `.env`:
 ```bash
 cp backend/.env.example backend/.env
@@ -92,14 +85,14 @@ Key settings in `backend/.env`:
 ```env
 NODE_ENV=production
 PORT=5000
-MONGODB_URI=mongodb://crtadmin:<YOUR_MONGO_PASSWORD>@127.0.0.1:27017/crt?authSource=admin
+MONGODB_URI=mongodb+srv://teampydah:TeamPydah@teampydah.y4zj6wh.mongodb.net/crt1
 AI_SERVER_URL=http://127.0.0.1:8001
-JWT_SECRET_KEY=<YOUR_JWT_SECRET>
-JWT_REFRESH_SECRET_KEY=<YOUR_JWT_REFRESH_SECRET>
+JWT_SECRET_KEY=versant_jwt_secret_key_2024_secure_and_unique
+JWT_REFRESH_SECRET_KEY=versant_jwt_refresh_secret_key_2024
 CORS_ORIGINS=http://localhost:3000,http://13.206.203.113,https://crt.pydahsoft.in
 ```
 
-### Step 3.4: Start Docker Services (MongoDB + AI Server)
+### Step 3.4: Start Docker AI Service
 
 ```bash
 cd /home/ubuntu/CRT-NEW
