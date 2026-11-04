@@ -33,7 +33,7 @@ import {
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import api from '../../services/api';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 
 const YEAR_OPTIONS = [
   { id: 1, name: '1st Year' },
@@ -923,29 +923,29 @@ const UserManagement = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner size="lg" />;
+    return <SkeletonLoader type="users" />;
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-4 md:p-5 w-full space-y-4 sm:space-y-5">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
-              <Users className="h-5 w-5" />
+            <span className="p-1 bg-blue-100 text-blue-700 rounded-lg">
+              <Users className="h-4 w-4" />
             </span>
-            <span className="text-xs uppercase tracking-wider font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
               User & Access Administration
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">User & Role Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">User & Role Management</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
             Manage portal users, custom roles, permissions, and SDMS organizational assignments.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => {
               resetLinkForm();
@@ -956,64 +956,64 @@ const UserManagement = () => {
               }
               setShowLinkModal(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl shadow-sm transition text-sm active:scale-95"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-2 rounded-lg shadow-sm transition text-xs active:scale-95"
           >
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className="h-3.5 w-3.5" />
             Link HRMS User
           </button>
           <button
             onClick={() => openRoleModal(null)}
-            className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition text-sm active:scale-95"
+            className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold px-3.5 py-2 rounded-lg shadow-sm transition text-xs active:scale-95"
           >
-            <Shield className="h-4 w-4 text-gray-500" />
+            <Shield className="h-3.5 w-3.5 text-gray-500" />
             Create Role
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Portal Users</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{summary?.totalPortalUsers || users.length}</p>
-            <p className="text-xs text-emerald-600 font-medium mt-1">Active Accounts</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Portal Users</p>
+            <p className="text-xl font-bold text-gray-900 mt-0.5">{summary?.totalPortalUsers || users.length}</p>
+            <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Active Accounts</p>
           </div>
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-            <UserCheck className="h-6 w-6" />
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <UserCheck className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">HRMS Linked</p>
-            <p className="text-2xl font-bold text-indigo-600 mt-1">{summary?.hrmsLinkedUsers || 0}</p>
-            <p className="text-xs text-gray-500 font-medium mt-1">Via Employee Number</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">HRMS Linked</p>
+            <p className="text-xl font-bold text-indigo-600 mt-0.5">{summary?.hrmsLinkedUsers || 0}</p>
+            <p className="text-[11px] text-gray-500 font-medium mt-0.5">Via Employee Number</p>
           </div>
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-            <Key className="h-6 w-6" />
+          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+            <Key className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Configured Roles</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">{roles.length}</p>
-            <p className="text-xs text-gray-500 font-medium mt-1">System & Custom</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Configured Roles</p>
+            <p className="text-xl font-bold text-purple-600 mt-0.5">{roles.length}</p>
+            <p className="text-[11px] text-gray-500 font-medium mt-0.5">System & Custom</p>
           </div>
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-            <Shield className="h-6 w-6" />
+          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+            <Shield className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">HRMS Active Staff</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{summary?.hrmsTotalEmployees || 618}</p>
-            <p className="text-xs text-blue-600 font-medium mt-1">Available in Live HRMS DB</p>
+            <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">HRMS Active Staff</p>
+            <p className="text-xl font-bold text-gray-900 mt-0.5">{summary?.hrmsTotalEmployees || 618}</p>
+            <p className="text-[11px] text-blue-600 font-medium mt-0.5">Available in Live HRMS DB</p>
           </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-            <Database className="h-6 w-6" />
+          <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+            <Database className="h-5 w-5" />
           </div>
         </div>
       </div>
@@ -1022,7 +1022,7 @@ const UserManagement = () => {
       <div className="flex border-b border-gray-200 space-x-2 bg-white px-4 pt-2 rounded-t-2xl border-t border-x">
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 py-3 px-4 font-semibold text-sm border-b-2 transition ${
+          className={`flex items-center gap-2 py-2 px-3 font-semibold text-xs sm:text-sm border-b-2 transition ${
             activeTab === 'users'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -1037,7 +1037,7 @@ const UserManagement = () => {
 
         <button
           onClick={() => setActiveTab('roles')}
-          className={`flex items-center gap-2 py-3 px-4 font-semibold text-sm border-b-2 transition ${
+          className={`flex items-center gap-2 py-2 px-3 font-semibold text-xs sm:text-sm border-b-2 transition ${
             activeTab === 'roles'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -1052,7 +1052,7 @@ const UserManagement = () => {
 
         <button
           onClick={() => setActiveTab('hrms_directory')}
-          className={`flex items-center gap-2 py-3 px-4 font-semibold text-sm border-b-2 transition ${
+          className={`flex items-center gap-2 py-2 px-3 font-semibold text-xs sm:text-sm border-b-2 transition ${
             activeTab === 'hrms_directory'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -1143,14 +1143,14 @@ const UserManagement = () => {
             <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
               <thead className="bg-gray-50 text-gray-600 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4">User</th>
-                  <th className="py-3.5 px-4">Employee No</th>
-                  <th className="py-3.5 px-4">Department & Role</th>
-                  <th className="py-3.5 px-4">Institutional Scope</th>
-                  <th className="py-3.5 px-4">Page Permissions</th>
-                  <th className="py-3.5 px-4">Auth Source</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-2.5 px-3">User</th>
+                  <th className="py-2.5 px-3">Employee No</th>
+                  <th className="py-2.5 px-3">Department & Role</th>
+                  <th className="py-2.5 px-3">Institutional Scope</th>
+                  <th className="py-2.5 px-3">Page Permissions</th>
+                  <th className="py-2.5 px-3">Auth Source</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -1203,7 +1203,7 @@ const UserManagement = () => {
 
                     return (
                       <tr key={u._id} className="hover:bg-blue-50/40 transition">
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
                               {u.name?.charAt(0)?.toUpperCase() || u.username?.charAt(0)?.toUpperCase() || 'U'}
@@ -1215,7 +1215,7 @@ const UserManagement = () => {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           {u.emp_no ? (
                             <span className="font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded text-xs font-semibold">
                               {u.emp_no}
@@ -1225,7 +1225,7 @@ const UserManagement = () => {
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           <div>
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
                               {u.role_id?.name || u.role}
@@ -1238,7 +1238,7 @@ const UserManagement = () => {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           {u.role === 'superadmin' ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                               <Building2 className="h-3 w-3" />
@@ -1312,7 +1312,7 @@ const UserManagement = () => {
                           })()}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           {u.role === 'superadmin' ? (
                             <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                               Full Access (All Pages)
@@ -1329,7 +1329,7 @@ const UserManagement = () => {
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           {u.auth_source === 'hrms' ? (
                             <span className="inline-flex items-center gap-1 text-xs text-blue-700 font-medium">
                               <Database className="h-3 w-3 text-blue-500" />
@@ -1343,7 +1343,7 @@ const UserManagement = () => {
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-2.5 px-3">
                           <button
                             onClick={() => handleToggleUserStatus(u)}
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition ${
@@ -1357,7 +1357,7 @@ const UserManagement = () => {
                           </button>
                         </td>
 
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => openEditUserModal(u)}
@@ -1562,8 +1562,8 @@ const UserManagement = () => {
           </div>
 
           {hrmsLoading ? (
-            <div className="py-12 flex justify-center">
-              <LoadingSpinner size="md" />
+            <div className="p-4">
+              <SkeletonLoader type="table" count={5} />
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-200">

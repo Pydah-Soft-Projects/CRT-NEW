@@ -36,7 +36,7 @@ import {
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import {
   getCrtModules,
   createCrtModule,
@@ -1042,31 +1042,18 @@ export default function CRTUpload() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
-        <LoadingSpinner />
-        <p className="mt-4 text-slate-600 font-semibold text-sm">
-          Loading CRT &amp; Versant Question Bank...
-        </p>
-      </div>
-    );
+    return <SkeletonLoader type="crt" />;
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 p-3 sm:p-4 md:p-5 lg:p-6 space-y-4 md:space-y-5">
 
       {/* ============================================================= */}
       {/* 1. TOP HEADER & BREADCRUMBS                                    */}
       {/* ============================================================= */}
       <div className="space-y-2">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-          <div className="flex items-center gap-1.5">
-            <span className="hover:text-slate-800 cursor-pointer">← Home</span>
-            <span>&gt;</span>
-            <span className="text-slate-800 font-semibold">CRT &amp; Versant</span>
-          </div>
-
+        {/* Header Search & Actions */}
+        <div className="flex items-center justify-end text-xs text-slate-500 font-medium">
           {/* User & Global Header Search on larger screens */}
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block w-72">
@@ -1097,19 +1084,17 @@ export default function CRTUpload() {
         {/* Header Title & Primary Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] tracking-tight">
+            <h1 className="text-xl md:text-2xl font-extrabold text-[#0F172A] tracking-tight">
               CRT &amp; Versant Question Bank
             </h1>
-            <p className="text-slate-500 text-xs md:text-sm mt-0.5">
-              Create and manage modules, topics, levels and questions for CRT and Versant assessments.
-            </p>
+            
           </div>
 
           <div className="flex items-center gap-2.5">
             {/* Import Questions Button */}
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-2xs transition-colors"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" />
               <span>Import Questions</span>
@@ -1118,7 +1103,7 @@ export default function CRTUpload() {
             {/* Add Module Button (Royal Blue) */}
             <button
               onClick={() => handleOpenModuleModal()}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Add Module</span>
@@ -1176,7 +1161,7 @@ export default function CRTUpload() {
                 key={mod._id || mod.code}
                 data-module-id={String(mod._id)}
                 onClick={() => setSelectedModuleId(String(mod._id))}
-                className={`relative bg-white rounded-2xl p-4 border transition-all cursor-pointer text-left shadow-2xs min-w-[215px] sm:min-w-[225px] flex-1 max-w-[270px] shrink-0 ${
+                className={`relative bg-white rounded-xl p-3 border transition-all cursor-pointer text-left shadow-2xs min-w-[195px] sm:min-w-[205px] flex-1 shrink-0 ${
                   isSelected
                     ? `border-2 ${theme.ringColor} shadow-md`
                     : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
@@ -1184,8 +1169,8 @@ export default function CRTUpload() {
               >
                 {/* Icon Badge & Three Dots Menu */}
                 <div className="flex items-start justify-between">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${theme.badgeBg} shadow-2xs`}>
-                    <IconComp className="w-5 h-5 text-white stroke-[2.2]" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme.badgeBg} shadow-2xs`}>
+                    <IconComp className="w-4 h-4 text-white stroke-[2.2]" />
                   </div>
 
                   <div className="relative">
@@ -1242,9 +1227,7 @@ export default function CRTUpload() {
                 <h3 className="font-bold text-slate-900 mt-1.5 text-sm tracking-tight truncate">
                   {mod.name}
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed min-h-[32px]">
-                  {mod.description || theme.defaultSubtitle}
-                </p>
+                
 
                 {/* Counts Footer */}
                 <div className="flex items-center text-[11px] font-bold text-slate-600 pt-2.5 mt-2 border-t border-slate-100">
@@ -1261,19 +1244,19 @@ export default function CRTUpload() {
       {/* ============================================================= */}
       {/* 3. MAIN WORKSPACE: THREE-SECTION DESKTOP LAYOUT                */}
       {/* ============================================================= */}
-      <div className="flex flex-col lg:flex-row gap-5 items-start">
+      <div className="w-full flex flex-col lg:flex-row gap-5 items-start">
 
         {/* ----------------------------------------------------------- */}
         {/* LEFT SECTION: TOPICS SIDEBAR (Width: ~260px)                 */}
         {/* ----------------------------------------------------------- */}
-        <div className="w-full lg:w-72 shrink-0 bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3.5">
+        <div className="w-full lg:w-72 shrink-0 bg-white rounded-xl border border-slate-200 p-3.5 shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+            <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
               Topics ({currentModule?.topics?.length || 0})
             </h3>
             <button
               onClick={() => handleOpenTopicModal()}
-              className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-md text-[11px] font-bold shadow-2xs transition-colors"
             >
               <Plus className="w-3 h-3" />
               <span>Add Topic</span>
@@ -1309,7 +1292,7 @@ export default function CRTUpload() {
                       setSelectedLevel('all');
                       setCurrentPage(1);
                     }}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs cursor-pointer transition-all ${
+                    className={`flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-all ${
                       isTopicSelected
                         ? 'bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600 rounded-l-none'
                         : 'text-slate-700 hover:bg-slate-50 font-medium'
@@ -1333,13 +1316,13 @@ export default function CRTUpload() {
         {/* ----------------------------------------------------------- */}
         {/* CENTER SECTION: QUESTIONS MANAGEMENT TABLE                   */}
         {/* ----------------------------------------------------------- */}
-        <div className="flex-1 w-full bg-white rounded-2xl border border-slate-200 p-5 md:p-6 shadow-2xs space-y-5">
+        <div className="flex-1 w-full bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-4">
 
           {/* Selected Topic Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                   {currentTopic?.name || 'Select a Topic'}
                 </h2>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -1566,9 +1549,8 @@ export default function CRTUpload() {
 
           {/* Questions Management Table */}
           {questionsLoading ? (
-            <div className="py-16 flex flex-col items-center justify-center">
-              <LoadingSpinner />
-              <span className="text-xs text-slate-500 font-semibold mt-2">Loading questions...</span>
+            <div className="py-4">
+              <SkeletonLoader type="table" count={4} />
             </div>
           ) : pagedQuestions.length === 0 ? (
             <div className="py-14 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">

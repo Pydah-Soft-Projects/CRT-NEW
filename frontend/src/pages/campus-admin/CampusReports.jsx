@@ -30,6 +30,7 @@ import {
 import { useNotification } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -1661,16 +1662,7 @@ const ResultsManagement = () => {
     };
 
     if (loading) {
-        return (
-            <main className="px-6 lg:px-10 py-12">
-                <div className="flex items-center justify-center h-64">
-                    <div className="flex items-center gap-3">
-                        <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-                        <span className="text-lg text-gray-600">Loading tests...</span>
-                    </div>
-                </div>
-            </main>
-        );
+        return <SkeletonLoader type="results" />;
     }
 
     return (

@@ -40,7 +40,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { useNotification } from '../../contexts/NotificationContext';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import TestProgressChart from '../../components/student/TestProgressChart';
 import SuperAdminAttemptDetailsModal from '../../components/superadmin/SuperAdminAttemptDetailsModal';
 import api from '../../services/api';
@@ -389,57 +389,52 @@ const ProgressTracking = () => {
   }, [testStudents]);
 
   if (loading && !selectedTest) {
-    return (
-      <div className="flex flex-col justify-center items-center h-full min-h-[60vh] space-y-4">
-        <LoadingSpinner size="lg" />
-        <p className="text-slate-500 font-medium">Loading Progress Analytics...</p>
-      </div>
-    );
+    return <SkeletonLoader type="progress" />;
   }
 
   const selectedModuleTests = (selectedModule && practiceTests[selectedModule.id]) || [];
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16">
+    <div className="w-full min-h-screen bg-slate-50/60 pb-16">
       {/* Top Header Banner */}
       <div className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl shadow-md text-white">
-                <Activity className="w-6 h-6" />
+        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg shadow-sm text-white">
+                <Activity className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     Progress & Performance Analytics
                   </h1>
-                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                     Live SDMS Sync
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Track student cohort mastery, attempt histories, and performance distributions
                 </p>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => fetchPracticeTests(true)}
                 disabled={refreshing}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition border border-slate-200 disabled:opacity-60"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition border border-slate-200 disabled:opacity-60"
                 title="Refresh Analytics Data"
               >
-                <RefreshCw className={`w-4 h-4 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
           </div>
 
           {/* Horizontal Module Selector Tabs */}
-          <div className="mt-5 pt-3 border-t border-slate-100 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex items-center gap-2 pb-1">
+          <div className="mt-4 pt-2.5 border-t border-slate-100 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex items-center gap-2 pb-1">
             {modules.map((mod) => {
               const tests = practiceTests[mod.id] || [];
               const isSelected = selectedModule?.id === mod.id;
@@ -449,13 +444,13 @@ const ProgressTracking = () => {
                 <button
                   key={mod.id}
                   onClick={() => handleModuleSelect(mod)}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer flex-shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex-shrink-0 ${
                     isSelected
-                      ? `bg-gradient-to-r ${mod.gradient} text-white shadow-md shadow-indigo-500/20`
+                      ? `bg-gradient-to-r ${mod.gradient} text-white shadow-sm shadow-indigo-500/20`
                       : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/80 hover:border-slate-300'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : mod.color}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : mod.color}`} />
                   <span>{mod.name}</span>
                   <span
                     className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
@@ -471,10 +466,10 @@ const ProgressTracking = () => {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 pt-6 space-y-6">
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 pt-4 sm:pt-5 space-y-4 sm:space-y-5">
         {/* Module Sub-Selector (Tests in Module) */}
         {selectedModule && (
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs">
+          <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-slate-200 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -544,8 +539,8 @@ const ProgressTracking = () => {
             {/* KPI Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
               {/* Total Assigned */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -558,8 +553,8 @@ const ProgressTracking = () => {
               </div>
 
               {/* Attempted */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -574,8 +569,8 @@ const ProgressTracking = () => {
               </div>
 
               {/* Pending / Not Started */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+              <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -588,8 +583,8 @@ const ProgressTracking = () => {
               </div>
 
               {/* Average Score */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+              <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -602,8 +597,8 @@ const ProgressTracking = () => {
               </div>
 
               {/* Top Score */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5 col-span-2 sm:col-span-1">
-                <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+              <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3 col-span-2 sm:col-span-1">
+                <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -748,7 +743,7 @@ const ProgressTracking = () => {
                       <div
                         key={student.student_id}
                         onClick={() => handleStudentSelect(student)}
-                        className={`bg-white rounded-2xl p-5 border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-md ${
+                        className={`bg-white rounded-xl p-3.5 border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:shadow-md ${
                           hasAttempted
                             ? 'border-slate-200/90 hover:border-blue-400'
                             : 'border-slate-200/70 hover:border-slate-300 opacity-90 hover:opacity-100 bg-slate-50/40'
@@ -759,7 +754,7 @@ const ProgressTracking = () => {
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                                   hasAttempted
                                     ? 'bg-blue-100 text-blue-800 font-extrabold'
                                     : 'bg-slate-200 text-slate-700'

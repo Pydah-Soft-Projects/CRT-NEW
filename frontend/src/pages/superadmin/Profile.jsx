@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { User, Mail, Shield, Calendar, Building, BookOpen, Users, Edit, KeyRound, Bell } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '../../services/api'
+import SkeletonLoader from '../../components/common/SkeletonLoader'
 
 const DetailItem = ({ icon, label, value, color = 'blue' }) => {
   const colors = {
@@ -50,11 +51,7 @@ const SuperAdminProfile = () => {
   }, [])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-      </div>
-    )
+    return <SkeletonLoader type="users" />;
   }
 
   if (!profile) {
@@ -67,7 +64,7 @@ const SuperAdminProfile = () => {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 md:p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="w-full">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

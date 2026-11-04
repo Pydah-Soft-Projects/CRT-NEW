@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNotification } from '../../contexts/NotificationContext';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import api from '../../services/api';
 import { Users, Filter, Search, ChevronRight, RotateCcw, Download } from 'lucide-react';
 import { 
@@ -350,47 +350,31 @@ const StudentManagement = () => {
     };
 
     return (
-        <main className="px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 mt-4 sm:mt-6 w-full h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+        <main className="px-3 sm:px-4 md:px-5 lg:px-6 mt-2 mb-2 w-full h-[calc(100vh-85px)] flex flex-col overflow-hidden">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col h-full overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-2 sm:mb-3 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2 flex-shrink-0">
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-1 sm:mb-2 flex items-center gap-2">
+                        <h1 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
                             Student Management
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
                                 SDMS Regular Students
                             </span>
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-600">
-                            {isRdsReadOnly
-                                ? 'Connected to AWS RDS Student Database (SDMS). Displaying Regular students only across colleges, courses, branches, years, semesters & sections.'
-                                : 'View student information across the system.'}
-                            {!loading && (
-                                <span className="ml-1 sm:ml-2 text-blue-600 font-semibold">
-                                    ({totalStudents.toLocaleString()} regular students
-                                    {(selectedCollege || selectedCourse || selectedBranch || selectedYear || selectedSemester || selectedSection || searchTerm) && (
-                                        <span className="text-xs sm:text-sm text-gray-500 font-normal">
-                                            {' '}filtered
-                                        </span>
-                                    )}
-                                    )
-                                </span>
-                            )}
-                        </p>
                     </div>
                 </div>
 
                 {/* Filter Section */}
-                <div className="mb-2 sm:mb-3 bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 flex-shrink-0">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center">
-                            <Filter className="mr-2 h-4 w-4 text-blue-600" />
+                <div className="mb-2 bg-white rounded-xl shadow-xs border border-gray-200 p-2.5 sm:p-3 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-gray-800 flex items-center">
+                            <Filter className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
                             SDMS Cascading Filters
                         </h3>
                         {(selectedCollege || selectedCourse || selectedBranch || selectedYear || selectedSemester || selectedSection || searchTerm) && (
                             <button
                                 onClick={handleResetFilters}
-                                className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1 hover:underline"
+                                className="text-[11px] text-red-600 hover:text-red-800 font-medium flex items-center gap-1 hover:underline"
                             >
                                 <RotateCcw className="w-3 h-3" />
                                 Reset All Filters
@@ -399,16 +383,16 @@ const StudentManagement = () => {
                     </div>
                     
                     {/* 6 Cascading Dropdowns */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-2">
                         {/* 1. College */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 College
                             </label>
                             <select
                                 value={selectedCollege}
                                 onChange={(e) => setSelectedCollege(e.target.value)}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                             >
                                 <option value="">All Colleges</option>
                                 {colleges.map(c => (
@@ -421,14 +405,14 @@ const StudentManagement = () => {
 
                         {/* 2. Course */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 Course
                             </label>
                             <select
                                 value={selectedCourse}
                                 onChange={(e) => setSelectedCourse(e.target.value)}
                                 disabled={!selectedCollege || loadingFilters.courses}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
                                 <option value="">
                                     {loadingFilters.courses ? 'Loading...' : 'All Courses'}
@@ -443,14 +427,14 @@ const StudentManagement = () => {
 
                         {/* 3. Branch */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 Branch
                             </label>
                             <select
                                 value={selectedBranch}
                                 onChange={(e) => setSelectedBranch(e.target.value)}
                                 disabled={!selectedCollege || loadingFilters.branches}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
                                 <option value="">
                                     {loadingFilters.branches ? 'Loading...' : 'All Branches'}
@@ -465,13 +449,13 @@ const StudentManagement = () => {
 
                         {/* 4. Year */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 Academic Year
                             </label>
                             <select
                                 value={selectedYear}
                                 onChange={(e) => setSelectedYear(e.target.value)}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                             >
                                 <option value="">All Years</option>
                                 {years.map(y => {
@@ -487,14 +471,14 @@ const StudentManagement = () => {
 
                         {/* 5. Semester */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 Semester
                             </label>
                             <select
                                 value={selectedSemester}
                                 onChange={(e) => setSelectedSemester(e.target.value)}
                                 disabled={loadingFilters.semesters}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
                                 <option value="">
                                     {loadingFilters.semesters ? 'Loading...' : 'All Semesters'}
@@ -509,14 +493,14 @@ const StudentManagement = () => {
 
                         {/* 6. Section */}
                         <div>
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-0.5">
                                 Section
                             </label>
                             <select
                                 value={selectedSection}
                                 onChange={(e) => setSelectedSection(e.target.value)}
                                 disabled={loadingFilters.sections}
-                                className="w-full py-1.5 px-2 text-xs sm:text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                className="w-full py-1 px-1.5 text-xs border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
                                 <option value="">
                                     {loadingFilters.sections ? 'Loading...' : 'All Sections'}
@@ -531,29 +515,29 @@ const StudentManagement = () => {
                     </div>
 
                     {/* Search and Action Bar */}
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between pt-1.5 border-t border-gray-100">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search by student name, PIN / roll number, email, mobile..."
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                className="w-full pl-9 pr-20 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm"
+                                className="w-full pl-8 pr-18 py-1.5 border border-gray-300 rounded-md shadow-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                             />
-                            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
                                 {searchInput && (
                                     <button
                                         onClick={handleClearSearch}
-                                        className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+                                        className="px-1.5 py-0.5 text-[11px] text-gray-500 hover:text-gray-700"
                                     >
                                         Clear
                                     </button>
                                 )}
                                 <button
                                     onClick={handleSearch}
-                                    className="px-3 py-1 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors"
+                                    className="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition-colors"
                                 >
                                     Search
                                 </button>
@@ -565,17 +549,17 @@ const StudentManagement = () => {
                                 <button
                                     onClick={handleDownloadAllCredentials}
                                     disabled={downloadingAll}
-                                    className="px-4 py-2 text-xs sm:text-sm bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                                    className="px-3 py-1.5 text-xs bg-emerald-600 text-white font-semibold rounded-md hover:bg-emerald-700 disabled:bg-emerald-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
                                     title="Export filtered student list as CSV"
                                 >
                                     {downloadingAll ? (
                                         <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                                             <span>Exporting...</span>
                                         </>
                                     ) : (
                                         <>
-                                            <Download className="w-4 h-4" />
+                                            <Download className="w-3.5 h-3.5" />
                                             <span>Export CSV</span>
                                         </>
                                     )}
@@ -586,24 +570,24 @@ const StudentManagement = () => {
                 </div>
 
                 {/* Student Display Table */}
-                <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 w-full flex flex-col flex-1 min-h-0">
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 w-full flex flex-col flex-1 min-h-0">
                     {/* Scrollable Table Container */}
                     <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                         {loading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <LoadingSpinner />
+                            <div className="p-4">
+                                <SkeletonLoader type="table" count={6} />
                             </div>
                         ) : students.length === 0 ? (
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }} 
                                 animate={{ opacity: 1, y: 0 }}
-                                className="flex flex-col items-center justify-center py-16"
+                                className="flex flex-col items-center justify-center py-12"
                             >
-                                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full mb-6">
-                                    <Users className="w-12 h-12 text-blue-500" />
+                                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full mb-4">
+                                    <Users className="w-10 h-10 text-blue-500" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-3">No students found</h3>
-                                <p className="text-gray-600 text-center max-w-md">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">No students found</h3>
+                                <p className="text-gray-600 text-center max-w-md text-xs sm:text-sm">
                                     {searchTerm ? `No students match your search for "${searchTerm}"` : 'No students have been found in the database.'}
                                 </p>
                             </motion.div>
@@ -612,26 +596,26 @@ const StudentManagement = () => {
                                 <table className="w-full">
                                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
                                         <tr>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200 w-16">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Photo</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200 w-14">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Photo</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Student Name</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Student Name</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">PIN Number</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">PIN Number</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">College Name</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">College Name</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Course</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Course</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Branch</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Branch</span>
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3.5 text-left border-b border-gray-200">
-                                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Year & Sem</span>
+                                            <th className="px-3 sm:px-4 py-2 text-left border-b border-gray-200">
+                                                <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Year & Sem</span>
                                             </th>
                                         </tr>
                                     </thead>
@@ -653,13 +637,13 @@ const StudentManagement = () => {
                                                     className="group hover:bg-blue-50/40 transition-colors duration-150"
                                                 >
                                                     {/* 1. Photo */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap w-16">
-                                                        <div className="w-10 h-10 relative flex-shrink-0">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap w-14">
+                                                        <div className="w-8 h-8 relative flex-shrink-0">
                                                             {photoUrl ? (
                                                                 <img 
                                                                     src={photoUrl} 
                                                                     alt={studentName}
-                                                                    className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400 shadow-sm"
+                                                                    className="w-8 h-8 rounded-full object-cover border border-emerald-400 shadow-xs"
                                                                     onError={(e) => {
                                                                         e.currentTarget.style.display = 'none';
                                                                         if (e.currentTarget.nextElementSibling) {
@@ -669,7 +653,7 @@ const StudentManagement = () => {
                                                                 />
                                                             ) : null}
                                                             <div 
-                                                                className={`w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold text-sm items-center justify-center shadow-sm ${photoUrl ? 'hidden' : 'flex'}`}
+                                                                className={`w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold text-xs items-center justify-center shadow-xs ${photoUrl ? 'hidden' : 'flex'}`}
                                                             >
                                                                 {studentName.charAt(0).toUpperCase()}
                                                             </div>
@@ -677,47 +661,47 @@ const StudentManagement = () => {
                                                     </td>
 
                                                     {/* 2. Student Name */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
-                                                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                                                        <div className="text-xs sm:text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
                                                             {studentName}
                                                         </div>
                                                     </td>
 
                                                     {/* 3. PIN Number */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
-                                                        <span className="inline-block font-mono text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md border border-gray-200">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                                                        <span className="inline-block font-mono text-[11px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-800 rounded border border-gray-200">
                                                             {pinNumber}
                                                         </span>
                                                     </td>
 
                                                     {/* 4. College Name */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
-                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/60 max-w-[240px] truncate" title={collegeName}>
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60 max-w-[200px] truncate" title={collegeName}>
                                                             {collegeName}
                                                         </span>
                                                     </td>
 
                                                     {/* 5. Course */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                                                        <div className="text-xs font-medium text-gray-900">
                                                             {courseName}
                                                         </div>
                                                     </td>
 
                                                     {/* 6. Branch */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
-                                                        <span className="inline-flex items-center text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                                                        <span className="inline-flex items-center text-[11px] font-medium text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.5 rounded">
                                                             {branchName}
                                                         </span>
                                                     </td>
 
                                                     {/* 7. Year & Sem */}
-                                                    <td className="px-3 sm:px-6 py-3.5 whitespace-nowrap">
+                                                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                                            <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
                                                                 {student.year ? `Year ${student.year}` : 'Year -'}
                                                             </span>
-                                                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                            <span className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                                                 {student.year && student.semester 
                                                                     ? `${student.year}-${student.semester}` 
                                                                     : student.semester ? `Sem ${student.semester}` : 'Sem -'}
@@ -732,9 +716,9 @@ const StudentManagement = () => {
                                 
                                 {/* Load More Button - Inside scrollable area */}
                                 {students.length > 0 && (
-                                    <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 z-10 shadow-lg">
+                                    <div className="sticky bottom-0 bg-white border-t border-gray-200 px-3 sm:px-4 py-2.5 z-10 shadow-md">
                                         <div className="flex items-center justify-between">
-                                            <div className="text-sm text-gray-700 font-medium">
+                                            <div className="text-xs text-gray-700 font-medium">
                                                 Showing {students.length} of {totalStudents} students
                                             </div>
                                             
@@ -742,24 +726,24 @@ const StudentManagement = () => {
                                                 <button
                                                     onClick={loadMore}
                                                     disabled={loadingMore}
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                                    className="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
                                                 >
                                                     {loadingMore ? (
                                                         <>
-                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
                                                             Loading...
                                                         </>
                                                     ) : (
                                                         <>
                                                             Load More Students
-                                                            <ChevronRight size={16} />
+                                                            <ChevronRight size={14} />
                                                         </>
                                                     )}
                                                 </button>
                                             )}
                                             
                                             {!hasMore && students.length > 0 && (
-                                                <div className="text-sm text-gray-500 font-medium">
+                                                <div className="text-xs text-gray-500 font-medium">
                                                     All students loaded
                                                 </div>
                                             )}

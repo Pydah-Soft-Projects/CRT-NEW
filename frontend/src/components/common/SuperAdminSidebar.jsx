@@ -140,12 +140,7 @@ const SuperAdminSidebar = () => {
             <p className="text-xs text-gray-600 font-medium capitalize">
               {user?.role_name || (user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal')}
             </p>
-            {user?.emp_no && (
-              <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold">
-                <span>HRMS ID:</span>
-                <span>{user.emp_no}</span>
-              </div>
-            )}
+
           </motion.div>
 
           <nav className="flex-1 flex flex-col justify-between min-h-0">
@@ -227,9 +222,17 @@ const SuperAdminSidebar = () => {
                 <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                   {user?.name || 'Super Admin'}
                 </p>
-                <p className="text-xs text-gray-500 capitalize truncate">
-                  {user?.role_name || user?.role?.replace('_', ' ') || 'Admin'}
-                </p>
+                <div className="flex items-center justify-between gap-1 mt-0.5">
+                  <p className="text-xs text-gray-500 capitalize truncate">
+                    {user?.role_name || user?.role?.replace('_', ' ') || 'Admin'}
+                  </p>
+                  {user?.emp_no && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold shrink-0">
+                      <span>HRMS ID:</span>
+                      <span>{user.emp_no}</span>
+                    </span>
+                  )}
+                </div>
               </div>
             </Link>
 
@@ -275,12 +278,7 @@ const SuperAdminSidebar = () => {
           <p className="text-xs text-gray-600 font-medium capitalize">
             {user?.role_name || (user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal')}
           </p>
-          {user?.emp_no && (
-            <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold">
-              <span>HRMS ID:</span>
-              <span>{user.emp_no}</span>
-            </div>
-          )}
+
         </motion.div>
 
         <nav className="flex-1 flex flex-col justify-between min-h-0">
