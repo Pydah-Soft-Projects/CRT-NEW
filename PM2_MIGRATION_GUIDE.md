@@ -89,7 +89,7 @@ MONGODB_URI=mongodb+srv://teampydah:TeamPydah@teampydah.y4zj6wh.mongodb.net/crt1
 AI_SERVER_URL=http://127.0.0.1:8001
 JWT_SECRET_KEY=versant_jwt_secret_key_2024_secure_and_unique
 JWT_REFRESH_SECRET_KEY=versant_jwt_refresh_secret_key_2024
-CORS_ORIGINS=http://localhost:3000,http://13.206.203.113,https://crt.pydahsoft.in
+CORS_ORIGINS=http://localhost:3000,http://13.206.203.113
 ```
 
 ### Step 3.4: Start Docker AI Service
