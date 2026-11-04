@@ -1,3 +1,50 @@
+function resolveOptionText(val, options) {
+  if (val === undefined || val === null || val === '') return '';
+  const str = String(val).trim();
+  if (Array.isArray(options) && options.length > 0) {
+    const letters = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const lIdx = letters.indexOf(str.toLowerCase());
+    if (lIdx !== -1 && options[lIdx] !== undefined) return String(options[lIdx]).trim();
+    const nIdx = parseInt(str, 10);
+    if (!isNaN(nIdx) && nIdx >= 0 && nIdx < options.length && str === String(nIdx)) {
+      return String(options[nIdx]).trim();
+    }
+    const found = options.find(o => String(o).trim().toLowerCase() === str.toLowerCase());
+    if (found) return String(found).trim();
+  } else if (options && typeof options === 'object') {
+    const upper = str.toUpperCase();
+    if (options[upper] !== undefined) return String(options[upper]).trim();
+    const foundKey = Object.keys(options).find(k => String(options[k]).trim().toLowerCase() === str.toLowerCase());
+    if (foundKey) return String(options[foundKey]).trim();
+  }
+  return str;
+}
+
+function isAnswerMatching(given, expected, options) {
+  if (!given || !expected) return false;
+  const clean = (s) => String(s).toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const cGiven = clean(given);
+  const cExpected = clean(expected);
+
+  if (cGiven === cExpected) return true;
+
+  const resolvedGiven = clean(resolveOptionText(given, options));
+  const resolvedExpected = clean(resolveOptionText(expected, options));
+
+  if (resolvedGiven && resolvedExpected && resolvedGiven === resolvedExpected) return true;
+  if (cGiven && resolvedExpected && cGiven === resolvedExpected) return true;
+  if (resolvedGiven && cExpected && resolvedGiven === cExpected) return true;
+
+  if (resolvedExpected.length >= 3 && (cGiven.includes(resolvedExpected) || resolvedGiven.includes(resolvedExpected))) {
+    return true;
+  }
+  if (cExpected.length >= 3 && (cGiven.includes(cExpected) || resolvedGiven.includes(cExpected))) {
+    return true;
+  }
+
+  return false;
+}
+
 const Result = require('../models/Result');
 const Test = require('../models/Test');
 const sdmsService = require('../services/sdms.service');
@@ -54,13 +101,37 @@ const studentMatchesTest = (student, test) => {
 
 const shapeAttempt = (result, test) => {
   const rawAnswers = Array.isArray(result.answers) ? result.answers : [];
+  const testQuestions = Array.isArray(test?.questions) ? test.questions : [];
+
   const detailedResults = rawAnswers.map((ans, idx) => {
     const qObj = ans && typeof ans === 'object' ? { ...ans } : { answer: ans };
+    const tq = testQuestions.find(q => String(q?.question_id || q?._id || q?.id) === String(qObj.question_id)) || testQuestions[idx] || {};
+
+    const rawCorrect = qObj.correct_answer || qObj.correct_answer_text || tq.correct_answer || tq.reference_text || '';
+    const resolvedCorrect = resolveOptionText(rawCorrect, tq.options || qObj.options) || String(rawCorrect || '').trim();
+    const originalText = qObj.original_text || qObj.reference_text || tq.reference_text || resolvedCorrect || '';
+    const qText = qObj.question_text || qObj.question || tq.question || tq.text || tq.prompt || `Question ${idx + 1}`;
+    const studentAnswer = qObj.student_answer || qObj.student_text || qObj.selected_answer || qObj.user_answer || qObj.answer || 'No answer';
+    const studentText = qObj.student_text || qObj.transcription || studentAnswer;
+    const similarityScore = typeof qObj.similarity_score === 'number'
+      ? qObj.similarity_score
+      : (typeof qObj.overall_score === 'number' ? qObj.overall_score : (typeof qObj.marks_obtained === 'number' ? qObj.marks_obtained : (qObj.is_correct ? 100 : 0)));
+
     const audioUrl = qObj.student_audio_url || qObj.audio_url || (rawAnswers.length === 1 ? result.speaking_audio_url : '') || '';
-    const qType = qObj.question_type || (audioUrl ? 'speaking' : 'mcq');
+    const qType = qObj.question_type || tq.question_type || (audioUrl ? 'speaking' : 'mcq');
+
     return {
       ...qObj,
+      question_index: qObj.question_index || idx + 1,
+      question_text: qText,
       question_type: qType,
+      student_answer: studentAnswer,
+      student_text: studentText,
+      correct_answer: resolvedCorrect || originalText || 'Not available',
+      correct_answer_text: resolvedCorrect || originalText || 'Not available',
+      original_text: originalText || resolvedCorrect || 'Not available',
+      reference_text: originalText || resolvedCorrect || '',
+      similarity_score: similarityScore,
       student_audio_url: audioUrl || qObj.student_audio_url || '',
       audio_url: audioUrl || qObj.audio_url || '',
       speaking_audio_url: result.speaking_audio_url || audioUrl || ''

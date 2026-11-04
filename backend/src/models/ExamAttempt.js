@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const examAttemptSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  sdms_student_id: { type: Number, default: null },
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  sdms_student_id: { type: Number },
   test_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Test', required: true },
   started_at: { type: Date, required: true, default: Date.now },
   expires_at: { type: Date, required: true },
@@ -11,7 +11,7 @@ const examAttemptSchema = new mongoose.Schema({
     enum: ['in_progress', 'submitting', 'submitted'],
     default: 'in_progress'
   },
-  result_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Result', default: null }
+  result_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Result' }
 }, { collection: 'exam_attempts' });
 
 examAttemptSchema.index(

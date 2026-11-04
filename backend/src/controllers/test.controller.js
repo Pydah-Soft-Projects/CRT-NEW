@@ -1,3 +1,50 @@
+function resolveOptionText(val, options) {
+  if (val === undefined || val === null || val === '') return '';
+  const str = String(val).trim();
+  if (Array.isArray(options) && options.length > 0) {
+    const letters = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const lIdx = letters.indexOf(str.toLowerCase());
+    if (lIdx !== -1 && options[lIdx] !== undefined) return String(options[lIdx]).trim();
+    const nIdx = parseInt(str, 10);
+    if (!isNaN(nIdx) && nIdx >= 0 && nIdx < options.length && str === String(nIdx)) {
+      return String(options[nIdx]).trim();
+    }
+    const found = options.find(o => String(o).trim().toLowerCase() === str.toLowerCase());
+    if (found) return String(found).trim();
+  } else if (options && typeof options === 'object') {
+    const upper = str.toUpperCase();
+    if (options[upper] !== undefined) return String(options[upper]).trim();
+    const foundKey = Object.keys(options).find(k => String(options[k]).trim().toLowerCase() === str.toLowerCase());
+    if (foundKey) return String(options[foundKey]).trim();
+  }
+  return str;
+}
+
+function isAnswerMatching(given, expected, options) {
+  if (!given || !expected) return false;
+  const clean = (s) => String(s).toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const cGiven = clean(given);
+  const cExpected = clean(expected);
+
+  if (cGiven === cExpected) return true;
+
+  const resolvedGiven = clean(resolveOptionText(given, options));
+  const resolvedExpected = clean(resolveOptionText(expected, options));
+
+  if (resolvedGiven && resolvedExpected && resolvedGiven === resolvedExpected) return true;
+  if (cGiven && resolvedExpected && cGiven === resolvedExpected) return true;
+  if (resolvedGiven && cExpected && resolvedGiven === cExpected) return true;
+
+  if (resolvedExpected.length >= 3 && (cGiven.includes(resolvedExpected) || resolvedGiven.includes(resolvedExpected))) {
+    return true;
+  }
+  if (cExpected.length >= 3 && (cGiven.includes(cExpected) || resolvedGiven.includes(cExpected))) {
+    return true;
+  }
+
+  return false;
+}
+
 const Test = require('../models/Test');
 const Question = require('../models/Question');
 const Result = require('../models/Result');
@@ -10,13 +57,14 @@ const sdmsService = require('../services/sdms.service');
 const { testIncludesSdmsScope } = require('../services/sdmsTestScope.service');
 
 const getResultIdentity = (req) => {
-  if (req.user.auth_source === 'sdms') {
-    return { user_id: null, student_id: null, sdms_student_id: req.user.sdms_student_id };
+  const sdmsId = Number(req?.user?.sdms_student_id);
+  if (req?.user?.auth_source === 'sdms' || (Number.isSafeInteger(sdmsId) && sdmsId > 0)) {
+    return { sdms_student_id: sdmsId };
   }
+  const uid = req?.user?.id || req?.user?._id;
   return {
-    user_id: req.user.id || req.user._id,
-    student_id: req.user.id || req.user._id,
-    sdms_student_id: null
+    user_id: uid,
+    student_id: uid
   };
 };
 
@@ -485,9 +533,11 @@ exports.submitSpeakingExam = async (req, res) => {
     const timeTakenMs = req.body.time_taken_ms;
     const resultIdentity = req.user ? getResultIdentity(req) : null;
     const userId = req.user?.auth_source === 'sdms' ? null : (req.user ? (req.user.id || req.user._id) : null);
-    const attemptIdentity = req.user?.auth_source === 'sdms'
-      ? { sdms_student_id: req.user.sdms_student_id }
-      : { user_id: userId };
+    const sdmsId = Number(req.user?.sdms_student_id);
+    const isSdms = req.user?.auth_source === 'sdms' || (Number.isSafeInteger(sdmsId) && sdmsId > 0);
+    const attemptIdentity = isSdms
+      ? { sdms_student_id: sdmsId }
+      : (userId ? { user_id: userId } : { _id: null });
     const studentDoc = userId ? await Student.findOne({ user_id: userId }) : null;
 
     let test = null;
@@ -547,7 +597,12 @@ exports.submitSpeakingExam = async (req, res) => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       const qKey = q.question_id ?? q._id ?? q.id ?? i;
-      const refText = String(q.reference_text || q.text || q.sentence || q.prompt || '').trim();
+
+      // Extract question text and correct answer
+      const questionText = String(q.question || q.text || q.prompt || q.title || q.sentence || `Question ${i + 1}`).trim();
+      const rawCorrect = q.correct_answer ?? q.correctAnswer ?? q.answer ?? q.reference_text ?? '';
+      const correctAnswerText = resolveOptionText(rawCorrect, q.options) || String(rawCorrect || '').trim();
+      const refText = String(q.reference_text || correctAnswerText || q.audio_script || q.sentence || q.prompt || q.text || '').trim();
 
       // Find matching audio file or base64
       let audioBuffer = null;
@@ -575,17 +630,25 @@ exports.submitSpeakingExam = async (req, res) => {
       }
 
       let transcription = '';
-      let evalData = null;
       let studentAudioUrl = '';
 
-      const needsSpeechRecording =
+      const hasOptions = (Array.isArray(q.options) && q.options.length > 0) || (q.options && typeof q.options === 'object' && Object.keys(q.options).length > 0);
+      const isSpeakingModule =
         String(test?.module_id || '').toUpperCase() === 'SPEAKING' ||
-        String(test?.subcategory || '').toLowerCase().includes('speaking') ||
+        String(test?.subcategory || '').toLowerCase().includes('speaking');
+
+      const isListeningModule =
+        String(test?.module_id || '').toUpperCase() === 'LISTENING' ||
+        String(test?.subcategory || '').toLowerCase().includes('listening');
+
+      const needsSpeechRecording =
+        isSpeakingModule ||
         q.question_type === 'audio_to_text' ||
         q.question_type === 'audio_interactive' ||
         q.question_type === 'speaking' ||
         q.conversion_type === 'audio_to_text' ||
-        q.conversion_type === 'both';
+        q.conversion_type === 'both' ||
+        (!hasOptions && isListeningModule);
 
       if (audioBuffer && audioBuffer.length > 0) {
         try {
@@ -598,80 +661,112 @@ exports.submitSpeakingExam = async (req, res) => {
         }
       }
 
-      if (needsSpeechRecording && audioBuffer && audioBuffer.length > 0) {
+      // 1. Transcribe audio if present
+      if (audioBuffer && audioBuffer.length > 0) {
         const transcribeRes = await aiService.transcribeAudio(audioBuffer, filename);
-        if (transcribeRes.success === false) {
-          const error = new Error(`Speech transcription failed for question ${i + 1}.`);
-          error.statusCode = 503;
-          throw error;
-        }
-        transcription = transcribeRes.transcription || transcribeRes.text || '';
-        evalData = aiService.evaluatePronunciation(refText, transcription);
-      } else if (needsSpeechRecording && test) {
-        const error = new Error(`An audio recording is required for question ${i + 1}.`);
-        error.statusCode = 400;
-        throw error;
-      } else if (test) {
-        const studentAnswer = textAnswers[qKey] || req.body[`question_${qKey}`] || '';
-        const correctAnswer = q.correct_answer;
-        const isCorrect = studentAnswer !== '' && correctAnswer !== undefined &&
-          String(studentAnswer).trim().toLowerCase() === String(correctAnswer).trim().toLowerCase();
-        const mcqScore = isCorrect ? 100 : 0;
-        evalData = {
-          accuracy_score: mcqScore,
-          fluency_score: mcqScore,
-          completeness_score: mcqScore,
-          overall_score: mcqScore,
-          word_feedback: []
-        };
-        transcription = String(studentAnswer);
-      } else {
-        const textAns = textAnswers[qKey] || req.body[`question_${qKey}`] || '';
-        if (textAns && typeof textAns === 'string' && !textAns.startsWith('data:audio')) {
-          transcription = textAns;
-          evalData = aiService.evaluatePronunciation(refText, textAns);
-        } else {
-          evalData = {
-            accuracy_score: 0,
-            fluency_score: 0,
-            completeness_score: 0,
-            overall_score: 0,
-            word_feedback: []
-          };
+        if (transcribeRes && transcribeRes.success !== false) {
+          transcription = transcribeRes.transcription || transcribeRes.text || '';
         }
       }
 
-      const qAccuracy = evalData.accuracy_score || 0;
-      const qFluency = evalData.fluency_score || 0;
-      const qCompleteness = evalData.completeness_score || 0;
-      const qOverall = evalData.overall_score || 0;
+      // Check for required recording
+      if (needsSpeechRecording && (!audioBuffer || audioBuffer.length === 0) && test) {
+        const error = new Error(`An audio recording is required for question ${i + 1}.`);
+        error.statusCode = 400;
+        throw error;
+      }
+
+      // 2. Extract student MCQ or text answer
+      let studentTextAnswer = '';
+      if (textAnswers[qKey] !== undefined) studentTextAnswer = String(textAnswers[qKey]);
+      else if (textAnswers[i] !== undefined) studentTextAnswer = String(textAnswers[i]);
+      else if (req.body[`question_${qKey}`] && !String(req.body[`question_${qKey}`]).startsWith('data:audio')) studentTextAnswer = String(req.body[`question_${qKey}`]);
+      else if (req.body[`answer_${qKey}`] && !String(req.body[`answer_${qKey}`]).startsWith('data:audio')) studentTextAnswer = String(req.body[`answer_${qKey}`]);
+      else if (req.body[`question_${i}`] && !String(req.body[`question_${i}`]).startsWith('data:audio')) studentTextAnswer = String(req.body[`question_${i}`]);
+      studentTextAnswer = studentTextAnswer.trim();
+
+      // 3. Evaluate Speech pronunciation if reference text & transcription exist
+      let speechEval = { accuracy_score: 0, fluency_score: 0, completeness_score: 0, overall_score: 0, word_feedback: [] };
+      if (transcription) {
+        speechEval = aiService.evaluatePronunciation(refText || correctAnswerText, transcription);
+      }
+
+      // 4. Compare answers (MCQ matching and/or Speech matching)
+      const isMcqMatch = Boolean(studentTextAnswer && isAnswerMatching(studentTextAnswer, correctAnswerText, q.options));
+      const isSpeechMatch = Boolean(transcription && (
+        isAnswerMatching(transcription, correctAnswerText, q.options) ||
+        isAnswerMatching(transcription, refText, q.options) ||
+        speechEval.overall_score >= 60
+      ));
+
+      let isCorrect = false;
+      let qOverall = 0;
+
+      if (hasOptions) {
+        // MCQ-based question (e.g. Listening comprehension MCQ)
+        if (studentTextAnswer && transcription) {
+          isCorrect = isMcqMatch || isSpeechMatch;
+        } else if (studentTextAnswer) {
+          isCorrect = isMcqMatch;
+        } else if (transcription) {
+          isCorrect = isSpeechMatch;
+        }
+        qOverall = isCorrect ? Math.max(100, speechEval.overall_score || 0) : Math.max(speechEval.overall_score || 0, 0);
+      } else {
+        // Voice-only / Speaking Repeat sentence question
+        if (transcription) {
+          isCorrect = isSpeechMatch || speechEval.overall_score >= 60;
+          qOverall = speechEval.overall_score || (isCorrect ? 100 : 0);
+        } else if (studentTextAnswer) {
+          isCorrect = isAnswerMatching(studentTextAnswer, refText || correctAnswerText, q.options);
+          qOverall = isCorrect ? 100 : 0;
+        }
+      }
+
+      const qAccuracy = speechEval.accuracy_score || qOverall;
+      const qFluency = speechEval.fluency_score || qOverall;
+      const qCompleteness = speechEval.completeness_score || qOverall;
 
       totalScoreSum += qOverall;
       totalAccuracySum += qAccuracy;
       totalFluencySum += qFluency;
       totalCompletenessSum += qCompleteness;
 
+      const studentDisplayAnswer = studentTextAnswer || transcription || 'No answer';
+
       evaluatedQuestions.push({
         question_id: qKey,
         question_index: i + 1,
-        question_text: refText,
-        question_type: q.question_type || (needsSpeechRecording ? 'speaking' : 'mcq'),
-        student_answer: transcription,
+        question_text: questionText,
+        question_type: q.question_type || (hasOptions ? 'mcq' : 'speaking'),
+        options: q.options || [],
+        
+        // Student answers
+        student_answer: studentDisplayAnswer,
+        student_text: transcription || studentDisplayAnswer,
+        transcription: transcription,
         student_audio_url: studentAudioUrl,
         audio_url: studentAudioUrl,
-        is_correct: qOverall >= 60,
+        
+        // Correct answers & reference
+        correct_answer: correctAnswerText || refText || 'Not available',
+        correct_answer_text: correctAnswerText || refText || 'Not available',
+        original_text: refText || correctAnswerText || 'Not available',
+        reference_text: refText || correctAnswerText || '',
+        prompt: questionText,
+        sentence: refText || correctAnswerText,
+        
+        // Evaluation scores
+        is_correct: isCorrect,
+        similarity_score: qOverall,
         marks_obtained: qOverall,
         max_marks: 100,
-        sentence: refText,
-        reference_text: refText,
-        prompt: q.text || refText,
-        transcription: transcription,
         accuracy_score: qAccuracy,
         fluency_score: qFluency,
         completeness_score: qCompleteness,
         overall_score: qOverall,
-        word_feedback: evalData.word_feedback || [],
-        passed: qOverall >= 60
+        word_feedback: speechEval.word_feedback || [],
+        passed: isCorrect
       });
     }
 

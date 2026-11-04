@@ -48,8 +48,37 @@ const PracticeModuleTaking = () => {
     fetchModule();
   }, [testId, showError]);
 
+  const isAudioModule =
+    String(module?.module_id || '').toLowerCase().includes('speaking') ||
+    String(module?.name || '').toLowerCase().includes('speaking') ||
+    String(module?.subcategory || '').toLowerCase().includes('speaking') ||
+    String(module?.category || '').toLowerCase().includes('speaking') ||
+    String(module?.module_id || '').toLowerCase().includes('listening') ||
+    String(module?.name || '').toLowerCase().includes('listening') ||
+    String(module?.subcategory || '').toLowerCase().includes('listening') ||
+    String(module?.category || '').toLowerCase().includes('listening') ||
+    String(module?.name || '').toLowerCase().includes('audio') ||
+    (Array.isArray(questions) && questions.some(q =>
+      q.question_type === 'audio' ||
+      q.question_type === 'speaking' ||
+      q.question_type === 'listening' ||
+      q.question_type === 'audio_to_text' ||
+      q.question_type === 'text_to_audio' ||
+      q.audio_url ||
+      q.audio_script
+    ));
+
   useEffect(() => {
-    // Anti-cheating: Prevent tab switching
+    if (isAudioModule) {
+      setCheatWarning(false);
+      setCheatCount(0);
+    }
+  }, [isAudioModule]);
+
+  useEffect(() => {
+    if (isAudioModule) return;
+
+    // Anti-cheating: Prevent tab switching (disabled for audio tests)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         setCheatWarning(true);
@@ -77,7 +106,7 @@ const PracticeModuleTaking = () => {
         examNode.removeEventListener('selectstart', preventAction);
       }
     };
-  }, [cheatCount]);
+  }, [cheatCount, isAudioModule]);
 
   const handleAnswerChange = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
@@ -196,7 +225,7 @@ const PracticeModuleTaking = () => {
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 truncate">{module.name}</h1>
             </div>
-            {cheatWarning && (
+            {!isAudioModule && cheatWarning && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-center">
                 <strong>Tab switching or leaving the exam is not allowed!</strong> ({cheatCount} warning{cheatCount > 1 ? 's' : ''})
               </div>

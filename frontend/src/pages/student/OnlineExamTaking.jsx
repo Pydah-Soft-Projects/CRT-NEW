@@ -69,6 +69,38 @@ function isListeningResponseQuestion(question, exam) {
   return false;
 }
 
+function isAudioExam(exam, questions) {
+  const mId = String(exam?.module_id || '').toLowerCase();
+  const subcat = String(exam?.subcategory || '').toLowerCase();
+  const title = String(exam?.title || '').toLowerCase();
+  const cat = String(exam?.category || '').toLowerCase();
+  const tType = String(exam?.test_type || '').toLowerCase();
+
+  const isAudioModule =
+    mId.includes('speaking') ||
+    subcat.includes('speaking') ||
+    title.includes('speaking') ||
+    cat.includes('speaking') ||
+    tType.includes('speaking') ||
+    mId.includes('listening') ||
+    subcat.includes('listening') ||
+    title.includes('listening') ||
+    cat.includes('listening') ||
+    tType.includes('listening') ||
+    mId.includes('audio') ||
+    title.includes('audio') ||
+    subcat.includes('audio') ||
+    cat.includes('audio');
+
+  if (isAudioModule) return true;
+
+  if (Array.isArray(questions) && questions.length > 0) {
+    return questions.some(q => isSpeakingResponseQuestion(q, exam) || isListeningResponseQuestion(q, exam));
+  }
+
+  return false;
+}
+
 const OnlineExamTaking = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -252,15 +284,30 @@ const OnlineExamTaking = () => {
     if (examId && !isExamFetched) fetchExam();
   }, [examId, isExamFetched]); // Removed loading from dependencies to prevent infinite loop
 
+  const isAudioTest = isAudioExam(exam, questions);
+
+  // If this is an audio/speaking/listening test, reset any cheat warnings or counts
   useEffect(() => {
-    // Anti-cheating: Prevent tab switching
+    if (isAudioTest) {
+      setCheatWarning(false);
+      setCheatCount(0);
+    }
+  }, [isAudioTest]);
+
+  useEffect(() => {
+    // Anti-cheating: Prevent tab switching (disabled for audio tests)
     const handleVisibilityChange = () => {
+      if (isAudioExam(exam, questions)) {
+        return;
+      }
       if (document.visibilityState === 'hidden') {
         setCheatWarning(true);
         setCheatCount(prev => prev + 1);
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    if (!isAudioExam(exam, questions)) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     // Prevent copy/cut/paste and text selection
     const preventAction = (e) => e.preventDefault();
@@ -282,15 +329,18 @@ const OnlineExamTaking = () => {
         examNode.removeEventListener('selectstart', preventAction);
       }
     };
-  }, []);
+  }, [exam, questions]);
 
-  // Auto-submit after 2 warnings or when time runs out
+  // Auto-submit after 2 warnings (disabled for audio tests)
   useEffect(() => {
+    if (isAudioExam(exam, questions)) {
+      return;
+    }
     if (cheatCount >= 2 && !autoSubmitted) {
       setAutoSubmitted(true);
       handleSubmit();
     }
-  }, [cheatCount, autoSubmitted]);
+  }, [cheatCount, autoSubmitted, exam, questions]);
 
   // Auto-submit when time runs out (only if timer is active and properly initialized)
   useEffect(() => {
@@ -1014,7 +1064,7 @@ const OnlineExamTaking = () => {
           className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8"
         >
           {/* Warning Messages */}
-          {cheatWarning && (
+          {!isAudioTest && cheatWarning && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

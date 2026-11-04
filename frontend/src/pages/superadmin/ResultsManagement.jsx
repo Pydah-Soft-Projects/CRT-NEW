@@ -2172,7 +2172,7 @@ const ResultsManagement = () => {
                                                                             <div>
                                                                                 <label className="text-sm font-medium text-gray-600">Correct Answer:</label>
                                                                                 <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800">
-                                                                                    {result.correct_answer_text || result.correct_answer || 'Not available'}
+                                                                                    {result.correct_answer_text || result.correct_answer || result.original_text || result.reference_text || 'Not available'}
                                                                                 </p>
                                                                             </div>
                                                                         </div>
@@ -2200,7 +2200,7 @@ const ResultsManagement = () => {
                                                                                 <div>
                                                                                     <label className="text-sm font-medium text-gray-600">Original Text:</label>
                                                                                     <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800">
-                                                                                        {result.original_text || result.correct_answer || 'Not available'}
+                                                                                        {result.original_text || result.reference_text || result.correct_answer_text || result.correct_answer || 'Not available'}
                                                                                     </p>
                                                                                 </div>
                                                                             </div>

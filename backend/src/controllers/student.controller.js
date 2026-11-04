@@ -1,3 +1,5 @@
+const { ensureCorrectAttemptIndexes } = require('../config/database');
+const mongoose = require('mongoose');
 const Student = require('../models/Student');
 const Test = require('../models/Test');
 const Result = require('../models/Result');
@@ -6,11 +8,55 @@ const questionBankService = require('../services/questionBank.service');
 const sdmsService = require('../services/sdms.service');
 const { toStudentTest } = require('../services/studentTestView.service');
 
-const getUserId = (req) => req.user.auth_source === 'sdms' ? null : (req.user.id || req.user._id);
-const getStudentIdentityFilter = (req) => req.user.auth_source === 'sdms'
-  ? { sdms_student_id: req.user.sdms_student_id }
-  : { user_id: getUserId(req) };
-const getStudentIdentityFields = getStudentIdentityFilter;
+const getUserId = (req) => {
+  if (req?.user?.auth_source === 'sdms') return null;
+  const rawId = req?.user?._id || req?.user?.id;
+  if (rawId && mongoose.Types.ObjectId.isValid(String(rawId))) {
+    return new mongoose.Types.ObjectId(String(rawId));
+  }
+  return null;
+};
+
+const getSdmsStudentId = (req) => {
+  const num = Number(req?.user?.sdms_student_id);
+  if (Number.isSafeInteger(num) && num > 0) {
+    return num;
+  }
+  return null;
+};
+
+const getStudentIdentityFilter = (req) => {
+  const sdmsId = getSdmsStudentId(req);
+  if (req?.user?.auth_source === 'sdms' || sdmsId !== null) {
+    if (sdmsId !== null) {
+      return { sdms_student_id: sdmsId };
+    }
+  }
+
+  const userId = getUserId(req);
+  if (userId) {
+    return { user_id: userId };
+  }
+
+  // Never return null or empty query that matches all students' null fields!
+  return { _id: new mongoose.Types.ObjectId() };
+};
+
+const getStudentIdentityFields = (req) => {
+  const sdmsId = getSdmsStudentId(req);
+  if (req?.user?.auth_source === 'sdms' || sdmsId !== null) {
+    if (sdmsId !== null) {
+      return { sdms_student_id: sdmsId };
+    }
+  }
+
+  const userId = getUserId(req);
+  if (userId) {
+    return { user_id: userId };
+  }
+
+  return {};
+};
 
 const isAssignedToStudent = async (test, req) => {
   const targetColleges = test.target_college_ids || [];
@@ -98,8 +144,13 @@ exports.getOnlineExams = async (req, res) => {
 
 exports.getCompletedExams = async (req, res) => {
   try {
+    const ownerFilter = getStudentIdentityFilter(req);
+    // Explicit safety check: ensure ownerFilter has a concrete student identifier
+    if (!ownerFilter.sdms_student_id && !ownerFilter.user_id) {
+      return res.json({ success: true, data: [] });
+    }
     const completedIds = await Result.distinct('test_id', {
-      ...getStudentIdentityFilter(req),
+      ...ownerFilter,
       test_id: { $ne: null }
     });
     return res.json({ success: true, data: completedIds });
@@ -128,6 +179,10 @@ exports.startTest = async (req, res) => {
     }
 
     const ownerFilter = getStudentIdentityFilter(req);
+    if (!ownerFilter.sdms_student_id && !ownerFilter.user_id) {
+      return res.status(403).json({ success: false, message: 'Student identity could not be verified. Please log in again.' });
+    }
+
     if (await Result.exists({ ...ownerFilter, test_id: test._id })) {
       return res.status(409).json({ success: false, message: 'This test has already been completed.' });
     }
@@ -139,8 +194,9 @@ exports.startTest = async (req, res) => {
 
     if (!attempt) {
       const durationMs = Math.max(Number(test.duration) || 30, 1) * 60 * 1000;
+      const identityFields = getStudentIdentityFields(req);
       attempt = new ExamAttempt({
-        ...getStudentIdentityFields(req),
+        ...identityFields,
         test_id: test._id,
         started_at: now,
         expires_at: new Date(now.getTime() + durationMs + 120000)
@@ -148,10 +204,30 @@ exports.startTest = async (req, res) => {
       try {
         await attempt.save();
       } catch (error) {
-        if (error.code !== 11000) throw error;
-        attempt = await ExamAttempt.findOne({ ...ownerFilter, test_id: test._id });
-        if (!attempt || attempt.status !== 'in_progress') {
-          return res.status(409).json({ success: false, message: 'This test has already been submitted.' });
+        if (error.code === 11000) {
+          attempt = await ExamAttempt.findOne({ ...ownerFilter, test_id: test._id });
+          if (attempt) {
+            if (attempt.status !== 'in_progress') {
+              return res.status(409).json({ success: false, message: 'This test has already been submitted.' });
+            }
+          } else {
+            console.warn(`Collision on exam_attempts index for test ${test._id}. Syncing indexes and retrying.`);
+            if (typeof ensureCorrectAttemptIndexes === 'function') {
+              await ensureCorrectAttemptIndexes(mongoose);
+            }
+            attempt = await ExamAttempt.findOne({ ...ownerFilter, test_id: test._id });
+            if (!attempt) {
+              attempt = new ExamAttempt({
+                ...identityFields,
+                test_id: test._id,
+                started_at: now,
+                expires_at: new Date(now.getTime() + durationMs + 120000)
+              });
+              await attempt.save();
+            }
+          }
+        } else {
+          throw error;
         }
       }
     }
@@ -247,13 +323,7 @@ exports.submitOnlineExam = async (req, res) => {
     });
 
     const score = Math.round((correctCount / totalQuestions) * 100);
-    const userId = getUserId(req);
-    const student = userId ? await Student.findOne({ user_id: userId }) : null;
-
-    const result = new Result({
-      student_id: student ? student._id : (userId || null),
-      user_id: userId || null,
-      sdms_student_id: req.user.auth_source === 'sdms' ? req.user.sdms_student_id : null,
+    const resultPayload = {
       test_id: test._id,
       module_id: test.module_id,
       test_name: test.title,
@@ -266,7 +336,19 @@ exports.submitOnlineExam = async (req, res) => {
       total_questions: totalQuestions,
       answers: detailedResults,
       submitted_at: new Date()
-    });
+    };
+
+    const sdmsId = getSdmsStudentId(req);
+    if (req.user.auth_source === 'sdms' || sdmsId !== null) {
+      resultPayload.sdms_student_id = sdmsId;
+    } else {
+      const userId = getUserId(req);
+      const student = userId ? await Student.findOne({ user_id: userId }) : null;
+      if (student?._id) resultPayload.student_id = student._id;
+      if (userId) resultPayload.user_id = userId;
+    }
+
+    const result = new Result(resultPayload);
     await result.save();
     await ExamAttempt.updateOne(
       { _id: claimedAttempt._id, status: 'submitting' },
@@ -410,13 +492,22 @@ exports.getTestResultById = async (req, res) => {
   try {
     const result = await Result.findOne({ _id: req.params.id, ...getStudentIdentityFilter(req) }).lean();
     if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
-    const test = result.test_id ? await Test.findById(result.test_id).select('title duration test_type').lean() : null;
+    const test = result.test_id ? await Test.findById(result.test_id).lean() : null;
+    const testQuestions = Array.isArray(test?.questions) ? test.questions : [];
     const detailedAnswers = (Array.isArray(result.answers) ? result.answers : []).map((ans, idx) => {
       const audioUrl = ans.student_audio_url || ans.audio_url || (idx === 0 ? result.speaking_audio_url : '') || '';
+      const tq = testQuestions.find(q => String(q?.question_id || q?._id || q?.id) === String(ans.question_id)) || testQuestions[idx] || {};
+      const rawCorrect = ans.correct_answer || ans.correct_answer_text || tq.correct_answer || tq.reference_text || '';
+      const originalText = ans.original_text || ans.reference_text || tq.reference_text || rawCorrect || '';
       return {
         ...ans,
-        question: ans.question || ans.question_text || ans.prompt || ans.sentence || ans.original_text || `Question ${idx + 1}`,
-        question_text: ans.question_text || ans.question || ans.prompt || ans.sentence || '',
+        question: ans.question || ans.question_text || tq.question || tq.text || ans.prompt || ans.sentence || `Question ${idx + 1}`,
+        question_text: ans.question_text || ans.question || tq.question || tq.text || '',
+        correct_answer: rawCorrect || originalText || 'Not available',
+        correct_answer_text: rawCorrect || originalText || 'Not available',
+        original_text: originalText || rawCorrect || 'Not available',
+        reference_text: originalText || rawCorrect || '',
+        student_text: ans.student_text || ans.transcription || ans.student_answer || '',
         student_audio_url: audioUrl,
         audio_url: audioUrl,
         similarity_score: ans.similarity_score ?? ans.accuracy_score ?? ans.overall_score ?? (ans.is_correct ? 100 : 0),
@@ -631,13 +722,22 @@ exports.getTestResultById = async (req, res) => {
   try {
     const result = await Result.findOne({ _id: req.params.id, ...getStudentIdentityFilter(req) }).lean();
     if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
-    const test = result.test_id ? await Test.findById(result.test_id).select('title duration test_type').lean() : null;
+    const test = result.test_id ? await Test.findById(result.test_id).lean() : null;
+    const testQuestions = Array.isArray(test?.questions) ? test.questions : [];
     const detailedAnswers = (Array.isArray(result.answers) ? result.answers : []).map((ans, idx) => {
       const audioUrl = ans.student_audio_url || ans.audio_url || (idx === 0 ? result.speaking_audio_url : '') || '';
+      const tq = testQuestions.find(q => String(q?.question_id || q?._id || q?.id) === String(ans.question_id)) || testQuestions[idx] || {};
+      const rawCorrect = ans.correct_answer || ans.correct_answer_text || tq.correct_answer || tq.reference_text || '';
+      const originalText = ans.original_text || ans.reference_text || tq.reference_text || rawCorrect || '';
       return {
         ...ans,
-        question: ans.question || ans.question_text || ans.prompt || ans.sentence || ans.original_text || `Question ${idx + 1}`,
-        question_text: ans.question_text || ans.question || ans.prompt || ans.sentence || '',
+        question: ans.question || ans.question_text || tq.question || tq.text || ans.prompt || ans.sentence || `Question ${idx + 1}`,
+        question_text: ans.question_text || ans.question || tq.question || tq.text || '',
+        correct_answer: rawCorrect || originalText || 'Not available',
+        correct_answer_text: rawCorrect || originalText || 'Not available',
+        original_text: originalText || rawCorrect || 'Not available',
+        reference_text: originalText || rawCorrect || '',
+        student_text: ans.student_text || ans.transcription || ans.student_answer || '',
         student_audio_url: audioUrl,
         audio_url: audioUrl,
         similarity_score: ans.similarity_score ?? ans.accuracy_score ?? ans.overall_score ?? (ans.is_correct ? 100 : 0),
