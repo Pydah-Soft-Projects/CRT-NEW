@@ -147,6 +147,12 @@ exports.login = async (req, res) => {
       campus_id: user.campus_id,
       sdms_college_id: user.sdms_college_id,
       sdms_course_id: user.sdms_course_id,
+      sdms_branch_id: user.sdms_branch_id,
+      sdms_year: user.sdms_year,
+      sdms_college_ids: user.sdms_college_ids || [],
+      sdms_course_ids: user.sdms_course_ids || [],
+      sdms_branch_ids: user.sdms_branch_ids || [],
+      sdms_years: user.sdms_years || [],
       course_id: user.course_id,
       batch_id: user.batch_id
     };
@@ -177,6 +183,12 @@ exports.login = async (req, res) => {
         campus_id: user.campus_id,
         sdms_college_id: user.sdms_college_id,
         sdms_course_id: user.sdms_course_id,
+        sdms_branch_id: user.sdms_branch_id,
+        sdms_year: user.sdms_year,
+        sdms_college_ids: user.sdms_college_ids || [],
+        sdms_course_ids: user.sdms_course_ids || [],
+        sdms_branch_ids: user.sdms_branch_ids || [],
+        sdms_years: user.sdms_years || [],
         course_id: user.course_id,
         batch_id: user.batch_id
       }
@@ -257,6 +269,12 @@ exports.refreshToken = async (req, res) => {
         campus_id: user.campus_id,
         sdms_college_id: user.sdms_college_id,
         sdms_course_id: user.sdms_course_id,
+        sdms_branch_id: user.sdms_branch_id,
+        sdms_year: user.sdms_year,
+        sdms_college_ids: user.sdms_college_ids || [],
+        sdms_course_ids: user.sdms_course_ids || [],
+        sdms_branch_ids: user.sdms_branch_ids || [],
+        sdms_years: user.sdms_years || [],
         course_id: user.course_id,
         batch_id: user.batch_id
       },

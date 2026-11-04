@@ -4,21 +4,40 @@ const sdmsService = require('../services/sdms.service');
 const { testIncludesSdmsScope } = require('../services/sdmsTestScope.service');
 
 const getReportingScope = (req) => {
-  if (req.user.role === 'campus_admin' || req.user.role === 'course_admin') {
-    return {
-      collegeId: req.sdmsScope?.collegeId || req.user.sdms_college_id || null,
-      courseId: req.sdmsScope?.courseId || req.user.sdms_course_id || null
-    };
-  }
+  const scope = req.sdmsScope || {};
+  const cleanIds = (arr, single) => {
+    let list = [];
+    if (Array.isArray(arr)) {
+      list = arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+    }
+    if (list.length === 0 && single !== null && single !== undefined && single !== '' && single !== 'null') {
+      const n = Number(single);
+      if (Number.isSafeInteger(n) && n > 0) list = [n];
+    }
+    return list;
+  };
+
+  const collegeIds = scope.collegeIds || cleanIds(req.user?.sdms_college_ids, req.user?.sdms_college_id || req.query?.college_id || req.query?.campus_id);
+  const courseIds = scope.courseIds || cleanIds(req.user?.sdms_course_ids, req.user?.sdms_course_id || req.query?.course_id);
+  const branchIds = scope.branchIds || cleanIds(req.user?.sdms_branch_ids, req.user?.sdms_branch_id || req.query?.branch_id);
+  const years = scope.years || cleanIds(req.user?.sdms_years, req.user?.sdms_year || req.query?.year);
+
+  const collegeId = scope.collegeId || collegeIds[0] || null;
+  const courseId = scope.courseId || courseIds[0] || null;
+
   return {
-    collegeId: req.query.college_id || req.query.campus_id || null,
-    courseId: req.query.course_id || null
+    collegeId,
+    courseId,
+    collegeIds: collegeIds.length ? collegeIds : null,
+    courseIds: courseIds.length ? courseIds : null,
+    branchIds: branchIds.length ? branchIds : null,
+    years: years.length ? years : null
   };
 };
 
 const hasRequiredAssignment = (req, scope) => (
-  (req.user.role !== 'campus_admin' || scope.collegeId) &&
-  (req.user.role !== 'course_admin' || scope.courseId)
+  (req.user?.role !== 'campus_admin' || (scope.collegeIds && scope.collegeIds.length > 0) || scope.collegeId) &&
+  (req.user?.role !== 'course_admin' || (scope.courseIds && scope.courseIds.length > 0) || scope.courseId)
 );
 
 const studentMatchesTest = (student, test) => {
@@ -30,9 +49,7 @@ const studentMatchesTest = (student, test) => {
     matches(test.target_branch_ids, student.branch_id) &&
     matches(test.target_years, student.year) &&
     matches(test.target_semesters, student.semester) &&
-    (!test.target_sections?.length || test.target_sections.includes(String(student.section || '').trim())) &&
-    !(test.target_campus_ids || []).length &&
-    !(test.target_batch_ids || []).length;
+    (!test.target_sections?.length || test.target_sections.includes(String(student.section || '').trim()));
 };
 
 const shapeAttempt = (result, test) => {
@@ -55,18 +72,59 @@ exports.getCampusDashboard = async (req, res) => {
     if (!hasRequiredAssignment(req, scope)) {
       return res.status(403).json({ success: false, message: 'SDMS college assignment is required to view this dashboard.' });
     }
-    const [students, totalBatches] = await Promise.all([
+
+    const [students, totalBatches, allTests] = await Promise.all([
       sdmsService.getFilteredStudents({ ...scope, page: 1, limit: 1, includePhoto: false }),
-      sdmsService.getBatchCount(scope.collegeId)
+      sdmsService.getBatchCount(scope.collegeId),
+      Test.find().sort({ created_at: -1 }).lean().catch(() => [])
     ]);
+
+    const visibleTests = allTests.filter(t => testIncludesSdmsScope(t, scope));
+    const activeExams = visibleTests.filter(t => t.test_type === 'online_exam');
+    const practiceTests = visibleTests.filter(t => t.test_type === 'practice' || t.category === 'practice');
+
+    const visibleTestIds = visibleTests.map(t => t._id);
+    const [totalAttempts, recentResults] = await Promise.all([
+      Result.countDocuments({ test_id: { $in: visibleTestIds.length ? visibleTestIds : [null] } }).catch(() => 0),
+      Result.find({ test_id: { $in: visibleTestIds.length ? visibleTestIds : [null] } }).sort({ submitted_at: -1 }).limit(10).lean().catch(() => [])
+    ]);
+
+    let averageScore = 0;
+    if (recentResults.length > 0) {
+      const sum = recentResults.reduce((acc, r) => acc + (r.percentage ?? r.score ?? 0), 0);
+      averageScore = Math.round((sum / recentResults.length) * 10) / 10;
+    }
+
+    const shapedRecentAttempts = recentResults.map(r => ({
+      _id: r._id,
+      student_id: r.sdms_student_id,
+      roll_number: r.student_roll_number || (r.sdms_student_id ? `STD-${r.sdms_student_id}` : 'Student'),
+      student_name: r.student_name || 'Student',
+      test_name: r.test_name || 'Online Exam',
+      percentage: r.percentage ?? r.score ?? 0,
+      submitted_at: r.submitted_at
+    }));
 
     return res.json({
       success: true,
       data: {
-        totalStudents: students.pagination.total,
+        totalStudents: students.pagination?.total || 0,
+        totalTests: visibleTests.length,
         totalBatches,
         campusName: 'Campus Administration',
-        activeExams: 0
+        activeExams: activeExams.length,
+        active_exams: activeExams.length,
+        averageScore,
+        totalAttempts,
+        recentAttempts: shapedRecentAttempts,
+        statistics: {
+          total_students: students.pagination?.total || 0,
+          total_tests: visibleTests.length,
+          total_batches: totalBatches,
+          active_exams: activeExams.length,
+          total_attempts: totalAttempts,
+          average_score: averageScore
+        }
       }
     });
   } catch (error) {
@@ -275,7 +333,7 @@ exports.getOnlineTestAttempts = async (req, res) => {
       return res.status(403).json({ success: false, message: 'This test is outside your reporting scope.' });
     }
 
-    const audience = await sdmsService.getExamAudience(test, scope.collegeId, 5000, scope.courseId);
+    const audience = await sdmsService.getExamAudience(test, scope.collegeIds || scope.collegeId, 5000, scope.courseIds || scope.courseId);
     const students = audience.students;
     const studentIds = students.map((student) => student.sdms_student_id);
     const results = studentIds.length ? await Result.find({
@@ -343,12 +401,19 @@ exports.getStudentOnlineTestAttempts = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found.' });
     }
     const student = await sdmsService.getStudentIdentityById(sdmsStudentId);
+    const colIds = scope.collegeIds?.length ? scope.collegeIds : (scope.collegeId ? [scope.collegeId] : null);
+    const couIds = scope.courseIds?.length ? scope.courseIds : (scope.courseId ? [scope.courseId] : null);
+    const brIds = scope.branchIds?.length ? scope.branchIds : (scope.branchId ? [scope.branchId] : null);
+    const yrIds = scope.years?.length ? scope.years : (scope.year ? [scope.year] : null);
+
     if (
       !student ||
-      (scope.collegeId && Number(student.college_id) !== Number(scope.collegeId)) ||
-      (scope.courseId && Number(student.course_id) !== Number(scope.courseId))
+      (colIds && !colIds.includes(Number(student.college_id))) ||
+      (couIds && !couIds.includes(Number(student.course_id))) ||
+      (brIds && !brIds.includes(Number(student.branch_id))) ||
+      (yrIds && !yrIds.includes(Number(student.year)))
     ) {
-      return res.status(404).json({ success: false, message: 'Student not found.' });
+      return res.status(404).json({ success: false, message: 'Student not found in your assigned scope.' });
     }
     if (!studentMatchesTest(student, test)) {
       return res.status(404).json({ success: false, message: 'Student not found.' });

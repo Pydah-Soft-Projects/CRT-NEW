@@ -178,23 +178,27 @@ exports.getUsers = async (req, res) => {
       // Ignore lookup errors
     }
 
-    const enrichedUsers = users.map(u => {
-      const collegeIds = (Array.isArray(u.sdms_college_ids) && u.sdms_college_ids.length > 0)
-        ? u.sdms_college_ids
-        : (u.sdms_college_id ? [u.sdms_college_id] : []);
-      const courseIds = (Array.isArray(u.sdms_course_ids) && u.sdms_course_ids.length > 0)
-        ? u.sdms_course_ids
-        : (u.sdms_course_id ? [u.sdms_course_id] : []);
-      const branchIds = (Array.isArray(u.sdms_branch_ids) && u.sdms_branch_ids.length > 0)
-        ? u.sdms_branch_ids
-        : (u.sdms_branch_id ? [u.sdms_branch_id] : []);
-      const years = (Array.isArray(u.sdms_years) && u.sdms_years.length > 0)
-        ? u.sdms_years
-        : (u.sdms_year ? [u.sdms_year] : []);
+    const filterValidIds = (arr, single) => {
+      let list = [];
+      if (Array.isArray(arr)) {
+        list = arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+      }
+      if (list.length === 0 && single !== null && single !== undefined && single !== '' && single !== 'null') {
+        const n = Number(single);
+        if (Number.isSafeInteger(n) && n > 0) list = [n];
+      }
+      return list;
+    };
 
-      const collegeNames = collegeIds.map(id => collegeMap[id] || `College ${id}`);
-      const courseNames = courseIds.map(id => courseMap[id] || `Course ${id}`);
-      const branchNames = branchIds.map(id => branchMap[id] || `Branch ${id}`);
+    const enrichedUsers = users.map(u => {
+      const collegeIds = filterValidIds(u.sdms_college_ids, u.sdms_college_id);
+      const courseIds = filterValidIds(u.sdms_course_ids, u.sdms_course_id);
+      const branchIds = filterValidIds(u.sdms_branch_ids, u.sdms_branch_id);
+      const years = filterValidIds(u.sdms_years, u.sdms_year);
+
+      const collegeNames = collegeIds.map(id => collegeMap[id] || (id ? `College ${id}` : '')).filter(Boolean);
+      const courseNames = courseIds.map(id => courseMap[id] || (id ? `Course ${id}` : '')).filter(Boolean);
+      const branchNames = branchIds.map(id => branchMap[id] || (id ? `Branch ${id}` : '')).filter(Boolean);
 
       return {
         ...u,
@@ -202,6 +206,10 @@ exports.getUsers = async (req, res) => {
         sdms_course_ids: courseIds,
         sdms_branch_ids: branchIds,
         sdms_years: years,
+        sdms_college_id: collegeIds[0] || null,
+        sdms_course_id: courseIds[0] || null,
+        sdms_branch_id: branchIds[0] || null,
+        sdms_year: years[0] || null,
         sdms_college_name: collegeNames.join(', '),
         sdms_course_name: courseNames.join(', '),
         sdms_branch_name: branchNames.join(', '),
@@ -272,14 +280,15 @@ exports.linkHRMSUser = async (req, res) => {
     }
 
     const parseNumArray = (arr, single) => {
-      if (Array.isArray(arr) && arr.length > 0) {
-        return arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+      let list = [];
+      if (Array.isArray(arr)) {
+        list = arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
       }
-      if (single !== undefined && single !== null && single !== '') {
+      if (list.length === 0 && single !== undefined && single !== null && single !== '' && single !== 'null') {
         const n = Number(single);
-        return Number.isSafeInteger(n) && n > 0 ? [n] : [];
+        if (Number.isSafeInteger(n) && n > 0) list = [n];
       }
-      return [];
+      return list;
     };
 
     const collegeIds = parseNumArray(sdms_college_ids, sdms_college_id);
@@ -419,7 +428,7 @@ exports.updateUser = async (req, res) => {
       if (Array.isArray(arr)) {
         return arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
       }
-      if (single !== undefined && single !== null && single !== '') {
+      if (single !== undefined && single !== null && single !== '' && single !== 'null') {
         const n = Number(single);
         return Number.isSafeInteger(n) && n > 0 ? [n] : [];
       }

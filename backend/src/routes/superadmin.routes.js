@@ -4,28 +4,31 @@ const superadminController = require('../controllers/superadmin.controller');
 const campusAdminController = require('../controllers/campusAdmin.controller');
 const authenticateToken = require('../middleware/auth.middleware');
 const authorizeRoles = require('../middleware/role.middleware');
+const requireSdmsAssignment = require('../middleware/sdmsScope.middleware');
 
 router.use(authenticateToken);
-router.use(authorizeRoles('superadmin'));
 
-router.get('/dashboard', superadminController.getDashboard);
-router.get('/stats', superadminController.getSystemStats);
-router.get('/online-tests-overview', campusAdminController.getOnlineTestOverview);
-router.get('/test-attempts/:testId', campusAdminController.getOnlineTestAttempts);
-router.get('/student-attempts/:studentId/:testId', campusAdminController.getStudentOnlineTestAttempts);
+const resultsViewers = authorizeRoles('superadmin', 'campus_admin', 'course_admin', 'evaluator', 'faculty');
+const dashboardViewers = authorizeRoles('superadmin', 'campus_admin', 'course_admin', 'evaluator', 'faculty');
+
+router.get('/dashboard', dashboardViewers, requireSdmsAssignment, superadminController.getDashboard);
+router.get('/stats', dashboardViewers, requireSdmsAssignment, superadminController.getSystemStats);
+router.get('/online-tests-overview', resultsViewers, requireSdmsAssignment, campusAdminController.getOnlineTestOverview);
+router.get('/test-attempts/:testId', resultsViewers, requireSdmsAssignment, campusAdminController.getOnlineTestAttempts);
+router.get('/student-attempts/:studentId/:testId', resultsViewers, requireSdmsAssignment, campusAdminController.getStudentOnlineTestAttempts);
 
 // Campus management routes (mapped at /superadmin and /campus-management)
-router.get('/', superadminController.getCampuses);
-router.get('/campuses', superadminController.getCampuses);
-router.post('/', superadminController.createCampus);
-router.post('/campuses', superadminController.createCampus);
-router.put('/campuses/:id', superadminController.updateCampus);
-router.put('/:id', superadminController.updateCampus);
-router.delete('/campuses/:id', superadminController.deleteCampus);
-router.delete('/:id', superadminController.deleteCampus);
+router.get('/', resultsViewers, superadminController.getCampuses);
+router.get('/campuses', resultsViewers, superadminController.getCampuses);
+router.post('/', authorizeRoles('superadmin'), superadminController.createCampus);
+router.post('/campuses', authorizeRoles('superadmin'), superadminController.createCampus);
+router.put('/campuses/:id', authorizeRoles('superadmin'), superadminController.updateCampus);
+router.put('/:id', authorizeRoles('superadmin'), superadminController.updateCampus);
+router.delete('/campuses/:id', authorizeRoles('superadmin'), superadminController.deleteCampus);
+router.delete('/:id', authorizeRoles('superadmin'), superadminController.deleteCampus);
 
 // Course management routes
-router.get('/courses/:campusId?', superadminController.getCourses);
-router.post('/courses/:campusId?', superadminController.createCourse);
+router.get('/courses/:campusId?', resultsViewers, superadminController.getCourses);
+router.post('/courses/:campusId?', authorizeRoles('superadmin'), superadminController.createCourse);
 
 module.exports = router;

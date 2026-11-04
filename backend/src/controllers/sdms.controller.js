@@ -3,17 +3,87 @@ const sdmsService = require('../services/sdms.service');
 const getAcademicFilters = (req) => {
   const getParam = (...names) => {
     for (const name of names) {
-      if (req.query && req.query[name] !== undefined) return req.query[name];
-      if (req.body && req.body[name] !== undefined) return req.body[name];
+      if (req.query && req.query[name] !== undefined && req.query[name] !== '' && req.query[name] !== 'all') return req.query[name];
+      if (req.body && req.body[name] !== undefined && req.body[name] !== '' && req.body[name] !== 'all') return req.body[name];
     }
     return null;
   };
 
+  const cleanList = (val) => {
+    if (val === null || val === undefined || val === '' || val === 'all') return [];
+    if (Array.isArray(val)) return val.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+    if (typeof val === 'string') return val.split(',').map(s => Number(s.trim())).filter(n => Number.isSafeInteger(n) && n > 0);
+    const n = Number(val);
+    return Number.isSafeInteger(n) && n > 0 ? [n] : [];
+  };
+
+  const scope = req.sdmsScope || {};
+
+  // Colleges
+  const requestedColleges = cleanList(getParam('college_ids', 'college_id', 'target_college_ids', 'campus_id', 'campus_ids'));
+  const scopedColleges = cleanList(scope.collegeIds || scope.collegeId);
+  let effectiveCollege = null;
+  if (scopedColleges.length > 0) {
+    if (requestedColleges.length > 0) {
+      const allowed = requestedColleges.filter(id => scopedColleges.includes(id));
+      effectiveCollege = allowed.length > 0 ? allowed : scopedColleges;
+    } else {
+      effectiveCollege = scopedColleges;
+    }
+  } else {
+    effectiveCollege = requestedColleges.length > 0 ? requestedColleges : null;
+  }
+
+  // Courses
+  const requestedCourses = cleanList(getParam('course_ids', 'course_id', 'target_course_ids'));
+  const scopedCourses = cleanList(scope.courseIds || scope.courseId);
+  let effectiveCourse = null;
+  if (scopedCourses.length > 0) {
+    if (requestedCourses.length > 0) {
+      const allowed = requestedCourses.filter(id => scopedCourses.includes(id));
+      effectiveCourse = allowed.length > 0 ? allowed : scopedCourses;
+    } else {
+      effectiveCourse = scopedCourses;
+    }
+  } else {
+    effectiveCourse = requestedCourses.length > 0 ? requestedCourses : null;
+  }
+
+  // Branches
+  const requestedBranches = cleanList(getParam('branch_ids', 'branch_id', 'target_branch_ids'));
+  const scopedBranches = cleanList(scope.branchIds || scope.branchId);
+  let effectiveBranch = null;
+  if (scopedBranches.length > 0) {
+    if (requestedBranches.length > 0) {
+      const allowed = requestedBranches.filter(id => scopedBranches.includes(id));
+      effectiveBranch = allowed.length > 0 ? allowed : scopedBranches;
+    } else {
+      effectiveBranch = scopedBranches;
+    }
+  } else {
+    effectiveBranch = requestedBranches.length > 0 ? requestedBranches : null;
+  }
+
+  // Years
+  const requestedYears = cleanList(getParam('years', 'year', 'target_years', 'current_year'));
+  const scopedYears = cleanList(scope.years || scope.year);
+  let effectiveYear = null;
+  if (scopedYears.length > 0) {
+    if (requestedYears.length > 0) {
+      const allowed = requestedYears.filter(id => scopedYears.includes(id));
+      effectiveYear = allowed.length > 0 ? allowed : scopedYears;
+    } else {
+      effectiveYear = scopedYears;
+    }
+  } else {
+    effectiveYear = requestedYears.length > 0 ? requestedYears : null;
+  }
+
   return {
-    collegeId: req.sdmsScope?.collegeId || getParam('college_ids', 'college_id', 'target_college_ids', 'campus_id', 'campus_ids'),
-    courseId: req.sdmsScope?.courseId || getParam('course_ids', 'course_id', 'target_course_ids'),
-    branchId: getParam('branch_ids', 'branch_id', 'target_branch_ids'),
-    year: getParam('years', 'year', 'target_years', 'current_year'),
+    collegeId: effectiveCollege,
+    courseId: effectiveCourse,
+    branchId: effectiveBranch,
+    year: effectiveYear,
     semester: getParam('semesters', 'semester', 'target_semesters', 'current_semester'),
     section: getParam('sections', 'section', 'target_sections'),
     search: req.query.search || req.body?.search || null
@@ -23,13 +93,16 @@ const getAcademicFilters = (req) => {
 exports.getColleges = async (req, res) => {
   try {
     let colleges = await sdmsService.getColleges();
-    if (req.sdmsScope?.collegeId) {
-      colleges = colleges.filter((college) => Number(college.id) === req.sdmsScope.collegeId);
-    } else if (req.sdmsScope?.courseId) {
+    const scopeColIds = req.sdmsScope?.collegeIds || (req.sdmsScope?.collegeId ? [req.sdmsScope.collegeId] : null);
+    if (scopeColIds && scopeColIds.length > 0) {
+      const allowed = new Set(scopeColIds.map(Number));
+      colleges = colleges.filter((college) => allowed.has(Number(college.id)));
+    } else if (req.sdmsScope?.courseIds || req.sdmsScope?.courseId) {
+      const courseIds = req.sdmsScope.courseIds || [req.sdmsScope.courseId];
       const courses = await sdmsService.getCourses();
       const collegeIds = new Set(
         courses
-          .filter((course) => Number(course.id) === req.sdmsScope.courseId)
+          .filter((course) => courseIds.map(Number).includes(Number(course.id)))
           .map((course) => Number(course.college_id))
       );
       colleges = colleges.filter((college) => collegeIds.has(Number(college.id)));
@@ -50,8 +123,10 @@ exports.getCourses = async (req, res) => {
   try {
     const filters = getAcademicFilters(req);
     let courses = await sdmsService.getCourses(filters.collegeId);
-    if (req.sdmsScope?.courseId) {
-      courses = courses.filter((course) => Number(course.id) === req.sdmsScope.courseId);
+    const scopeCourseIds = req.sdmsScope?.courseIds || (req.sdmsScope?.courseId ? [req.sdmsScope.courseId] : null);
+    if (scopeCourseIds && scopeCourseIds.length > 0) {
+      const allowed = new Set(scopeCourseIds.map(Number));
+      courses = courses.filter((course) => allowed.has(Number(course.id)));
     }
     return res.json({
       success: true,
@@ -68,7 +143,12 @@ exports.getCourses = async (req, res) => {
 exports.getBranches = async (req, res) => {
   try {
     const filters = getAcademicFilters(req);
-    const branches = await sdmsService.getBranches(filters.collegeId, filters.courseId);
+    let branches = await sdmsService.getBranches(filters.collegeId, filters.courseId);
+    const scopeBranchIds = req.sdmsScope?.branchIds || (req.sdmsScope?.branchId ? [req.sdmsScope.branchId] : null);
+    if (scopeBranchIds && scopeBranchIds.length > 0) {
+      const allowed = new Set(scopeBranchIds.map(Number));
+      branches = branches.filter((branch) => allowed.has(Number(branch.id)));
+    }
     return res.json({
       success: true,
       source: 'rds',
@@ -84,7 +164,12 @@ exports.getBranches = async (req, res) => {
 exports.getYears = async (req, res) => {
   try {
     const filters = getAcademicFilters(req);
-    const years = await sdmsService.getYears(filters.collegeId, filters.courseId, filters.branchId);
+    let years = await sdmsService.getYears(filters.collegeId, filters.courseId, filters.branchId);
+    const scopeYears = req.sdmsScope?.years || (req.sdmsScope?.year ? [req.sdmsScope.year] : null);
+    if (scopeYears && scopeYears.length > 0) {
+      const allowed = new Set(scopeYears.map(Number));
+      years = years.filter((yr) => allowed.has(Number(yr)));
+    }
     return res.json({
       success: true,
       source: 'rds',

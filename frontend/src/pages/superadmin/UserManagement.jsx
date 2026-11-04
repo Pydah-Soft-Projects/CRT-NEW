@@ -45,12 +45,13 @@ const YEAR_OPTIONS = [
 ];
 
 const formatYearBadge = (yr) => {
+  if (yr === null || yr === undefined || yr === '' || yr === 'null') return '';
   const n = Number(yr);
+  if (!Number.isSafeInteger(n) || n <= 0) return '';
   if (n === 1) return '1st Year';
   if (n === 2) return '2nd Year';
   if (n === 3) return '3rd Year';
-  if (!isNaN(n) && n > 0) return `${n}th Year`;
-  return String(yr);
+  return `${n}th Year`;
 };
 
 function MultiSelectDropdown({
@@ -782,15 +783,22 @@ const UserManagement = () => {
     setEditUserPermissions(JSON.parse(JSON.stringify(user.permissions || user.role_id?.permissions || {})));
     setEditUserStatus(user.status || 'active');
 
-    const cIds = user.sdms_college_ids?.length ? user.sdms_college_ids : (user.sdms_college_id ? [user.sdms_college_id] : []);
-    const coIds = user.sdms_course_ids?.length ? user.sdms_course_ids : (user.sdms_course_id ? [user.sdms_course_id] : []);
-    const bIds = user.sdms_branch_ids?.length ? user.sdms_branch_ids : (user.sdms_branch_id ? [user.sdms_branch_id] : []);
-    const yList = user.sdms_years?.length ? user.sdms_years : (user.sdms_year ? [user.sdms_year] : []);
+    const cleanIds = (arr, single) => {
+      let list = [];
+      if (Array.isArray(arr)) {
+        list = arr.map(Number).filter(n => Number.isSafeInteger(n) && n > 0);
+      }
+      if (list.length === 0 && single !== null && single !== undefined && single !== '' && single !== 'null') {
+        const n = Number(single);
+        if (Number.isSafeInteger(n) && n > 0) list = [n];
+      }
+      return list;
+    };
 
-    setEditSdmsCollegeIds(cIds.map(Number));
-    setEditSdmsCourseIds(coIds.map(Number));
-    setEditSdmsBranchIds(bIds.map(Number));
-    setEditSdmsYears(yList.map(Number));
+    setEditSdmsCollegeIds(cleanIds(user.sdms_college_ids, user.sdms_college_id));
+    setEditSdmsCourseIds(cleanIds(user.sdms_course_ids, user.sdms_course_id));
+    setEditSdmsBranchIds(cleanIds(user.sdms_branch_ids, user.sdms_branch_id));
+    setEditSdmsYears(cleanIds(user.sdms_years, user.sdms_year));
 
     setShowEditUserModal(true);
   };
@@ -1236,52 +1244,72 @@ const UserManagement = () => {
                               <Building2 className="h-3 w-3" />
                               All Colleges (Global)
                             </span>
-                          ) : (u.sdms_college_name || u.sdms_college_id || (u.sdms_college_ids && u.sdms_college_ids.length > 0)) ? (
-                            <div className="text-xs space-y-1 max-w-[240px]">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <Building2 className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
-                                {(() => {
-                                  const names = u.sdms_college_names?.length ? u.sdms_college_names : (u.sdms_college_name ? [u.sdms_college_name] : []);
-                                  if (names.length === 0) return <span className="font-semibold text-gray-900">Assigned College</span>;
-                                  if (names.length <= 2) {
-                                    return names.map((cn, i) => (
-                                      <span key={i} className="font-semibold text-gray-900 bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded text-[11px] truncate max-w-[190px]" title={cn}>
-                                        {cn}
+                          ) : (() => {
+                            const collegeNames = (u.sdms_college_names || (u.sdms_college_name ? [u.sdms_college_name] : []))
+                              .filter(name => name && !String(name).toLowerCase().includes('null'));
+                            const courseNames = (u.sdms_course_names || (u.sdms_course_name ? [u.sdms_course_name] : []))
+                              .filter(name => name && !String(name).toLowerCase().includes('null'));
+                            const branchNames = (u.sdms_branch_names || (u.sdms_branch_name ? [u.sdms_branch_name] : []))
+                              .filter(name => name && !String(name).toLowerCase().includes('null'));
+                            const validYears = (u.sdms_years || (u.sdms_year ? [u.sdms_year] : []))
+                              .map(Number)
+                              .filter(y => Number.isSafeInteger(y) && y > 0);
+
+                            const hasAnyScope = collegeNames.length > 0 || courseNames.length > 0 || branchNames.length > 0 || validYears.length > 0;
+
+                            if (!hasAnyScope) {
+                              return <span className="text-xs text-gray-400 italic">Unassigned (Global)</span>;
+                            }
+
+                            return (
+                              <div className="text-xs space-y-1 max-w-[240px]">
+                                {collegeNames.length > 0 ? (
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Building2 className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                                    {collegeNames.length <= 2 ? (
+                                      collegeNames.map((cn, i) => (
+                                        <span key={i} className="font-semibold text-gray-900 bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded text-[11px] truncate max-w-[190px]" title={cn}>
+                                          {cn}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded text-[11px]" title={collegeNames.join(', ')}>
+                                        {collegeNames[0]} +{collegeNames.length - 1} more
                                       </span>
-                                    ));
-                                  }
-                                  return (
-                                    <span className="font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded text-[11px]" title={names.join(', ')}>
-                                      {names[0]} +{names.length - 1} more
-                                    </span>
-                                  );
-                                })()}
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-slate-500 font-medium text-[11px]">
+                                    <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                                    <span>All Colleges</span>
+                                  </div>
+                                )}
+
+                                {(courseNames.length > 0 || branchNames.length > 0) && (
+                                  <div className="text-[11px] text-gray-600 flex items-center gap-1 flex-wrap pl-5">
+                                    {courseNames.length > 0 && (
+                                      <span className="font-medium text-gray-700">
+                                        {courseNames.join(', ')}
+                                      </span>
+                                    )}
+                                    {branchNames.length > 0 && (
+                                      <span className="text-gray-400">• {branchNames.join(', ')}</span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {validYears.length > 0 && (
+                                  <div className="flex items-center gap-1 flex-wrap pl-5 pt-0.5">
+                                    {validYears.map((yr, idx) => (
+                                      <span key={idx} className="bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded text-[10px]">
+                                        {formatYearBadge(yr)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-
-                              {(u.sdms_course_names?.length > 0 || u.sdms_course_name) && (
-                                <div className="text-[11px] text-gray-600 flex items-center gap-1 flex-wrap pl-5">
-                                  <span className="font-medium text-gray-700">
-                                    {u.sdms_course_names?.length ? u.sdms_course_names.join(', ') : u.sdms_course_name}
-                                  </span>
-                                  {(u.sdms_branch_names?.length > 0 || u.sdms_branch_name) && (
-                                    <span className="text-gray-400">• {u.sdms_branch_names?.length ? u.sdms_branch_names.join(', ') : u.sdms_branch_name}</span>
-                                  )}
-                                </div>
-                              )}
-
-                              {(u.sdms_years?.length > 0 || u.sdms_year) && (
-                                <div className="flex items-center gap-1 flex-wrap pl-5 pt-0.5">
-                                  {(u.sdms_years?.length ? u.sdms_years : [u.sdms_year]).map((yr, idx) => (
-                                    <span key={idx} className="bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded text-[10px]">
-                                      {formatYearBadge(yr)}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400 italic">Unassigned (Global)</span>
-                          )}
+                            );
+                          })()}
                         </td>
 
                         <td className="py-3.5 px-4">

@@ -845,9 +845,13 @@ class SDMSService {
    */
   async getFilteredStudents({
     collegeId,
+    collegeIds,
     courseId,
+    courseIds,
     branchId,
+    branchIds,
     year,
+    years,
     semester,
     section,
     search,
@@ -879,10 +883,10 @@ class SDMSService {
       }
     };
 
-    appendFilter('s.college_id', collegeId, true);
-    appendFilter('s.course_id', courseId, true);
-    appendFilter('s.branch_id', branchId, true);
-    appendFilter('s.current_year', year, true);
+    appendFilter('s.college_id', (collegeIds && collegeIds.length) ? collegeIds : collegeId, true);
+    appendFilter('s.course_id', (courseIds && courseIds.length) ? courseIds : courseId, true);
+    appendFilter('s.branch_id', (branchIds && branchIds.length) ? branchIds : branchId, true);
+    appendFilter('s.current_year', (years && years.length) ? years : year, true);
 
     const sems = parseIdList(semester);
     if (sems.length === 1) {
@@ -1020,9 +1024,29 @@ class SDMSService {
   }
 
   async getExamAudience(test, collegeId = null, maxStudents = 5000, courseId = null) {
+    const targetCols = parseIdList(test.target_college_ids);
+    const scopeCols = parseIdList(collegeId);
+    let effectiveCol = null;
+    if (scopeCols.length > 0 && targetCols.length > 0) {
+      effectiveCol = targetCols.filter(id => scopeCols.includes(id));
+      if (effectiveCol.length === 0) effectiveCol = [-1];
+    } else {
+      effectiveCol = targetCols.length > 0 ? targetCols : (scopeCols.length > 0 ? scopeCols : null);
+    }
+
+    const targetCourses = parseIdList(test.target_course_ids);
+    const scopeCourses = parseIdList(courseId);
+    let effectiveCourse = null;
+    if (scopeCourses.length > 0 && targetCourses.length > 0) {
+      effectiveCourse = targetCourses.filter(id => scopeCourses.includes(id));
+      if (effectiveCourse.length === 0) effectiveCourse = [-1];
+    } else {
+      effectiveCourse = targetCourses.length > 0 ? targetCourses : (scopeCourses.length > 0 ? scopeCourses : null);
+    }
+
     const filters = {
-      collegeId: collegeId || (test.target_college_ids?.length ? test.target_college_ids : null),
-      courseId: courseId || (test.target_course_ids?.length ? test.target_course_ids : null),
+      collegeId: effectiveCol,
+      courseId: effectiveCourse,
       branchId: test.target_branch_ids?.length ? test.target_branch_ids : null,
       year: test.target_years?.length ? test.target_years : null,
       semester: test.target_semesters?.length ? test.target_semesters : null,
@@ -1042,9 +1066,29 @@ class SDMSService {
   }
 
   async getExamAudienceCount(test, collegeId = null, courseId = null) {
+    const targetCols = parseIdList(test.target_college_ids);
+    const scopeCols = parseIdList(collegeId);
+    let effectiveCol = null;
+    if (scopeCols.length > 0 && targetCols.length > 0) {
+      effectiveCol = targetCols.filter(id => scopeCols.includes(id));
+      if (effectiveCol.length === 0) return 0;
+    } else {
+      effectiveCol = targetCols.length > 0 ? targetCols : (scopeCols.length > 0 ? scopeCols : null);
+    }
+
+    const targetCourses = parseIdList(test.target_course_ids);
+    const scopeCourses = parseIdList(courseId);
+    let effectiveCourse = null;
+    if (scopeCourses.length > 0 && targetCourses.length > 0) {
+      effectiveCourse = targetCourses.filter(id => scopeCourses.includes(id));
+      if (effectiveCourse.length === 0) return 0;
+    } else {
+      effectiveCourse = targetCourses.length > 0 ? targetCourses : (scopeCourses.length > 0 ? scopeCourses : null);
+    }
+
     const filters = {
-      collegeId: collegeId || (test.target_college_ids?.length ? test.target_college_ids : null),
-      courseId: courseId || (test.target_course_ids?.length ? test.target_course_ids : null),
+      collegeId: effectiveCol,
+      courseId: effectiveCourse,
       branchId: test.target_branch_ids?.length ? test.target_branch_ids : null,
       year: test.target_years?.length ? test.target_years : null,
       semester: test.target_semesters?.length ? test.target_semesters : null,

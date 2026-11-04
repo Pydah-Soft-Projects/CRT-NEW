@@ -4,10 +4,19 @@ const sdmsService = require('../services/sdms.service');
 
 const MAX_STUDENTS = 5000;
 
-const getScope = (req) => ({
-  collegeId: req.sdmsScope?.collegeId || null,
-  courseId: req.sdmsScope?.courseId || null
-});
+const getScope = (req) => {
+  const scope = req.sdmsScope || {};
+  return {
+    collegeId: scope.collegeId || null,
+    collegeIds: scope.collegeIds || null,
+    courseId: scope.courseId || null,
+    courseIds: scope.courseIds || null,
+    branchId: scope.branchId || null,
+    branchIds: scope.branchIds || null,
+    year: scope.year || null,
+    years: scope.years || null
+  };
+};
 
 const getScopedStudents = async (req) => {
   return sdmsService.getAllFilteredStudents({
@@ -20,19 +29,51 @@ const getScopedTestFilter = (req) => {
   const scope = getScope(req);
   const filter = { status: 'active' };
   const andConditions = [];
-  for (const [field, value] of [
-    ['target_college_ids', scope.collegeId],
-    ['target_course_ids', scope.courseId]
-  ]) {
-    if (!value) continue;
+
+  const colIds = scope.collegeIds || (scope.collegeId ? [scope.collegeId] : null);
+  if (colIds && colIds.length) {
     andConditions.push({
       $or: [
-        { [field]: value },
-        { [field]: { $size: 0 } },
-        { [field]: { $exists: false } }
+        { target_college_ids: { $in: colIds.map(Number) } },
+        { target_college_ids: { $size: 0 } },
+        { target_college_ids: { $exists: false } }
       ]
     });
   }
+
+  const courseIds = scope.courseIds || (scope.courseId ? [scope.courseId] : null);
+  if (courseIds && courseIds.length) {
+    andConditions.push({
+      $or: [
+        { target_course_ids: { $in: courseIds.map(Number) } },
+        { target_course_ids: { $size: 0 } },
+        { target_course_ids: { $exists: false } }
+      ]
+    });
+  }
+
+  const branchIds = scope.branchIds || (scope.branchId ? [scope.branchId] : null);
+  if (branchIds && branchIds.length) {
+    andConditions.push({
+      $or: [
+        { target_branch_ids: { $in: branchIds.map(Number) } },
+        { target_branch_ids: { $size: 0 } },
+        { target_branch_ids: { $exists: false } }
+      ]
+    });
+  }
+
+  const years = scope.years || (scope.year ? [scope.year] : null);
+  if (years && years.length) {
+    andConditions.push({
+      $or: [
+        { target_years: { $in: years.map(Number) } },
+        { target_years: { $size: 0 } },
+        { target_years: { $exists: false } }
+      ]
+    });
+  }
+
   if (andConditions.length) filter.$and = andConditions;
   return filter;
 };
@@ -40,22 +81,58 @@ const getScopedTestFilter = (req) => {
 exports.getCourseDashboard = async (req, res) => {
   try {
     const scope = getScope(req);
-    const [students, totalTests] = await Promise.all([
+    const testFilter = getScopedTestFilter(req);
+    const [students, totalTests, matchingTests] = await Promise.all([
       sdmsService.getFilteredStudents({
         ...scope,
         page: 1,
         limit: 1,
         includePhoto: false
       }),
-      Test.countDocuments(getScopedTestFilter(req))
+      Test.countDocuments(testFilter),
+      Test.find(testFilter).sort({ created_at: -1 }).limit(10).lean().catch(() => [])
     ]);
+
+    const testIds = matchingTests.map(t => t._id);
+    const [totalAttempts, recentResults] = await Promise.all([
+      Result.countDocuments({ test_id: { $in: testIds.length ? testIds : [null] } }).catch(() => 0),
+      Result.find({ test_id: { $in: testIds.length ? testIds : [null] } }).sort({ submitted_at: -1 }).limit(10).lean().catch(() => [])
+    ]);
+
+    let averageScore = 0;
+    if (recentResults.length > 0) {
+      const sum = recentResults.reduce((acc, r) => acc + (r.percentage ?? r.score ?? 0), 0);
+      averageScore = Math.round((sum / recentResults.length) * 10) / 10;
+    }
+
+    const shapedRecentAttempts = recentResults.map(r => ({
+      _id: r._id,
+      student_id: r.sdms_student_id,
+      roll_number: r.student_roll_number || (r.sdms_student_id ? `STD-${r.sdms_student_id}` : 'Student'),
+      student_name: r.student_name || 'Student',
+      test_name: r.test_name || 'Course Exam',
+      percentage: r.percentage ?? r.score ?? 0,
+      submitted_at: r.submitted_at
+    }));
+
     return res.json({
       success: true,
       data: {
-        totalStudents: students.pagination.total,
+        totalStudents: students.pagination?.total || 0,
         totalTests,
+        totalBatches: 0,
         activeModules: ['listening', 'speaking', 'reading', 'writing'],
-        avgProgress: 0
+        avgProgress: averageScore,
+        averageScore,
+        totalAttempts,
+        recentAttempts: shapedRecentAttempts,
+        statistics: {
+          total_students: students.pagination?.total || 0,
+          total_tests: totalTests,
+          total_batches: 0,
+          total_attempts: totalAttempts,
+          average_score: averageScore
+        }
       }
     });
   } catch (error) {

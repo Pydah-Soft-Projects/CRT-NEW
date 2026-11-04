@@ -191,8 +191,8 @@ exports.deleteTest = async (req, res) => {
 exports.getStudentCount = async (req, res) => {
   try {
     const b = req.body || {};
-    const collegeIds = req.sdmsScope?.collegeId ? [req.sdmsScope.collegeId] : (b.college_ids || b.target_college_ids || b.college_id || null);
-    const courseIds = req.sdmsScope?.courseId ? [req.sdmsScope.courseId] : (b.course_ids || b.target_course_ids || b.course_id || null);
+    const collegeIds = req.sdmsScope?.collegeIds || (req.sdmsScope?.collegeId ? [req.sdmsScope.collegeId] : null) || (b.college_ids || b.target_college_ids || b.college_id || null);
+    const courseIds = req.sdmsScope?.courseIds || (req.sdmsScope?.courseId ? [req.sdmsScope.courseId] : null) || (b.course_ids || b.target_course_ids || b.course_id || null);
     const branchIds = b.branch_ids || b.target_branch_ids || b.branch_id || null;
     const years = b.years || b.target_years || b.year || null;
     const semesters = b.semesters || b.target_semesters || b.semester || null;
@@ -269,26 +269,45 @@ exports.getAllTests = async (req, res) => {
   try {
     const scope = req.sdmsScope || {};
     const andConditions = [];
-    if (req.user.role !== 'superadmin') {
-      for (const [field, value] of [
-        ['target_college_ids', scope.collegeId],
-        ['target_course_ids', scope.courseId]
-      ]) {
-        if (value) {
-          andConditions.push({
-            $or: [
-              { [field]: value },
-              { [field]: { $size: 0 } },
-              { [field]: { $exists: false } }
-            ]
-          });
-        }
-      }
-      for (const field of ['target_campus_ids', 'target_batch_ids']) {
+    if (req.user && req.user.role !== 'superadmin') {
+      const scopeColIds = scope.collegeIds || (scope.collegeId ? [scope.collegeId] : (req.user?.sdms_college_ids?.length ? req.user.sdms_college_ids : (req.user?.sdms_college_id ? [req.user.sdms_college_id] : [])));
+      const scopeCourseIds = scope.courseIds || (scope.courseId ? [scope.courseId] : (req.user?.sdms_course_ids?.length ? req.user.sdms_course_ids : (req.user?.sdms_course_id ? [req.user.sdms_course_id] : [])));
+      const scopeBranchIds = scope.branchIds || (scope.branchId ? [scope.branchId] : (req.user?.sdms_branch_ids?.length ? req.user.sdms_branch_ids : (req.user?.sdms_branch_id ? [req.user.sdms_branch_id] : [])));
+      const scopeYears = scope.years || (scope.year ? [scope.year] : (req.user?.sdms_years?.length ? req.user.sdms_years : (req.user?.sdms_year ? [req.user.sdms_year] : [])));
+
+      if (scopeColIds && scopeColIds.length > 0) {
         andConditions.push({
           $or: [
-            { [field]: { $size: 0 } },
-            { [field]: { $exists: false } }
+            { target_college_ids: { $in: scopeColIds.map(Number) } },
+            { target_college_ids: { $size: 0 } },
+            { target_college_ids: { $exists: false } }
+          ]
+        });
+      }
+      if (scopeCourseIds && scopeCourseIds.length > 0) {
+        andConditions.push({
+          $or: [
+            { target_course_ids: { $in: scopeCourseIds.map(Number) } },
+            { target_course_ids: { $size: 0 } },
+            { target_course_ids: { $exists: false } }
+          ]
+        });
+      }
+      if (scopeBranchIds && scopeBranchIds.length > 0) {
+        andConditions.push({
+          $or: [
+            { target_branch_ids: { $in: scopeBranchIds.map(Number) } },
+            { target_branch_ids: { $size: 0 } },
+            { target_branch_ids: { $exists: false } }
+          ]
+        });
+      }
+      if (scopeYears && scopeYears.length > 0) {
+        andConditions.push({
+          $or: [
+            { target_years: { $in: scopeYears.map(Number) } },
+            { target_years: { $size: 0 } },
+            { target_years: { $exists: false } }
           ]
         });
       }
