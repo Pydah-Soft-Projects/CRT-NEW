@@ -1,19 +1,30 @@
-# /etc/nginx/sites-available/crt
-# Symlink to /etc/nginx/sites-enabled/crt
-
+# 1. HTTP Server - Redirects all traffic cleanly to HTTPS
 server {
-    listen 80 default_server;
+    listen 80;
+    listen [::]:80;
     server_name crt.pydah.edu.in 13.206.203.113 localhost _;
+
+    return 301 https://crt.pydah.edu.in$request_uri;
+}
+
+# 2. HTTPS Server - Secure Production Portal
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name crt.pydah.edu.in;
+
+    ssl_certificate /etc/letsencrypt/live/crt.pydah.edu.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/crt.pydah.edu.in/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     client_max_body_size 50M;
 
-    # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
 
-    # Gzip compression
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
@@ -21,7 +32,6 @@ server {
     gzip_comp_level 4;
     gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
 
-    # 1. API proxy to Express backend
     location /api/ {
         proxy_pass http://127.0.0.1:5000/;
         proxy_http_version 1.1;
@@ -31,10 +41,9 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
     }
 
-    # 2. WebSocket proxy for Socket.IO
     location /socket.io/ {
         proxy_pass http://127.0.0.1:5000/socket.io/;
         proxy_http_version 1.1;
@@ -44,21 +53,18 @@ server {
         proxy_read_timeout 60s;
     }
 
-    # 3. Frontend proxy to PM2 serve (Port 3000)
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
     }
 
-    # Health check endpoint
     location /nginx-health {
         access_log off;
         return 200 "healthy\n";
         add_header Content-Type text/plain;
     }
 }
-
