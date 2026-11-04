@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code, Play, CheckCircle, XCircle, TestTube, AlertCircle } from 'lucide-react';
+import { Code, Play, CheckCircle, XCircle, TestTube, AlertCircle, Mic, Headphones, Volume2 } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import api from '../../services/api';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -22,19 +22,73 @@ function isExamClosedByServerMessage(message) {
   );
 }
 
-function isSpeakingResponseQuestion(question) {
-  return (
+function isSpeakingResponseQuestion(question, exam) {
+  const isSpeakingModule =
+    String(exam?.module_id || '').toLowerCase().includes('speaking') ||
+    String(exam?.subcategory || '').toLowerCase().includes('speaking') ||
+    String(exam?.title || '').toLowerCase().includes('speaking');
+
+  if (
     question?.question_type === 'audio_to_text' ||
     question?.question_type === 'audio_interactive' ||
+    question?.question_type === 'speaking' ||
     question?.conversion_type === 'audio_to_text' ||
     question?.conversion_type === 'both'
-  );
+  ) {
+    return true;
+  }
+
+  if (isSpeakingModule && question?.question_type !== 'compiler' && question?.question_type !== 'technical' && !question?.test_cases?.length) {
+    return true;
+  }
+
+  return false;
+}
+
+function isListeningResponseQuestion(question, exam) {
+  const isListeningModule =
+    String(exam?.module_id || '').toLowerCase().includes('listening') ||
+    String(exam?.subcategory || '').toLowerCase().includes('listening') ||
+    String(exam?.title || '').toLowerCase().includes('listening');
+
+  if (
+    question?.question_type === 'text_to_audio' ||
+    question?.question_type === 'audio' ||
+    question?.question_type === 'listening' ||
+    Boolean(question?.audio_script) ||
+    Boolean(question?.audio_url) ||
+    Boolean(question?.audio_presigned_url)
+  ) {
+    return true;
+  }
+
+  if (isListeningModule && question?.question_type !== 'compiler' && question?.question_type !== 'technical' && !question?.test_cases?.length) {
+    return true;
+  }
+
+  return false;
 }
 
 const OnlineExamTaking = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const examId = searchParams.get('testid');
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const pathId = pathParts[pathParts.length - 1] !== 'exam' ? pathParts[pathParts.length - 1] : null;
+  const examId = searchParams.get('testid') || pathId;
+  const [isPlayingTts, setIsPlayingTts] = useState(false);
+
+  const playTtsAudio = (text) => {
+    if ('speechSynthesis' in window && text) {
+      window.speechSynthesis.cancel();
+      setIsPlayingTts(true);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.onend = () => setIsPlayingTts(false);
+      utterance.onerror = () => setIsPlayingTts(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
   const { error: showError, success } = useNotification();
   const [questions, setQuestions] = useState([]);
   const [exam, setExam] = useState(null);
@@ -536,16 +590,18 @@ const OnlineExamTaking = () => {
       const timeTakenMs = startTime ? endTime - startTime : null;
 
       // Check if this is a listening or speaking module that requires audio submission
-      const isSpeakingExam = String(exam?.module_id || '').toUpperCase() === 'SPEAKING' ||
-        questions.some(isSpeakingResponseQuestion);
+      const isSpeakingExam =
+        String(exam?.module_id || '').toLowerCase().includes('speaking') ||
+        String(exam?.subcategory || '').toLowerCase().includes('speaking') ||
+        String(exam?.title || '').toLowerCase().includes('speaking') ||
+        questions.some(q => isSpeakingResponseQuestion(q, exam));
 
       if (isSpeakingExam) {
         // Speaking assessments require a real recording for every scored question.
         const missingRecordings = [];
         questions.forEach((question, index) => {
           const qKey = examQuestionAnswerKey(question, index);
-          const requiresRecording = String(exam?.module_id || '').toUpperCase() === 'SPEAKING' ||
-            isSpeakingResponseQuestion(question);
+          const requiresRecording = isSpeakingResponseQuestion(question, exam);
           if (requiresRecording && !recordings[qKey]) {
             missingRecordings.push(index + 1);
           }
@@ -1073,10 +1129,13 @@ const OnlineExamTaking = () => {
                   </motion.h3>
 
 
-                  {/* Audio playback for listening modules (presigned URL when API provides it) */}
-                  {(currentQuestion.question_type === 'audio' ||
+                  {/* Audio playback for listening modules (presigned URL or TTS) */}
+                  {(isListeningResponseQuestion(currentQuestion, exam) ||
+                    currentQuestion.question_type === 'audio' ||
+                    currentQuestion.question_type === 'text_to_audio' ||
                     currentQuestion.audio_url ||
-                    currentQuestion.audio_presigned_url) && (
+                    currentQuestion.audio_presigned_url ||
+                    currentQuestion.audio_script) && (
                     <motion.div
                       className="mb-8 text-center"
                       initial={{ opacity: 0, y: 10 }}
@@ -1084,43 +1143,45 @@ const OnlineExamTaking = () => {
                       transition={{ duration: 0.5, delay: 0.4 }}
                     >
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <p className="text-blue-700 font-medium mb-2 text-sm">Listen to the audio:</p>
-                        <audio
-                          key={`audio-${currentQuestion.question_id}-${currentQuestionIndex}-${getPlayableAudioUrl(currentQuestion).slice(-32)}`}
-                          controls
-                          className="mx-auto w-full max-w-md"
-                          src={getPlayableAudioUrl(currentQuestion)}
-                          onError={(e) => {
-                            const error = e.target.error;
-                            let errorMessage = 'Failed to load audio file.';
-
-                            if (error) {
-                              switch (error.code) {
-                                case MediaError.MEDIA_ERR_NETWORK:
-                                  errorMessage = 'Network error loading audio. Please check your connection.';
-                                  break;
-                                case MediaError.MEDIA_ERR_DECODE:
-                                  errorMessage = 'Audio format not supported. Please try a different browser.';
-                                  break;
-                                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                                  errorMessage = 'Audio source not supported. Please contact support.';
-                                  break;
-                                default:
-                                  errorMessage = 'Audio loading failed. Please refresh and try again.';
-                              }
-                            }
-
-                            showError(errorMessage);
-                          }}
-                          preload="auto"
-                        >
-                          Your browser does not support the audio element.
-                        </audio>
+                        <p className="text-blue-700 font-medium mb-2 text-sm flex items-center justify-center gap-1.5">
+                          <Headphones className="w-4 h-4" />
+                          <span>Listen to the Audio Prompt:</span>
+                        </p>
+                        {getPlayableAudioUrl(currentQuestion) ? (
+                          <audio
+                            key={`audio-${currentQuestion.question_id}-${currentQuestionIndex}-${getPlayableAudioUrl(currentQuestion).slice(-32)}`}
+                            controls
+                            className="mx-auto w-full max-w-md"
+                            src={getPlayableAudioUrl(currentQuestion)}
+                            onError={(e) => {
+                              showError('Failed to load audio file.');
+                            }}
+                            preload="auto"
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                            <button
+                              type="button"
+                              onClick={() => playTtsAudio(currentQuestion.audio_script || questionTitle)}
+                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all"
+                            >
+                              <Volume2 className="w-4 h-4" />
+                              <span>{isPlayingTts ? 'Playing Voice Prompt...' : 'Listen to Voice Prompt'}</span>
+                            </button>
+                            <p className="text-xs text-blue-600">Click to listen to the synthesized speech announcement</p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
 
-                  {(!currentQuestion.question_type || currentQuestion.question_type === 'mcq') && currentQuestion.options && (
+                  {/* Standard MCQ options (rendered ONLY when not a speaking assessment and options exist) */}
+                  {(!currentQuestion.question_type || currentQuestion.question_type === 'mcq' || currentQuestion.question_type === 'text_to_audio') &&
+                    !isSpeakingResponseQuestion(currentQuestion, exam) &&
+                    currentQuestion.options &&
+                    Object.keys(currentQuestion.options).length >= 2 && (
                     <motion.div
                       className="space-y-4"
                       initial={{ opacity: 0 }}
@@ -1451,8 +1512,9 @@ const OnlineExamTaking = () => {
                       </motion.div>
                     )}
 
-                  {/* Audio recording interface for listening modules */}
-                  {(isSpeakingResponseQuestion(currentQuestion) || String(exam?.module_id || '').toUpperCase() === 'SPEAKING') && (
+                  {/* Audio recording interface for Speaking and Spoken Listening modules */}
+                  {(isSpeakingResponseQuestion(currentQuestion, exam) ||
+                    (isListeningResponseQuestion(currentQuestion, exam) && (!currentQuestion.options || Object.keys(currentQuestion.options).length < 2))) && (
                     <motion.div
                       className="space-y-6"
                       initial={{ opacity: 0 }}
@@ -1460,15 +1522,34 @@ const OnlineExamTaking = () => {
                       transition={{ duration: 0.6, delay: 0.5 }}
                     >
                       <div className="text-center">
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                          <h4 className="text-lg font-semibold text-yellow-800 mb-2">Instructions for Listening Module:</h4>
-                          <p className="text-yellow-700">
-                            1. Listen to the audio above carefully<br />
-                            2. Click "Start Recording" to record your response<br />
-                            3. Speak clearly into your microphone<br />
-                            4. Click "Stop Recording" when finished<br />
-                            5. You can also type your response below (optional)
-                          </p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                          <h4 className="text-lg font-semibold text-amber-800 mb-2 flex items-center justify-center gap-2">
+                            <Mic className="w-5 h-5 text-amber-700" />
+                            <span>
+                              {isSpeakingResponseQuestion(currentQuestion, exam)
+                                ? 'Instructions for Speaking Assessment:'
+                                : 'Instructions for Listening Assessment:'}
+                            </span>
+                          </h4>
+                          <div className="text-amber-700 text-sm leading-relaxed">
+                            {isSpeakingResponseQuestion(currentQuestion, exam) ? (
+                              <>
+                                1. Read the sentence/prompt above carefully<br />
+                                2. Click "Start Recording" to record your speech response<br />
+                                3. Speak clearly and maintain a natural pace into your microphone<br />
+                                4. Click "Stop Recording" when finished<br />
+                                5. You can also type your response below (optional)
+                              </>
+                            ) : (
+                              <>
+                                1. Listen to the audio prompt above carefully<br />
+                                2. Click "Start Recording" to speak your answer<br />
+                                3. Speak clearly into your microphone<br />
+                                4. Click "Stop Recording" when finished<br />
+                                5. You can also type your response below (optional)
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         {/* Recording Controls */}

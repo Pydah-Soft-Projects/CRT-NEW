@@ -144,6 +144,7 @@ function AppContent() {
 
           {/* Exam Taking Routes - No Sidebar */}
           <Route path="/student/exam" element={<ProtectedRoute allowedRoles={['student']}><OnlineExamTaking /></ProtectedRoute>} />
+          <Route path="/student/exam/:testId" element={<ProtectedRoute allowedRoles={['student']}><OnlineExamTaking /></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

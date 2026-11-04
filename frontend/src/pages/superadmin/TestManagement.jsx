@@ -11,6 +11,9 @@ import {
   FileText,
   Upload,
   Download,
+  Headphones,
+  Mic,
+  Volume2,
   Trash2,
   CheckCircle,
   AlertCircle,
@@ -777,6 +780,15 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
   const [manualQText, setManualQText] = useState('');
   const [manualOptions, setManualOptions] = useState(['', '', '', '']);
   const [manualCorrectAns, setManualCorrectAns] = useState('');
+  const [manualRefText, setManualRefText] = useState('');
+  const [manualAudioScript, setManualAudioScript] = useState('');
+  const [manualTimeLimit, setManualTimeLimit] = useState(30);
+
+  // Helper detection for speaking/listening modules or subcategories
+  const isSpeaking = String(moduleId || '').toLowerCase().includes('speaking') ||
+    String(subcategory || '').toLowerCase().includes('speaking');
+  const isListening = String(moduleId || '').toLowerCase().includes('listening') ||
+    String(subcategory || '').toLowerCase().includes('listening');
 
   // STEP 3 STATE: Review & Notifications
   const [notifyStudents, setNotifyStudents] = useState(true);
@@ -932,22 +944,40 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
     }
   };
 
-  // Download Sample CSV
+  // Download Sample CSV (Context-aware for Speaking, Listening, and MCQ)
   const handleDownloadSampleCsv = () => {
-    const csvContent =
-      "question,option_a,option_b,option_c,option_d,correct_answer\n" +
-      '"What is the primary function of an operating system?","Hardware management","Word processing","Painting","None","Hardware management"\n' +
-      '"A train covers 120 km in 2 hours. What is its speed?","50 km/h","60 km/h","70 km/h","80 km/h","60 km/h"\n' +
-      '"Choose the synonym of METICULOUS:","Careless","Thorough","Hasty","Vague","Thorough"';
+    let csvContent = '';
+    let templateName = subcategory || moduleId || 'exam';
+
+    if (isSpeaking) {
+      csvContent =
+        "prompt,reference_text,time_limit_seconds,instructions\n" +
+        '"Read the following sentence aloud clearly into the microphone: Traffic congestion has become a major challenge for modern urban cities worldwide.","Traffic congestion has become a major challenge for modern urban cities worldwide.",30,"Speak clearly and maintain a natural pace."\n' +
+        '"Repeat the sentence: The annual technology symposium has been rescheduled to next Friday morning.","The annual technology symposium has been rescheduled to next Friday morning.",30,"Listen and repeat the exact sentence clearly."\n' +
+        '"Read the passage aloud: Effective communication in diverse teams requires active listening, empathy, and clarity.","Effective communication in diverse teams requires active listening, empathy, and clarity.",45,"Pronounce each word accurately and distinctly."';
+    } else if (isListening) {
+      csvContent =
+        "audio_script,question,option_a,option_b,option_c,option_d,correct_answer,reference_text,instructions\n" +
+        '"Attention all passengers on flight AI-204 to New York. The departure gate has been moved from Gate 12 to Gate 24B. Boarding will commence in twenty minutes.","Which gate has flight AI-204 been relocated to?","Gate 12","Gate 24B","Gate 20","Gate 4B","Gate 24B","","Listen to the audio announcement and answer the question."\n' +
+        '"Our quarterly financial review shows that customer retention improved by twelve percent after introducing the 24/7 technical support hotline.","What was the primary factor behind the 12 percent improvement in retention?","Price reductions","24/7 technical support hotline","New marketing campaigns","Product redesign","24/7 technical support hotline","","Listen carefully and select the correct cause."\n' +
+        '"Please leave your visitor badge at the security reception desk before exiting through the main lobby.","Please repeat the sentence you just heard.","","","","","Please leave your visitor badge at the security reception desk before exiting through the main lobby.","Please leave your visitor badge at the security reception desk before exiting through the main lobby.","Listen to the audio and repeat clearly into the microphone."';
+    } else {
+      csvContent =
+        "question,option_a,option_b,option_c,option_d,correct_answer\n" +
+        '"What is the primary function of an operating system?","Hardware management","Word processing","Painting","None","Hardware management"\n' +
+        '"A train covers 120 km in 2 hours. What is its speed?","50 km/h","60 km/h","70 km/h","80 km/h","60 km/h"\n' +
+        '"Choose the synonym of METICULOUS:","Careless","Thorough","Hasty","Vague","Thorough"';
+    }
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `test_questions_template_${subcategory}.csv`);
+    link.setAttribute('download', `test_questions_template_${templateName}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Sample CSV template downloaded!');
+    toast.success(`Sample ${isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'MCQ'} CSV template downloaded!`);
   };
 
   // File Upload Handler (CSV or Excel)
@@ -1001,34 +1031,58 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
     e.target.value = '';
   };
 
-  // Row Parser Helper (MCQ & Speaking questions)
+  // Row Parser Helper (MCQ, Speaking & Listening questions)
   const parseRowsToQuestions = (rows) => {
     const result = [];
-    const isSpeakingTest = String(moduleId || '').toUpperCase().includes('SPEAKING');
+    const isSpeakingTest = isSpeaking;
+    const isListeningTest = isListening;
 
     rows.forEach((row, idx) => {
-      const qText = row.question || row.text || row.Question || row.QUESTION || row['Question Text'];
-      if (!qText) return;
+      const qText = row.question || row.text || row.prompt || row.Prompt || row.Question || row.QUESTION || row['Question Text'];
+      const audioScript = row.audio_script || row.script || row.AudioScript || row['Audio Script'] || '';
+      const rowRefText = row.reference_text || row.referenceText || row['Reference Text'] || '';
+
+      if (!qText && !audioScript && !rowRefText) return;
+
+      const mainText = String(qText || audioScript || rowRefText).trim();
 
       const optA = row.option_a || row.option1 || row['Option A'] || row.A || '';
       const optB = row.option_b || row.option2 || row['Option B'] || row.B || '';
       const optC = row.option_c || row.option3 || row['Option C'] || row.C || '';
       const optD = row.option_d || row.option4 || row['Option D'] || row.D || '';
       const options = [optA, optB, optC, optD].filter(Boolean);
+      const hasOptions = options.length >= 2;
 
-      const isSpeakingRow = isSpeakingTest || !!row.reference_text || options.length === 0;
-      const refText = row.reference_text || (isSpeakingRow ? String(qText).trim() : '');
-      const correctAns = row.correct_answer || row.answer || row.CorrectAnswer || row.Answer || (isSpeakingRow ? refText : optA);
+      const isSpeakingRow = isSpeakingTest || (!hasOptions && Boolean(rowRefText));
+      const isListeningRow = isListeningTest || Boolean(audioScript);
+
+      const refText = rowRefText || (isSpeakingRow ? mainText : '');
+      const timeLimit = parseInt(row.time_limit_seconds || row.time_limit || (isSpeakingRow ? 30 : 60), 10) || (isSpeakingRow ? 30 : 60);
+
+      let questionType = 'mcq';
+      let conversionType = 'none';
+
+      if (isSpeakingRow) {
+        questionType = 'audio_to_text';
+        conversionType = 'audio_to_text';
+      } else if (isListeningRow) {
+        questionType = hasOptions ? 'text_to_audio' : 'audio';
+        conversionType = hasOptions ? 'text_to_audio' : 'both';
+      }
+
+      const correctAns = row.correct_answer || row.answer || row.CorrectAnswer || row.Answer || (isSpeakingRow ? refText : (options[0] || ''));
 
       result.push({
         id: `upload_${Date.now()}_${idx}`,
-        text: String(qText).trim(),
+        text: mainText,
+        question: mainText,
         reference_text: refText,
-        options: options.length >= 2 ? options : [],
+        audio_script: audioScript,
+        options: hasOptions ? options : [],
         correct_answer: String(correctAns).trim(),
-        question_type: isSpeakingRow ? 'audio_to_text' : 'mcq',
-        conversion_type: isSpeakingRow ? 'audio_to_text' : 'none',
-        time_limit_seconds: isSpeakingRow ? 30 : 60,
+        question_type: questionType,
+        conversion_type: conversionType,
+        time_limit_seconds: timeLimit,
         subcategory: subcategory
       });
     });
@@ -1038,9 +1092,61 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
   // Add Manual Question
   const handleAddManualQuestion = () => {
     if (!manualQText.trim()) {
-      toast.error('Question text is required');
+      toast.error(isSpeaking ? 'Speaking prompt is required' : 'Question text is required');
       return;
     }
+
+    if (isSpeaking) {
+      const refText = manualRefText.trim() || manualQText.trim();
+      const newQ = {
+        id: `manual_${Date.now()}`,
+        text: manualQText.trim(),
+        question: manualQText.trim(),
+        reference_text: refText,
+        options: [],
+        correct_answer: refText,
+        question_type: 'audio_to_text',
+        conversion_type: 'audio_to_text',
+        time_limit_seconds: parseInt(manualTimeLimit, 10) || 30,
+        subcategory: subcategory
+      };
+      setQuestions(prev => [newQ, ...prev]);
+      setManualQText('');
+      setManualRefText('');
+      setShowManualForm(false);
+      toast.success('Speaking question added!');
+      return;
+    }
+
+    if (isListening) {
+      const cleanOpts = manualOptions.map(o => o.trim()).filter(Boolean);
+      const hasOptions = cleanOpts.length >= 2;
+      const ans = manualCorrectAns.trim() || (hasOptions ? cleanOpts[0] : (manualRefText.trim() || manualQText.trim()));
+
+      const newQ = {
+        id: `manual_${Date.now()}`,
+        text: manualQText.trim(),
+        question: manualQText.trim(),
+        audio_script: manualAudioScript.trim() || manualQText.trim(),
+        reference_text: manualRefText.trim(),
+        options: hasOptions ? cleanOpts : [],
+        correct_answer: ans,
+        question_type: hasOptions ? 'text_to_audio' : 'audio',
+        conversion_type: hasOptions ? 'text_to_audio' : 'both',
+        time_limit_seconds: 60,
+        subcategory: subcategory
+      };
+      setQuestions(prev => [newQ, ...prev]);
+      setManualQText('');
+      setManualAudioScript('');
+      setManualRefText('');
+      setManualOptions(['', '', '', '']);
+      setManualCorrectAns('');
+      setShowManualForm(false);
+      toast.success('Listening question added!');
+      return;
+    }
+
     const cleanOpts = manualOptions.map(o => o.trim()).filter(Boolean);
     if (cleanOpts.length < 2) {
       toast.error('Provide at least 2 options');
@@ -1051,9 +1157,12 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
     const newQ = {
       id: `manual_${Date.now()}`,
       text: manualQText.trim(),
+      question: manualQText.trim(),
       options: cleanOpts,
       correct_answer: ans,
       question_type: 'mcq',
+      conversion_type: 'none',
+      time_limit_seconds: 60,
       subcategory: subcategory
     };
 
@@ -1560,9 +1669,14 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                   className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-3 overflow-hidden"
                 >
                   <div className="flex items-center justify-between">
-                    <h5 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
-                      Add Custom Question
-                    </h5>
+                    <div className="flex items-center gap-2">
+                      <h5 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                        {isSpeaking ? 'Add Speaking Practice Question' : isListening ? 'Add Listening Comprehension Question' : 'Add Custom MCQ Question'}
+                      </h5>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                        {isSpeaking ? '🎙️ Speaking' : isListening ? '🎧 Listening' : '📝 MCQ'}
+                      </span>
+                    </div>
                     <button
                       onClick={() => setShowManualForm(false)}
                       className="text-slate-400 hover:text-slate-600 text-xs"
@@ -1571,47 +1685,168 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                     </button>
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="Enter question text here..."
-                    value={manualQText}
-                    onChange={e => setManualQText(e.target.value)}
-                    className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  />
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {manualOptions.map((opt, oIdx) => (
+                  {isSpeaking ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Speaking Prompt / Sentence for Student to Speak *
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g., Read the following sentence aloud clearly: Traffic congestion has become a major challenge for modern urban cities worldwide."
+                          value={manualQText}
+                          onChange={e => setManualQText(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Reference Text (Expected Transcript for Whisper AI evaluation)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Leave blank to use the prompt sentence above"
+                            value={manualRefText}
+                            onChange={e => setManualRefText(e.target.value)}
+                            className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Recording Time Limit
+                          </label>
+                          <select
+                            value={manualTimeLimit}
+                            onChange={e => setManualTimeLimit(Number(e.target.value))}
+                            className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                          >
+                            <option value={15}>15 Seconds</option>
+                            <option value={30}>30 Seconds (Default)</option>
+                            <option value={45}>45 Seconds</option>
+                            <option value={60}>60 Seconds</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={handleAddManualQuestion}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
+                        >
+                          Save Speaking Question
+                        </button>
+                      </div>
+                    </div>
+                  ) : isListening ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Audio Script / Voice Announcement to Synthesize *
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g., Attention passengers. Flight AI-204 to New York will now depart from Gate 24B."
+                          value={manualAudioScript}
+                          onChange={e => setManualAudioScript(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Question / Prompt
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Which gate is flight AI-204 departing from? (or leave blank to repeat sentence)"
+                          value={manualQText}
+                          onChange={e => setManualQText(e.target.value)}
+                          className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Options (Optional: Fill for MCQ comprehension, leave empty for voice repeat)
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {manualOptions.map((opt, oIdx) => (
+                            <input
+                              key={oIdx}
+                              type="text"
+                              placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
+                              value={opt}
+                              onChange={e => {
+                                const newOpts = [...manualOptions];
+                                newOpts[oIdx] = e.target.value;
+                                setManualOptions(newOpts);
+                              }}
+                              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <input
+                          type="text"
+                          placeholder="Correct Answer (Exact option or expected text)"
+                          value={manualCorrectAns}
+                          onChange={e => setManualCorrectAns(e.target.value)}
+                          className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddManualQuestion}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
+                        >
+                          Save Listening Question
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
                       <input
-                        key={oIdx}
                         type="text"
-                        placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
-                        value={opt}
-                        onChange={e => {
-                          const newOpts = [...manualOptions];
-                          newOpts[oIdx] = e.target.value;
-                          setManualOptions(newOpts);
-                        }}
-                        className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none"
+                        placeholder="Enter question text here..."
+                        value={manualQText}
+                        onChange={e => setManualQText(e.target.value)}
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                       />
-                    ))}
-                  </div>
 
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    <input
-                      type="text"
-                      placeholder="Correct Answer (Exact text or Option)"
-                      value={manualCorrectAns}
-                      onChange={e => setManualCorrectAns(e.target.value)}
-                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddManualQuestion}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
-                    >
-                      Save Question
-                    </button>
-                  </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {manualOptions.map((opt, oIdx) => (
+                          <input
+                            key={oIdx}
+                            type="text"
+                            placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
+                            value={opt}
+                            onChange={e => {
+                              const newOpts = [...manualOptions];
+                              newOpts[oIdx] = e.target.value;
+                              setManualOptions(newOpts);
+                            }}
+                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none"
+                          />
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <input
+                          type="text"
+                          placeholder="Correct Answer (Exact text or Option)"
+                          value={manualCorrectAns}
+                          onChange={e => setManualCorrectAns(e.target.value)}
+                          className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddManualQuestion}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm"
+                        >
+                          Save Question
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1648,9 +1883,34 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                           {idx + 1}
                         </span>
                         <div className="space-y-2 flex-1">
-                          <p className="text-sm font-semibold text-slate-900 leading-snug">
-                            {q.text}
-                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-slate-900 leading-snug">
+                              {q.text || q.question}
+                            </p>
+                            {(q.question_type === 'audio_to_text' || (!q.options?.length && q.reference_text) || isSpeaking) && (
+                              <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                                <Mic className="w-3 h-3" /> Speaking
+                              </span>
+                            )}
+                            {(q.question_type === 'text_to_audio' || q.audio_script || isListening) && (
+                              <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                <Headphones className="w-3 h-3" /> Listening
+                              </span>
+                            )}
+                          </div>
+
+                          {q.audio_script && (
+                            <div className="p-2 bg-blue-50/70 rounded-lg text-xs text-blue-900 border border-blue-100">
+                              <span className="font-bold text-blue-700">Audio Script:</span> {q.audio_script}
+                            </div>
+                          )}
+
+                          {q.reference_text && (
+                            <div className="p-2 bg-slate-50 rounded-lg text-xs text-slate-700 border border-slate-100">
+                              <span className="font-bold text-slate-600">Expected Transcript:</span> {q.reference_text}
+                            </div>
+                          )}
+
                           {Array.isArray(q.options) && q.options.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
                               {q.options.map((opt, oIdx) => {
@@ -1917,8 +2177,30 @@ function PreviewTestModal({ test, onClose }) {
                       {idx + 1}
                     </span>
                     <div className="flex-1 space-y-2">
-                      <p className="text-sm font-semibold text-slate-900">{q.text}</p>
-                      {Array.isArray(q.options) && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-slate-900">{q.text || q.question}</p>
+                        {(q.question_type === 'audio_to_text' || (!q.options?.length && q.reference_text)) && (
+                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                            🎙️ Speaking
+                          </span>
+                        )}
+                        {(q.question_type === 'text_to_audio' || q.audio_script) && (
+                          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                            🎧 Listening
+                          </span>
+                        )}
+                      </div>
+                      {q.audio_script && (
+                        <div className="p-2 bg-blue-50/70 rounded-lg text-xs text-blue-900 border border-blue-100">
+                          <span className="font-bold text-blue-700">Audio Script:</span> {q.audio_script}
+                        </div>
+                      )}
+                      {q.reference_text && (
+                        <div className="p-2 bg-slate-50 rounded-lg text-xs text-slate-700 border border-slate-100">
+                          <span className="font-bold text-slate-600">Reference:</span> {q.reference_text}
+                        </div>
+                      )}
+                      {Array.isArray(q.options) && q.options.length > 0 && (
                         <div className="grid grid-cols-2 gap-1.5 text-xs">
                           {q.options.map((opt, oIdx) => {
                             const isCorrect = String(opt).trim().toLowerCase() === String(q.correct_answer).trim().toLowerCase();

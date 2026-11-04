@@ -89,26 +89,50 @@ class QuestionBankService {
     }
 
     // Map database documents to clean question objects with both text and question normalized
-    const mappedQuestions = (questionsFromDb || []).map((q, idx) => ({
-      id: q._id ? q._id.toString() : `db_${idx + 1}`,
-      _id: q._id ? q._id.toString() : `db_${idx + 1}`,
-      question_id: q._id ? q._id.toString() : `db_${idx + 1}`,
-      text: q.text || q.question || '',
-      question: q.text || q.question || '',
-      options: Array.isArray(q.options) && q.options.length ? q.options : [],
-      correct_answer: q.correct_answer,
-      question_type: q.question_type || 'mcq',
-      conversion_type: q.conversion_type || 'none',
-      reference_text: q.reference_text || '',
-      audio_script: q.audio_script || '',
-      module_id: q.module_id || resolvedModule.toUpperCase(),
-      subcategory: q.subcategory || resolvedTopic,
-      topic_id: q.topic_id || q.subcategory || resolvedTopic,
-      level_id: q.level_id || parsedLevel || 1,
-      level_name: q.level_name || `Level ${q.level_id || parsedLevel || 1}`,
-      explanation: q.explanation || q.expected_output || '',
-      time_limit_seconds: q.time_limit_seconds || 60
-    }));
+    const mappedQuestions = (questionsFromDb || []).map((q, idx) => {
+      const qSub = String(q.subcategory || resolvedTopic || '').toLowerCase();
+      const qMod = String(q.module_id || resolvedModule || '').toLowerCase();
+      const isSpeakingTopic = qSub.includes('speaking') || qMod.includes('speaking');
+      const isListeningTopic = qSub.includes('listening') || qMod.includes('listening');
+      const hasOpts = Array.isArray(q.options) && q.options.length >= 2;
+
+      let resolvedQType = q.question_type;
+      let resolvedConvType = q.conversion_type || 'none';
+
+      if (!resolvedQType || resolvedQType === 'mcq') {
+        if (isSpeakingTopic) {
+          resolvedQType = 'audio_to_text';
+          resolvedConvType = 'audio_to_text';
+        } else if (isListeningTopic) {
+          resolvedQType = hasOpts ? 'text_to_audio' : 'audio';
+          resolvedConvType = hasOpts ? 'text_to_audio' : 'both';
+        } else {
+          resolvedQType = 'mcq';
+        }
+      }
+
+      return {
+        id: q._id ? q._id.toString() : `db_${idx + 1}`,
+        _id: q._id ? q._id.toString() : `db_${idx + 1}`,
+        question_id: q._id ? q._id.toString() : `db_${idx + 1}`,
+        text: q.text || q.question || '',
+        question: q.text || q.question || '',
+        options: hasOpts ? q.options : [],
+        correct_answer: q.correct_answer || (resolvedQType === 'audio_to_text' ? (q.reference_text || q.text || q.question) : ''),
+        question_type: resolvedQType,
+        conversion_type: resolvedConvType,
+        reference_text: q.reference_text || (resolvedQType === 'audio_to_text' ? (q.text || q.question || '') : ''),
+        audio_script: q.audio_script || (isListeningTopic ? (q.text || q.question || '') : ''),
+        audio_url: q.audio_url || '',
+        module_id: q.module_id || resolvedModule.toUpperCase(),
+        subcategory: q.subcategory || resolvedTopic,
+        topic_id: q.topic_id || q.subcategory || resolvedTopic,
+        level_id: q.level_id || parsedLevel || 1,
+        level_name: q.level_name || `Level ${q.level_id || parsedLevel || 1}`,
+        explanation: q.explanation || q.expected_output || '',
+        time_limit_seconds: q.time_limit_seconds || (isSpeakingTopic ? 30 : 60)
+      };
+    });
 
     // Filter out already attempted question IDs to prevent repeating questions
     const excludeSet = new Set((Array.isArray(excludeIds) ? excludeIds : []).map(String));
