@@ -16,6 +16,9 @@ router.post('/modules/:moduleId/topics', crtController.createTopic);
 router.put('/modules/:moduleId/topics/:topicId', crtController.updateTopic);
 router.delete('/modules/:moduleId/topics/:topicId', crtController.deleteTopic);
 
+// College Scopes for Questions
+router.get('/colleges', crtController.getColleges);
+
 // Dynamic Questions Management
 router.get('/questions', crtController.getQuestions);
 router.post('/questions', crtController.createQuestion);
@@ -28,4 +31,3 @@ router.get('/stats', crtController.getStats);
 router.post('/tts-preview', crtController.generateTTSPreview);
 
 module.exports = router;
-

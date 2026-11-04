@@ -24,8 +24,9 @@ class QuestionBankService {
    * @param {number|null} level - 1, 2, or 3
    * @param {Array<string>} excludeIds - question IDs already seen in previous tests
    * @param {number} testNumber - practice test index (1, 2, 3...)
+   * @param {Object} options - additional options like { college_id }
    */
-  async getAutoPracticeQuestions(moduleType = 'crt', topic = 'aptitude', count = 25, level = null, excludeIds = [], testNumber = 1) {
+  async getAutoPracticeQuestions(moduleType = 'crt', topic = 'aptitude', count = 25, level = null, excludeIds = [], testNumber = 1, options = {}) {
     const normalizedModule = String(moduleType || 'crt').toLowerCase().trim();
     const normalizedTopic = String(topic || 'aptitude').toLowerCase().trim();
 
@@ -42,6 +43,10 @@ class QuestionBankService {
 
     const targetCount = Math.min(Math.max(parseInt(count, 10) || 25, 1), 100);
     const parsedLevel = level ? parseInt(level, 10) : null;
+    const rawCollegeId = options.college_id ?? options.collegeId;
+    const targetCollegeId = (rawCollegeId !== undefined && rawCollegeId !== null && rawCollegeId !== '' && rawCollegeId !== 'all')
+      ? Number(rawCollegeId)
+      : null;
 
     let questionsFromDb = [];
     try {
@@ -57,19 +62,74 @@ class QuestionBankService {
         orConditions.push({ module_id: new RegExp(`^${resolvedModule}`, 'i') });
       }
 
-      // If level is specified, try matching with level_id first
-      if (parsedLevel) {
-        questionsFromDb = await Question.find({
-          $and: [
-            { $or: orConditions },
-            { level_id: parsedLevel }
+      // Helper to query with college preference
+      const runQuery = async (baseQuery, collegeIdConstraint = null) => {
+        let q = { ...baseQuery };
+        if (collegeIdConstraint) {
+          q = { $and: [baseQuery, collegeIdConstraint] };
+        }
+        return Question.find(q).lean();
+      };
+
+      const topicQuery = parsedLevel
+        ? { $and: [{ $or: orConditions }, { level_id: parsedLevel }] }
+        : { $or: orConditions };
+
+      // 1. If college ID provided, try college-specific questions first
+      if (targetCollegeId !== null && !isNaN(targetCollegeId)) {
+        const collegeConstraint = {
+          $or: [
+            { college_id: targetCollegeId },
+            { college_ids: targetCollegeId }
           ]
-        }).lean();
+        };
+
+        const collegeQuestions = await runQuery(topicQuery, collegeConstraint);
+        if (collegeQuestions && collegeQuestions.length > 0) {
+          questionsFromDb = [...collegeQuestions];
+        }
+
+        // If we don't have enough questions for this college, top up with global questions
+        if (questionsFromDb.length < targetCount) {
+          const globalConstraint = {
+            $or: [
+              { is_global: true },
+              { college_id: null },
+              { college_ids: { $size: 0 } }
+            ]
+          };
+          const globalQuestions = await runQuery(topicQuery, globalConstraint);
+          const existingIds = new Set(questionsFromDb.map(q => String(q._id)));
+          for (const gq of (globalQuestions || [])) {
+            if (!existingIds.has(String(gq._id))) {
+              questionsFromDb.push(gq);
+              existingIds.add(String(gq._id));
+              if (questionsFromDb.length >= targetCount * 2) break;
+            }
+          }
+        }
+      } else {
+        // No specific college constraint: fetch normally
+        questionsFromDb = await Question.find(topicQuery).lean();
       }
 
-      // If no questions found for that specific level or no level specified, search without level constraint
-      if (!questionsFromDb || questionsFromDb.length === 0) {
-        questionsFromDb = await Question.find({ $or: orConditions }).lean();
+      // If no questions found for that specific level, search without level constraint
+      if ((!questionsFromDb || questionsFromDb.length === 0) && parsedLevel) {
+        if (targetCollegeId !== null && !isNaN(targetCollegeId)) {
+          const collegeConstraint = {
+            $or: [
+              { college_id: targetCollegeId },
+              { college_ids: targetCollegeId }
+            ]
+          };
+          const unlevelCol = await runQuery({ $or: orConditions }, collegeConstraint);
+          if (unlevelCol && unlevelCol.length > 0) {
+            questionsFromDb = [...unlevelCol];
+          }
+        }
+        if (!questionsFromDb || questionsFromDb.length === 0) {
+          questionsFromDb = await Question.find({ $or: orConditions }).lean();
+        }
       }
 
       // If still no questions found by exact subcategory, fallback to module level
@@ -78,7 +138,7 @@ class QuestionBankService {
           ? { module_id: new RegExp(`^${resolvedModule}`, 'i'), level_id: parsedLevel }
           : { module_id: new RegExp(`^${resolvedModule}`, 'i') };
         questionsFromDb = await Question.find(fallbackQuery).lean();
-        
+
         if (!questionsFromDb || questionsFromDb.length === 0) {
           questionsFromDb = await Question.find({ module_id: new RegExp(`^${resolvedModule}`, 'i') }).lean();
         }

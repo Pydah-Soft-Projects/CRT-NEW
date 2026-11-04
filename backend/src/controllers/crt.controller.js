@@ -1,5 +1,7 @@
 const CrtModule = require('../models/CrtModule');
 const Question = require('../models/Question');
+const Campus = require('../models/Campus');
+const sdmsService = require('../services/sdms.service');
 const aiService = require('../services/ai.service');
 
 // Helper to slugify a string
@@ -629,8 +631,40 @@ exports.deleteTopic = async (req, res) => {
 };
 
 /**
+ * GET /crt/colleges
+ * Fetch colleges for CRT question bank scoping (from SDMS or Campus collection fallback)
+ */
+exports.getColleges = async (req, res) => {
+  try {
+    let colleges = [];
+    try {
+      colleges = await sdmsService.getColleges();
+    } catch (sdmsErr) {
+      console.warn('[CRT] SDMS getColleges warning, falling back to Campus collection:', sdmsErr.message);
+    }
+
+    if (!colleges || colleges.length === 0) {
+      const campuses = await Campus.find({ status: 'active' }).sort({ name: 1 }).lean();
+      colleges = campuses.map((c, idx) => ({
+        id: idx + 1,
+        campus_id: c._id,
+        name: c.name,
+        code: c.code || ''
+      }));
+    }
+
+    return res.json({
+      success: true,
+      data: colleges || []
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * GET /crt/questions
- * Filter questions by module, topic, level, and system conversion type
+ * Filter questions by module, topic, level, system conversion type, and college scope
  */
 exports.getQuestions = async (req, res) => {
   try {
@@ -640,6 +674,9 @@ exports.getQuestions = async (req, res) => {
       level_id,
       conversion_type,
       question_type,
+      college_id,
+      college_ids,
+      include_global = 'false',
       search,
       page = 1,
       limit = 50
@@ -683,6 +720,59 @@ exports.getQuestions = async (req, res) => {
 
     if (question_type && question_type !== 'all') {
       filter.question_type = question_type;
+    }
+
+    // College Scope Filtering (Multi-select or single)
+    const rawColParam = college_ids || college_id;
+    if (rawColParam && rawColParam !== 'all') {
+      let collegeCondition;
+      if (rawColParam === 'global') {
+        collegeCondition = {
+          $or: [
+            { is_global: true },
+            { college_id: null },
+            { college_ids: { $size: 0 } }
+          ]
+        };
+      } else {
+        const parsedIds = (Array.isArray(rawColParam) ? rawColParam : String(rawColParam).split(','))
+          .map(v => Number(String(v).trim()))
+          .filter(n => !isNaN(n) && n > 0);
+
+        if (parsedIds.length > 0) {
+          if (include_global === 'true') {
+            collegeCondition = {
+              $or: [
+                { college_id: { $in: parsedIds } },
+                { college_ids: { $in: parsedIds } },
+                { is_global: true },
+                { college_id: null }
+              ]
+            };
+          } else {
+            collegeCondition = {
+              $or: [
+                { college_id: { $in: parsedIds } },
+                { college_ids: { $in: parsedIds } }
+              ]
+            };
+          }
+        }
+      }
+
+      if (collegeCondition) {
+        if (filter.$and) {
+          filter.$and.push(collegeCondition);
+        } else if (filter.$or) {
+          filter.$and = [
+            { $or: filter.$or },
+            collegeCondition
+          ];
+          delete filter.$or;
+        } else {
+          Object.assign(filter, collegeCondition);
+        }
+      }
     }
 
     if (search && search.trim()) {
@@ -750,6 +840,11 @@ exports.createQuestion = async (req, res) => {
       subcategory,
       level_id,
       level_name,
+      college_id,
+      college_name,
+      college_ids,
+      campus_id,
+      is_global,
       question_type = 'mcq',
       conversion_type,
       options,
@@ -794,6 +889,29 @@ exports.createQuestion = async (req, res) => {
     const script = audio_script ? String(audio_script).trim() : (resolvedConversion === 'text_to_audio' || resolvedConversion === 'both' ? text.trim() : '');
     const answer = correct_answer !== undefined ? String(correct_answer).trim() : (cleanOptions[0] || refText || '');
 
+    // Resolve College Scope
+    let resolvedCollegeId = null;
+    let resolvedCollegeIds = [];
+    let resolvedCollegeName = '';
+    let resolvedIsGlobal = true;
+
+    if (college_id !== undefined && college_id !== null && college_id !== '' && college_id !== 'all' && college_id !== 'global') {
+      resolvedCollegeId = Number(college_id);
+      resolvedCollegeIds = Array.isArray(college_ids) && college_ids.length ? college_ids.map(Number) : [resolvedCollegeId];
+      resolvedCollegeName = college_name ? String(college_name).trim() : '';
+      resolvedIsGlobal = is_global !== undefined ? Boolean(is_global === true || is_global === 'true') : false;
+    } else if (Array.isArray(college_ids) && college_ids.length > 0) {
+      resolvedCollegeIds = college_ids.map(Number);
+      resolvedCollegeId = resolvedCollegeIds[0];
+      resolvedCollegeName = college_name ? String(college_name).trim() : '';
+      resolvedIsGlobal = is_global !== undefined ? Boolean(is_global === true || is_global === 'true') : false;
+    } else {
+      resolvedCollegeId = null;
+      resolvedCollegeIds = [];
+      resolvedCollegeName = 'All Colleges';
+      resolvedIsGlobal = true;
+    }
+
     const question = new Question({
       text: text.trim(),
       module_id: module_id || 'crt',
@@ -802,6 +920,11 @@ exports.createQuestion = async (req, res) => {
       subcategory: subcategory || topic_id || 'general',
       level_id: level_id ? parseInt(level_id, 10) : 1,
       level_name: level_name || `Level ${level_id || 1}`,
+      college_id: resolvedCollegeId,
+      college_ids: resolvedCollegeIds,
+      college_name: resolvedCollegeName,
+      campus_id: campus_id || null,
+      is_global: resolvedIsGlobal,
       question_type: question_type,
       conversion_type: resolvedConversion,
       options: cleanOptions,
@@ -840,6 +963,11 @@ exports.bulkUploadQuestions = async (req, res) => {
       subcategory,
       level_id,
       level_name,
+      college_id,
+      college_name,
+      college_ids,
+      campus_id,
+      is_global,
       questions
     } = req.body;
 
@@ -875,6 +1003,38 @@ exports.bulkUploadQuestions = async (req, res) => {
       const script = q.audio_script || (convType === 'text_to_audio' || convType === 'both' ? String(qText).trim() : '');
       const ans = q.correct_answer || q.answer || refText || (opts.length > 0 ? opts[0] : '');
 
+      // Resolve College Scope per question or batch fallback
+      let rowCollegeId = null;
+      let rowCollegeIds = [];
+      let rowCollegeName = '';
+      let rowIsGlobal = true;
+
+      const rawCandidateIds = (Array.isArray(q.college_ids) && q.college_ids.length > 0)
+        ? q.college_ids
+        : (Array.isArray(college_ids) && college_ids.length > 0
+          ? college_ids
+          : (q.college_id && q.college_id !== 'all' && q.college_id !== 'global'
+            ? [q.college_id]
+            : (college_id && college_id !== 'all' && college_id !== 'global' ? [college_id] : [])));
+
+      const parsedColIds = (Array.isArray(rawCandidateIds) ? rawCandidateIds : String(rawCandidateIds).split(','))
+        .map(v => Number(String(v).trim()))
+        .filter(n => !isNaN(n) && n > 0);
+
+      if (parsedColIds.length > 0) {
+        rowCollegeIds = parsedColIds;
+        rowCollegeId = parsedColIds[0];
+        rowCollegeName = q.college_name || college_name || '';
+        rowIsGlobal = q.is_global !== undefined
+          ? Boolean(q.is_global === true || q.is_global === 'true')
+          : (is_global !== undefined ? Boolean(is_global === true || is_global === 'true') : false);
+      } else {
+        rowCollegeId = null;
+        rowCollegeIds = [];
+        rowCollegeName = 'All Colleges';
+        rowIsGlobal = true;
+      }
+
       docsToInsert.push({
         text: String(qText).trim(),
         module_id: module_id || q.module_id || 'crt',
@@ -883,6 +1043,11 @@ exports.bulkUploadQuestions = async (req, res) => {
         subcategory: subcategory || q.subcategory || topic_id || 'general',
         level_id: q.level_id ? parseInt(q.level_id, 10) : (level_id ? parseInt(level_id, 10) : 1),
         level_name: q.level_name || level_name || `Level ${level_id || 1}`,
+        college_id: rowCollegeId,
+        college_ids: rowCollegeIds,
+        college_name: rowCollegeName,
+        campus_id: q.campus_id || campus_id || null,
+        is_global: rowIsGlobal,
         question_type: qType,
         conversion_type: convType,
         options: opts,
@@ -939,7 +1104,12 @@ exports.updateQuestion = async (req, res) => {
       topic_id,
       subcategory,
       code_stub,
-      expected_output
+      expected_output,
+      college_id,
+      college_name,
+      college_ids,
+      campus_id,
+      is_global
     } = req.body;
 
     const question = await Question.findById(id);
@@ -965,6 +1135,24 @@ exports.updateQuestion = async (req, res) => {
     if (subcategory) question.subcategory = subcategory;
     if (code_stub !== undefined) question.code_stub = code_stub;
     if (expected_output !== undefined) question.expected_output = expected_output;
+
+    if (college_id !== undefined) {
+      if (college_id === null || college_id === '' || college_id === 'all' || college_id === 'global') {
+        question.college_id = null;
+        question.college_name = 'All Colleges';
+        question.college_ids = [];
+        question.is_global = true;
+      } else {
+        question.college_id = Number(college_id);
+        question.college_name = college_name !== undefined ? String(college_name).trim() : question.college_name;
+        question.college_ids = Array.isArray(college_ids) && college_ids.length ? college_ids.map(Number) : [Number(college_id)];
+        question.is_global = is_global !== undefined ? Boolean(is_global === true || is_global === 'true') : false;
+      }
+    } else if (is_global !== undefined) {
+      question.is_global = Boolean(is_global === true || is_global === 'true');
+    }
+    if (campus_id !== undefined) question.campus_id = campus_id || null;
+
     question.updated_at = new Date();
 
     await question.save();
@@ -1034,10 +1222,12 @@ exports.getStats = async (req, res) => {
       totalTopics += (m.topics || []).filter(t => t.is_active !== false).length;
     });
 
-    const [audioToTextCount, textToAudioCount, bothCount] = await Promise.all([
+    const [audioToTextCount, textToAudioCount, bothCount, collegeScopedCount, globalCount] = await Promise.all([
       Question.countDocuments({ conversion_type: 'audio_to_text' }),
       Question.countDocuments({ conversion_type: 'text_to_audio' }),
-      Question.countDocuments({ conversion_type: 'both' })
+      Question.countDocuments({ conversion_type: 'both' }),
+      Question.countDocuments({ is_global: false, college_id: { $ne: null } }),
+      Question.countDocuments({ $or: [{ is_global: true }, { college_id: null }] })
     ]);
 
     return res.json({
@@ -1048,7 +1238,9 @@ exports.getStats = async (req, res) => {
         totalQuestions: questionsCount,
         audioToTextQuestions: audioToTextCount,
         textToAudioQuestions: textToAudioCount,
-        dualVoiceQuestions: bothCount
+        dualVoiceQuestions: bothCount,
+        collegeScopedQuestions: collegeScopedCount,
+        globalQuestions: globalCount
       }
     });
   } catch (error) {

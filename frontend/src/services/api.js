@@ -390,7 +390,7 @@ export const deleteTest = async (testId) => {
   return api.delete(`/test-management/tests/${testId}`);
 };
 
-export const getAutoPracticeQuestions = async (module, topic, count = 25, level = null, testNumber = 1, excludeIds = []) => {
+export const getAutoPracticeQuestions = async (module, topic, count = 25, level = null, testNumber = 1, excludeIds = [], collegeId = null) => {
   return api.get('/student/auto-practice-questions', {
     params: {
       module,
@@ -398,7 +398,8 @@ export const getAutoPracticeQuestions = async (module, topic, count = 25, level 
       count,
       level,
       test_number: testNumber,
-      exclude_ids: Array.isArray(excludeIds) && excludeIds.length ? excludeIds.join(',') : undefined
+      exclude_ids: Array.isArray(excludeIds) && excludeIds.length ? excludeIds.join(',') : undefined,
+      college_id: collegeId || undefined
     }
   });
 };
@@ -553,6 +554,10 @@ export const updateCrtTopic = async (moduleId, topicId, data) => {
 
 export const deleteCrtTopic = async (moduleId, topicId) => {
   return api.delete(`/crt/modules/${moduleId}/topics/${topicId}`);
+};
+
+export const getCrtColleges = async () => {
+  return api.get('/crt/colleges');
 };
 
 export const getCrtQuestions = async (params = {}) => {

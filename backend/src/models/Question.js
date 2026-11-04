@@ -8,6 +8,12 @@ const questionSchema = new mongoose.Schema({
   level_id: { type: Number, default: 1 },
   level_name: { type: String, default: 'Level 1' },
   subcategory: { type: String, default: 'general' },
+  // College Scope fields
+  college_id: { type: Number, default: null, index: true },
+  college_name: { type: String, default: '' },
+  college_ids: [{ type: Number }],
+  campus_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', default: null },
+  is_global: { type: Boolean, default: true, index: true },
   question_type: { 
     type: String, 
     default: 'mcq' 
@@ -29,5 +35,8 @@ const questionSchema = new mongoose.Schema({
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, { collection: 'questions' });
+
+questionSchema.index({ module_id: 1, topic_id: 1, level_id: 1, college_id: 1 });
+questionSchema.index({ college_id: 1, is_global: 1 });
 
 module.exports = mongoose.model('Question', questionSchema);

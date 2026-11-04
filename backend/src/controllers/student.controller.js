@@ -464,13 +464,23 @@ exports.getAutoPracticeQuestions = async (req, res) => {
       });
     }
 
+    // Determine student's college scope for college-specific question bank
+    let studentCollegeId = (req.query.college_id && req.query.college_id !== 'all')
+      ? req.query.college_id
+      : (req.user?.college_id || req.user?.sdms_college_id || null);
+    if (!studentCollegeId && req.user?.auth_source !== 'sdms') {
+      const studentDoc = await Student.findOne({ user_id: getUserId(req) }).select('college_id').lean();
+      if (studentDoc?.college_id) studentCollegeId = studentDoc.college_id;
+    }
+
     const questions = await questionBankService.getAutoPracticeQuestions(
       moduleType,
       topic,
       count,
       level,
       usedIds,
-      testNumber
+      testNumber,
+      { college_id: studentCollegeId }
     );
 
     return res.json({

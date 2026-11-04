@@ -34,9 +34,13 @@ import {
   Check,
   AlertCircle,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  School,
+  Building2,
+  Globe
 } from 'lucide-react';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
+import MultiSelectDropdown from '../../components/common/MultiSelectDropdown';
 import {
   getCrtModules,
   createCrtModule,
@@ -45,6 +49,7 @@ import {
   createCrtTopic,
   updateCrtTopic,
   deleteCrtTopic,
+  getCrtColleges,
   getCrtQuestions,
   createCrtQuestion,
   bulkUploadCrtQuestions,
@@ -248,6 +253,16 @@ export default function CRTUpload() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [levelDropdownFilter, setLevelDropdownFilter] = useState('all');
 
+  // College Scope Filtering & Options (multi-selection, empty = All Colleges)
+  const [colleges, setColleges] = useState([]);
+  const [collegesLoading, setCollegesLoading] = useState(false);
+  const [selectedCollegeFilters, setSelectedCollegeFilters] = useState([]); // [] means All Colleges
+  const [includeGlobalWithCollege, setIncludeGlobalWithCollege] = useState(true);
+
+  // Bulk Import & Sentence Target College Scopes (multi-selection, empty = All Colleges)
+  const [importCollegeScopes, setImportCollegeScopes] = useState([]);
+  const [bulkSentenceCollegeScopes, setBulkSentenceCollegeScopes] = useState([]);
+
   // Modules horizontal inline scrolling
   const modulesScrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -319,6 +334,10 @@ export default function CRTUpload() {
     audio_script: '',
     time_limit_seconds: 30,
     level_id: 1,
+    college_id: null,
+    college_ids: [],
+    college_name: '',
+    is_global: true,
     code_stub: '',
     expected_output: '',
     explanation: ''
@@ -417,6 +436,21 @@ export default function CRTUpload() {
 
   useEffect(() => {
     fetchStructure(false);
+
+    const fetchColleges = async () => {
+      try {
+        setCollegesLoading(true);
+        const res = await getCrtColleges();
+        const list = res?.data?.data || res?.data || [];
+        setColleges(Array.isArray(list) ? list : []);
+      } catch (err) {
+        console.warn('Failed to load CRT colleges:', err);
+        setColleges([]);
+      } finally {
+        setCollegesLoading(false);
+      }
+    };
+    fetchColleges();
   }, []);
 
   // Sync active topic on module change
@@ -435,7 +469,7 @@ export default function CRTUpload() {
     }
   }, [currentModule]);
 
-  // Load questions for selected module, topic, level
+  // Load questions for selected module, topic, level and college scope
   const loadQuestions = useCallback(async () => {
     if (!currentModule || !currentTopic) {
       setQuestions([]);
@@ -452,6 +486,11 @@ export default function CRTUpload() {
         limit: 150
       };
 
+      if (selectedCollegeFilters.length > 0) {
+        params.college_ids = selectedCollegeFilters.join(',');
+        params.include_global = includeGlobalWithCollege ? 'true' : 'false';
+      }
+
       const res = await getCrtQuestions(params);
       const list = res?.data?.data?.questions || [];
       setQuestions(list);
@@ -463,13 +502,13 @@ export default function CRTUpload() {
     } finally {
       setQuestionsLoading(false);
     }
-  }, [currentModule, currentTopic, selectedLevel, levelDropdownFilter, typeFilter]);
+  }, [currentModule, currentTopic, selectedLevel, levelDropdownFilter, typeFilter, selectedCollegeFilters, includeGlobalWithCollege]);
 
   useEffect(() => {
     if (currentModule && currentTopic) {
       loadQuestions();
     }
-  }, [currentModule, currentTopic, selectedLevel, levelDropdownFilter, typeFilter, loadQuestions]);
+  }, [currentModule, currentTopic, selectedLevel, levelDropdownFilter, typeFilter, selectedCollegeFilters, includeGlobalWithCollege, loadQuestions]);
 
   // Filter questions by global search or center question search
   const displayedQuestions = useMemo(() => {
@@ -534,6 +573,16 @@ export default function CRTUpload() {
     const targetTypeId = typePreset || mapModuleTypeToQuestionType(currentModule?.module_type);
     const preset = QUESTION_TYPES.find(t => t.id === targetTypeId) || QUESTION_TYPES[0];
 
+    const initialCollegeIds = Array.isArray(selectedCollegeFilters) ? [...selectedCollegeFilters] : [];
+    const isGlobal = initialCollegeIds.length === 0;
+    const firstCol = !isGlobal ? colleges.find(c => String(c.id) === String(initialCollegeIds[0])) : null;
+    let initialColName = 'All Colleges';
+    if (initialCollegeIds.length === 1) {
+      initialColName = firstCol?.name || `College #${initialCollegeIds[0]}`;
+    } else if (initialCollegeIds.length > 1) {
+      initialColName = `${initialCollegeIds.length} Colleges`;
+    }
+
     setEditingQuestion(null);
     setDrawerStep(1);
     setDrawerForm({
@@ -547,6 +596,10 @@ export default function CRTUpload() {
       audio_script: '',
       time_limit_seconds: 30,
       level_id: defaultLevel,
+      college_ids: initialCollegeIds,
+      college_id: initialCollegeIds[0] ? Number(initialCollegeIds[0]) : null,
+      college_name: initialColName,
+      is_global: isGlobal,
       code_stub: '',
       expected_output: '',
       explanation: ''
@@ -561,6 +614,18 @@ export default function CRTUpload() {
     else if (q.conversion_type === 'both') typeId = 'both';
     else if (q.question_type === 'technical') typeId = 'technical';
 
+    const qCollegeIds = Array.isArray(q.college_ids) && q.college_ids.length > 0
+      ? q.college_ids.map(String)
+      : (q.college_id ? [String(q.college_id)] : []);
+    const isGlobal = q.is_global !== undefined ? Boolean(q.is_global) : qCollegeIds.length === 0;
+    let colName = 'All Colleges';
+    if (qCollegeIds.length === 1) {
+      const found = colleges.find(c => String(c.id) === String(qCollegeIds[0]));
+      colName = found?.name || `College #${qCollegeIds[0]}`;
+    } else if (qCollegeIds.length > 1) {
+      colName = `${qCollegeIds.length} Colleges`;
+    }
+
     setEditingQuestion(q);
     setDrawerStep(2); // Jump directly to content for editing
     setDrawerForm({
@@ -574,6 +639,10 @@ export default function CRTUpload() {
       audio_script: q.audio_script || '',
       time_limit_seconds: q.time_limit_seconds || 30,
       level_id: q.level_id || 1,
+      college_ids: qCollegeIds,
+      college_id: qCollegeIds[0] ? Number(qCollegeIds[0]) : null,
+      college_name: q.college_name || colName,
+      is_global: isGlobal,
       code_stub: q.code_stub || '',
       expected_output: q.expected_output || '',
       explanation: q.explanation || ''
@@ -626,6 +695,20 @@ export default function CRTUpload() {
     const script = drawerForm.audio_script.trim() || (drawerForm.conversion_type === 'text_to_audio' || drawerForm.conversion_type === 'both' ? drawerForm.text.trim() : '');
     const ans = drawerForm.correct_answer.trim() || (cleanOpts.length > 0 ? cleanOpts[0] : refText);
 
+    const rawCollegeIds = Array.isArray(drawerForm.college_ids)
+      ? drawerForm.college_ids
+      : (drawerForm.college_id ? [drawerForm.college_id] : []);
+    const parsedCollegeIds = rawCollegeIds.map(Number).filter(n => !isNaN(n) && n > 0);
+    const isGlobal = parsedCollegeIds.length === 0;
+
+    let colName = 'All Colleges';
+    if (parsedCollegeIds.length === 1) {
+      const found = colleges.find(c => String(c.id) === String(parsedCollegeIds[0]));
+      colName = found?.name || `College #${parsedCollegeIds[0]}`;
+    } else if (parsedCollegeIds.length > 1) {
+      colName = `${parsedCollegeIds.length} Colleges`;
+    }
+
     const payload = {
       ...drawerForm,
       options: cleanOpts,
@@ -636,7 +719,11 @@ export default function CRTUpload() {
       main_module_id: currentModule._id,
       topic_id: currentTopic._id,
       subcategory: currentTopic.code || currentTopic.name,
-      level_name: `Level ${drawerForm.level_id}`
+      level_name: `Level ${drawerForm.level_id}`,
+      college_ids: parsedCollegeIds,
+      college_id: parsedCollegeIds[0] || null,
+      college_name: isGlobal ? 'All Colleges' : colName,
+      is_global: isGlobal
     };
 
     try {
@@ -704,12 +791,13 @@ export default function CRTUpload() {
   // -------------------------------------------------------------
   const handleDownloadTemplate = () => {
     const lvlNum = selectedLevel !== 'all' ? selectedLevel : 1;
+    const colVal = selectedCollegeFilters.length > 0 ? selectedCollegeFilters.join(';') : '';
     const csvContent =
-      'question,conversion_type,question_type,audio_script,reference_text,option_a,option_b,option_c,option_d,correct_answer,explanation,level\n' +
-      `"A pipe can fill a tank in 6 hours. Another pipe empties it in 8 hours. Time taken together?","none","mcq","","","18 hrs","24 hrs","12 hrs","30 hrs","24 hrs","Net work = 1/6 - 1/8 = 1/24. Time = 24 hours.",${lvlNum}\n` +
-      `"Listen to the announcement and identify the room number.","text_to_audio","text_to_audio","Attention passengers. The orientation session has been moved to Conference Room 302 on the third floor.","","Room 203","Room 302","Room 320","Room 402","Room 302","Text-to-Audio (TTS): System plays synthesized voice.",${lvlNum}\n` +
-      `"Read the following sentence aloud clearly into the microphone.","audio_to_text","audio_to_text","","Traffic congestion has become a major challenge for modern urban cities worldwide.","","","","","Traffic congestion has become a major challenge for modern urban cities worldwide.","Audio-to-Text (STT / Versant): Candidate speaks, AI evaluates pronunciation.",${lvlNum}\n` +
-      `"Listen and repeat the sentence exactly as you hear it.","both","both","Please leave your visitor badge at the reception desk before departing.","Please leave your visitor badge at the reception desk before departing.","","","","","Please leave your visitor badge at the reception desk before departing.","Dual Voice AI: System speaks TTS, candidate repeats via mic.",${lvlNum}`;
+      'question,conversion_type,question_type,audio_script,reference_text,option_a,option_b,option_c,option_d,correct_answer,explanation,level,college_id\n' +
+      `"A pipe can fill a tank in 6 hours. Another pipe empties it in 8 hours. Time taken together?","none","mcq","","","18 hrs","24 hrs","12 hrs","30 hrs","24 hrs","Net work = 1/6 - 1/8 = 1/24. Time = 24 hours.",${lvlNum},"${colVal}"\n` +
+      `"Listen to the announcement and identify the room number.","text_to_audio","text_to_audio","Attention passengers. The orientation session has been moved to Conference Room 302 on the third floor.","","Room 203","Room 302","Room 320","Room 402","Room 302","Text-to-Audio (TTS): System plays synthesized voice.",${lvlNum},"${colVal}"\n` +
+      `"Read the following sentence aloud clearly into the microphone.","audio_to_text","audio_to_text","","Traffic congestion has become a major challenge for modern urban cities worldwide.","","","","","Traffic congestion has become a major challenge for modern urban cities worldwide.","Audio-to-Text (STT / Versant): Candidate speaks, AI evaluates pronunciation.",${lvlNum},"${colVal}"\n` +
+      `"Listen and repeat the sentence exactly as you hear it.","both","both","Please leave your visitor badge at the reception desk before departing.","Please leave your visitor badge at the reception desk before departing.","","","","","Please leave your visitor badge at the reception desk before departing.","Dual Voice AI: System speaks TTS, candidate repeats via mic.",${lvlNum},"${colVal}"`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -780,6 +868,9 @@ export default function CRTUpload() {
       const script = r.audio_script || (convType === 'text_to_audio' || convType === 'both' ? String(qText).trim() : '');
       const ans = r.correct_answer || r.answer || refText || (opts.length > 0 ? opts[0] : '');
 
+      const rawCol = r.college_id || r.college || r['College ID'] || '';
+      const rowColId = (rawCol && rawCol !== 'all' && rawCol !== 'global') ? Number(rawCol) : null;
+
       parsed.push({
         idx: idx + 1,
         text: String(qText).trim(),
@@ -790,12 +881,19 @@ export default function CRTUpload() {
         reference_text: String(refText).trim(),
         audio_script: String(script).trim(),
         explanation: String(r.explanation || '').trim(),
-        level_id: r.level ? parseInt(r.level, 10) : activeLvl
+        level_id: r.level ? parseInt(r.level, 10) : activeLvl,
+        college_id: rowColId
       });
     });
 
     if (parsed.length > 0) {
       setParsedImportRows(parsed);
+      // Pre-select import college scope from current filters if active
+      if (selectedCollegeFilters.length > 0) {
+        setImportCollegeScopes([...selectedCollegeFilters]);
+      } else {
+        setImportCollegeScopes([]);
+      }
       setIsImportModalOpen(true);
       toast.success(`Parsed ${parsed.length} questions ready to import!`);
     } else {
@@ -811,12 +909,29 @@ export default function CRTUpload() {
 
     try {
       setIsImportSubmitting(true);
+      const parsedColIds = (Array.isArray(importCollegeScopes) ? importCollegeScopes : [])
+        .map(Number)
+        .filter(n => !isNaN(n) && n > 0);
+      const isGlobal = parsedColIds.length === 0;
+
+      let colName = 'All Colleges';
+      if (parsedColIds.length === 1) {
+        const found = colleges.find(c => String(c.id) === String(parsedColIds[0]));
+        colName = found?.name || `College #${parsedColIds[0]}`;
+      } else if (parsedColIds.length > 1) {
+        colName = `${parsedColIds.length} Colleges`;
+      }
+
       const payload = {
         module_id: currentModule.code,
         main_module_id: currentModule._id,
         topic_id: currentTopic._id,
         subcategory: currentTopic.code || currentTopic.name,
         level_id: selectedLevel !== 'all' ? parseInt(selectedLevel, 10) : 1,
+        college_ids: parsedColIds,
+        college_id: parsedColIds[0] || null,
+        college_name: isGlobal ? 'All Colleges' : colName,
+        is_global: isGlobal,
         questions: parsedImportRows
       };
 
@@ -852,6 +967,19 @@ export default function CRTUpload() {
 
     try {
       setIsBulkSentenceSubmitting(true);
+      const parsedColIds = (Array.isArray(bulkSentenceCollegeScopes) ? bulkSentenceCollegeScopes : [])
+        .map(Number)
+        .filter(n => !isNaN(n) && n > 0);
+      const isGlobal = parsedColIds.length === 0;
+
+      let colName = 'All Colleges';
+      if (parsedColIds.length === 1) {
+        const found = colleges.find(c => String(c.id) === String(parsedColIds[0]));
+        colName = found?.name || `College #${parsedColIds[0]}`;
+      } else if (parsedColIds.length > 1) {
+        colName = `${parsedColIds.length} Colleges`;
+      }
+
       const questionsToUpload = lines.map(sentence => ({
         text: sentence,
         reference_text: sentence,
@@ -862,6 +990,10 @@ export default function CRTUpload() {
         level_name: `Level ${bulkSentenceLevel || 1}`,
         options: [],
         correct_answer: sentence,
+        college_ids: parsedColIds,
+        college_id: parsedColIds[0] || null,
+        college_name: isGlobal ? 'All Colleges' : colName,
+        is_global: isGlobal,
         explanation: 'Read the sentence aloud into your microphone. Graded by AI Whisper speech recognition.'
       }));
 
@@ -872,6 +1004,10 @@ export default function CRTUpload() {
         subcategory: currentTopic.code || currentTopic.name,
         level_id: parseInt(bulkSentenceLevel, 10) || 1,
         level_name: `Level ${bulkSentenceLevel || 1}`,
+        college_ids: parsedColIds,
+        college_id: parsedColIds[0] || null,
+        college_name: isGlobal ? 'All Colleges' : colName,
+        is_global: isGlobal,
         questions: questionsToUpload
       });
 
@@ -1037,6 +1173,48 @@ export default function CRTUpload() {
     return (
       <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
         MCQ
+      </span>
+    );
+  };
+
+  // Helper badge for College Scope in table & details (no icons, clean tag)
+  const renderCollegeBadge = (q) => {
+    const colIds = Array.isArray(q?.college_ids) && q.college_ids.length > 0
+      ? q.college_ids
+      : (q?.college_id ? [q.college_id] : []);
+    const isGlobal = q?.is_global || colIds.length === 0 || q?.college_name === 'All Colleges';
+
+    if (isGlobal) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+          Global
+        </span>
+      );
+    }
+
+    if (colIds.length > 1) {
+      const collegeNames = colIds
+        .map(id => colleges.find(c => String(c.id) === String(id))?.name || `College #${id}`)
+        .join(', ');
+      return (
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs"
+          title={collegeNames}
+        >
+          {colIds.length} Colleges
+        </span>
+      );
+    }
+
+    const col = colleges.find(c => String(c.id) === String(colIds[0]));
+    const label = col?.code ? `[${col.code}] ${col.name}` : (q?.college_name || `College #${colIds[0]}`);
+
+    return (
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 max-w-[130px] truncate shadow-2xs"
+        title={col?.name || label}
+      >
+        <span className="truncate">{label}</span>
       </span>
     );
   };
@@ -1441,9 +1619,38 @@ export default function CRTUpload() {
             })}
           </div>
 
-          {/* Search, Type Filter, Template & Add Question Row */}
+          {/* Search, Type Filter, College Scope, Template & Add Question Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* College Scope Multi-Select Filter */}
+              <div className="w-56">
+                <MultiSelectDropdown
+                  options={colleges}
+                  selectedValues={selectedCollegeFilters}
+                  onChange={(vals) => {
+                    setSelectedCollegeFilters(vals);
+                    setImportCollegeScopes(vals);
+                    setBulkSentenceCollegeScopes(vals);
+                    setCurrentPage(1);
+                  }}
+                  allLabel="All Colleges"
+                  placeholder="Filter colleges..."
+                  compact={true}
+                />
+              </div>
+
+              {selectedCollegeFilters.length > 0 && (
+                <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 bg-indigo-50/70 border border-indigo-100 rounded-lg px-2 py-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeGlobalWithCollege}
+                    onChange={(e) => setIncludeGlobalWithCollege(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3"
+                  />
+                  <span>+ Include Global</span>
+                </label>
+              )}
+
               {/* Type Filter Select */}
               <select
                 value={typeFilter}
@@ -1471,7 +1678,7 @@ export default function CRTUpload() {
               </select>
 
               {/* Question Search Input */}
-              <div className="relative min-w-[200px] flex-1 max-w-xs">
+              <div className="relative min-w-[180px] flex-1 max-w-xs">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -1583,6 +1790,7 @@ export default function CRTUpload() {
                     <th className="p-3 w-8">#</th>
                     <th className="p-3 w-20">Type</th>
                     <th className="p-3">Question Content</th>
+                    <th className="p-3 w-28">Scope</th>
                     <th className="p-3 w-20">Level</th>
                     <th className="p-3 w-16">Duration</th>
                     <th className="p-3 w-14 text-center">Audio</th>
@@ -1613,6 +1821,9 @@ export default function CRTUpload() {
                         </td>
                         <td className="p-3 font-medium max-w-sm truncate text-slate-900" title={q.text}>
                           {q.text}
+                        </td>
+                        <td className="p-3">
+                          {renderCollegeBadge(q)}
                         </td>
                         <td className="p-3 font-semibold text-slate-600">
                           Level {q.level_id || 1}
@@ -2039,16 +2250,51 @@ export default function CRTUpload() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      College Scope (Bank Assignment)
+                    </label>
+                    <MultiSelectDropdown
+                      options={colleges}
+                      selectedValues={drawerForm.college_ids || []}
+                      onChange={(vals) => {
+                        const isGlob = vals.length === 0;
+                        let colName = 'All Colleges';
+                        if (vals.length === 1) {
+                          const found = colleges.find(c => String(c.id) === String(vals[0]));
+                          colName = found?.name || `College #${vals[0]}`;
+                        } else if (vals.length > 1) {
+                          colName = `${vals.length} Colleges`;
+                        }
+                        setDrawerForm(prev => ({
+                          ...prev,
+                          college_ids: vals,
+                          college_id: vals[0] ? Number(vals[0]) : null,
+                          college_name: colName,
+                          is_global: isGlob
+                        }));
+                      }}
+                      allLabel="All Colleges (Global Question)"
+                      placeholder="Select colleges..."
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Scoped questions are prioritized for students belonging to the chosen colleges.
+                    </p>
+                  </div>
+
                   {/* Summary Review Card */}
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                     <div className="font-bold text-slate-700">Question Summary:</div>
                     <div className="text-slate-600 line-clamp-2 italic">"{drawerForm.text}"</div>
-                    <div className="flex items-center gap-2 pt-1 text-[11px] font-bold">
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold">
                       <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 uppercase">
                         {drawerForm.typeId}
                       </span>
                       <span className="text-slate-500">
                         Level {drawerForm.level_id} • {drawerForm.time_limit_seconds}s
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                        {drawerForm.is_global || !(drawerForm.college_ids?.length) ? 'Global' : drawerForm.college_name}
                       </span>
                     </div>
                   </div>
@@ -2104,6 +2350,27 @@ export default function CRTUpload() {
                 </button>
               </div>
 
+              {/* Target College Scope Selection Banner */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div>
+                  <span className="text-xs font-bold text-slate-800">
+                    Target College Scope
+                  </span>
+                  <p className="text-[11px] text-slate-500">
+                    Imported questions will be scoped to the selected college question banks.
+                  </p>
+                </div>
+                <div className="w-full sm:w-80">
+                  <MultiSelectDropdown
+                    options={colleges}
+                    selectedValues={importCollegeScopes}
+                    onChange={setImportCollegeScopes}
+                    allLabel="All Colleges (Global Question Bank)"
+                    placeholder="Select colleges..."
+                  />
+                </div>
+              </div>
+
               {parsedImportRows.length === 0 ? (
                 <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl space-y-3">
                   <Upload className="w-10 h-10 text-slate-400 mx-auto" />
@@ -2127,19 +2394,47 @@ export default function CRTUpload() {
                         <th className="p-2.5 w-20">Type</th>
                         <th className="p-2.5">Question Prompt</th>
                         <th className="p-2.5">Answer / Reference</th>
+                        <th className="p-2.5 w-24">Scope</th>
                         <th className="p-2.5 w-16">Level</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {parsedImportRows.slice(0, 50).map((row, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="p-2.5 text-slate-400">{idx + 1}</td>
-                          <td className="p-2.5">{renderTypeBadge(row.conversion_type, row.question_type)}</td>
-                          <td className="p-2.5 truncate max-w-xs">{row.text}</td>
-                          <td className="p-2.5 font-semibold text-emerald-700 truncate max-w-xs">{row.correct_answer || row.reference_text}</td>
-                          <td className="p-2.5">Level {row.level_id}</td>
-                        </tr>
-                      ))}
+                      {parsedImportRows.slice(0, 50).map((row, idx) => {
+                        const isGlobal = !row.college_id && (!importCollegeScopes || importCollegeScopes.length === 0);
+                        let scopeLabel = 'Global';
+                        if (!isGlobal) {
+                          if (row.college_id) {
+                            const c = colleges.find(item => String(item.id) === String(row.college_id));
+                            scopeLabel = c?.code ? `[${c.code}]` : (c?.name || `College #${row.college_id}`);
+                          } else if (importCollegeScopes.length === 1) {
+                            const c = colleges.find(item => String(item.id) === String(importCollegeScopes[0]));
+                            scopeLabel = c?.code ? `[${c.code}]` : (c?.name || `College #${importCollegeScopes[0]}`);
+                          } else {
+                            scopeLabel = `${importCollegeScopes.length} Colleges`;
+                          }
+                        }
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-2.5 text-slate-400">{idx + 1}</td>
+                            <td className="p-2.5">{renderTypeBadge(row.conversion_type, row.question_type)}</td>
+                            <td className="p-2.5 truncate max-w-xs">{row.text}</td>
+                            <td className="p-2.5 font-semibold text-emerald-700 truncate max-w-xs">{row.correct_answer || row.reference_text}</td>
+                            <td className="p-2.5">
+                              {isGlobal ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                  Global
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 max-w-[120px] truncate" title={scopeLabel}>
+                                  <span className="truncate">{scopeLabel}</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2.5">Level {row.level_id}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2236,6 +2531,22 @@ export default function CRTUpload() {
                       <option value={45}>45 Seconds (Paragraphs / Long Sentences)</option>
                       <option value={60}>60 Seconds</option>
                     </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Target College Scope *
+                    </label>
+                    <MultiSelectDropdown
+                      options={colleges}
+                      selectedValues={bulkSentenceCollegeScopes}
+                      onChange={setBulkSentenceCollegeScopes}
+                      allLabel="All Colleges (Global Question Bank)"
+                      placeholder="Select colleges..."
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Created questions will be assigned to these colleges' speaking question bank.
+                    </p>
                   </div>
                 </div>
 
@@ -2535,6 +2846,7 @@ export default function CRTUpload() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   {renderTypeBadge(viewingQuestion.conversion_type, viewingQuestion.question_type)}
+                  {renderCollegeBadge(viewingQuestion)}
                   <h3 className="text-base font-extrabold text-slate-900">Question Details</h3>
                 </div>
                 <button onClick={() => setViewingQuestion(null)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">

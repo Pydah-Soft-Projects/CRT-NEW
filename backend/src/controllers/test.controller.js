@@ -342,7 +342,7 @@ exports.getStudentCount = async (req, res) => {
 
 exports.uploadQuestions = async (req, res) => {
   try {
-    const { module_id, level_id } = req.body;
+    const { module_id, level_id, college_id, college_name } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No CSV file uploaded' });
     }
@@ -350,6 +350,18 @@ exports.uploadQuestions = async (req, res) => {
     const csvContent = req.file.buffer.toString('utf-8');
     const lines = csvContent.split('\n').filter(l => l.trim().length > 0);
     
+    let resolvedCollegeId = null;
+    let resolvedCollegeIds = [];
+    let resolvedCollegeName = 'All Colleges';
+    let resolvedIsGlobal = true;
+
+    if (college_id !== undefined && college_id !== null && college_id !== '' && college_id !== 'all' && college_id !== 'global') {
+      resolvedCollegeId = Number(college_id);
+      resolvedCollegeIds = [resolvedCollegeId];
+      resolvedCollegeName = college_name || '';
+      resolvedIsGlobal = false;
+    }
+
     let createdCount = 0;
     for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(',');
@@ -363,7 +375,11 @@ exports.uploadQuestions = async (req, res) => {
           module_id: module_id || 'reading',
           level_id: level_id ? parseInt(level_id) : 1,
           correct_answer: correctAnswer,
-          options: options.length ? options : [correctAnswer]
+          options: options.length ? options : [correctAnswer],
+          college_id: resolvedCollegeId,
+          college_ids: resolvedCollegeIds,
+          college_name: resolvedCollegeName,
+          is_global: resolvedIsGlobal
         });
         await q.save();
         createdCount++;
@@ -468,10 +484,19 @@ exports.getAllTests = async (req, res) => {
 
 exports.getQuestions = async (req, res) => {
   try {
-    const { module_id, level_id } = req.query;
+    const { module_id, level_id, college_id } = req.query;
     const filter = {};
     if (module_id) filter.module_id = module_id;
     if (level_id) filter.level_id = parseInt(level_id);
+    if (college_id && college_id !== 'all') {
+      const cId = Number(college_id);
+      filter.$or = [
+        { college_id: cId },
+        { college_ids: cId },
+        { is_global: true },
+        { college_id: null }
+      ];
+    }
 
     const questions = await Question.find(filter);
     return res.json({ success: true, data: questions });

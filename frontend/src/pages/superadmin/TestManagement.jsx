@@ -1129,7 +1129,8 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
   const handleAutoPullBank = async () => {
     try {
       setIsLoadingBank(true);
-      const res = await getAutoPracticeQuestions(moduleId, subcategory, 25);
+      const targetColId = selectedColleges.length > 0 ? selectedColleges[0] : null;
+      const res = await getAutoPracticeQuestions(moduleId, subcategory, 25, null, 1, [], targetColId);
       const bankQuestions = res?.data?.questions || [];
       if (bankQuestions.length > 0) {
         setQuestions(bankQuestions);
