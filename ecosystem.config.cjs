@@ -27,10 +27,10 @@ module.exports = {
       cwd: path.resolve(__dirname, 'frontend'),
       script: 'serve',
       env: {
-        PM2_SERVE_PATH: path.resolve(__dirname, 'frontend/dist'),
+        PM2_SERVE_PATH: path.resolve(__dirname, 'frontend/dist') + '/',
         PM2_SERVE_PORT: 3000,
         PM2_SERVE_SPA: 'true',
-        PM2_SERVE_HOMEPAGE: './index.html'
+        PM2_SERVE_HOMEPAGE: '/index.html'
       },
       instances: 1,
       exec_mode: 'fork',
