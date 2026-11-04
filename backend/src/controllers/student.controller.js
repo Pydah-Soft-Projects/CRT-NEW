@@ -411,6 +411,19 @@ exports.getTestResultById = async (req, res) => {
     const result = await Result.findOne({ _id: req.params.id, ...getStudentIdentityFilter(req) }).lean();
     if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
     const test = result.test_id ? await Test.findById(result.test_id).select('title duration test_type').lean() : null;
+    const detailedAnswers = (Array.isArray(result.answers) ? result.answers : []).map((ans, idx) => {
+      const audioUrl = ans.student_audio_url || ans.audio_url || (idx === 0 ? result.speaking_audio_url : '') || '';
+      return {
+        ...ans,
+        question: ans.question || ans.question_text || ans.prompt || ans.sentence || ans.original_text || `Question ${idx + 1}`,
+        question_text: ans.question_text || ans.question || ans.prompt || ans.sentence || '',
+        student_audio_url: audioUrl,
+        audio_url: audioUrl,
+        similarity_score: ans.similarity_score ?? ans.accuracy_score ?? ans.overall_score ?? (ans.is_correct ? 100 : 0),
+        accuracy_score: ans.accuracy_score ?? ans.similarity_score ?? ans.overall_score ?? 0
+      };
+    });
+
     return res.json({
       success: true,
       data: {
@@ -419,7 +432,8 @@ exports.getTestResultById = async (req, res) => {
         duration: result.duration || test?.duration,
         score_percentage: result.percentage ?? result.score ?? 0,
         average_score: result.percentage ?? result.score ?? 0,
-        detailed_results: Array.isArray(result.answers) ? result.answers : []
+        speaking_audio_url: result.speaking_audio_url || detailedAnswers.find(d => d.student_audio_url)?.student_audio_url || '',
+        detailed_results: detailedAnswers
       }
     });
   } catch (error) {
@@ -618,6 +632,19 @@ exports.getTestResultById = async (req, res) => {
     const result = await Result.findOne({ _id: req.params.id, ...getStudentIdentityFilter(req) }).lean();
     if (!result) return res.status(404).json({ success: false, message: 'Result not found' });
     const test = result.test_id ? await Test.findById(result.test_id).select('title duration test_type').lean() : null;
+    const detailedAnswers = (Array.isArray(result.answers) ? result.answers : []).map((ans, idx) => {
+      const audioUrl = ans.student_audio_url || ans.audio_url || (idx === 0 ? result.speaking_audio_url : '') || '';
+      return {
+        ...ans,
+        question: ans.question || ans.question_text || ans.prompt || ans.sentence || ans.original_text || `Question ${idx + 1}`,
+        question_text: ans.question_text || ans.question || ans.prompt || ans.sentence || '',
+        student_audio_url: audioUrl,
+        audio_url: audioUrl,
+        similarity_score: ans.similarity_score ?? ans.accuracy_score ?? ans.overall_score ?? (ans.is_correct ? 100 : 0),
+        accuracy_score: ans.accuracy_score ?? ans.similarity_score ?? ans.overall_score ?? 0
+      };
+    });
+
     return res.json({
       success: true,
       data: {
@@ -626,7 +653,8 @@ exports.getTestResultById = async (req, res) => {
         duration: result.duration || test?.duration,
         score_percentage: result.percentage ?? result.score ?? 0,
         average_score: result.percentage ?? result.score ?? 0,
-        detailed_results: Array.isArray(result.answers) ? result.answers : []
+        speaking_audio_url: result.speaking_audio_url || detailedAnswers.find(d => d.student_audio_url)?.student_audio_url || '',
+        detailed_results: detailedAnswers
       }
     });
   } catch (error) {

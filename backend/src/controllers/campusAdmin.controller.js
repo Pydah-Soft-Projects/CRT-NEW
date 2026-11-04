@@ -53,15 +53,28 @@ const studentMatchesTest = (student, test) => {
 };
 
 const shapeAttempt = (result, test) => {
-  const detailedResults = Array.isArray(result.answers) ? result.answers : [];
+  const rawAnswers = Array.isArray(result.answers) ? result.answers : [];
+  const detailedResults = rawAnswers.map((ans, idx) => {
+    const qObj = ans && typeof ans === 'object' ? { ...ans } : { answer: ans };
+    const audioUrl = qObj.student_audio_url || qObj.audio_url || (rawAnswers.length === 1 ? result.speaking_audio_url : '') || '';
+    const qType = qObj.question_type || (audioUrl ? 'speaking' : 'mcq');
+    return {
+      ...qObj,
+      question_type: qType,
+      student_audio_url: audioUrl || qObj.student_audio_url || '',
+      audio_url: audioUrl || qObj.audio_url || '',
+      speaking_audio_url: result.speaking_audio_url || audioUrl || ''
+    };
+  });
   return {
     ...result,
-    test_name: result.test_name || test.title,
+    test_name: result.test_name || test?.title || '',
     score_percentage: result.percentage ?? result.score ?? 0,
     correct_answers: result.correct_answers ?? detailedResults.filter((answer) => answer.is_correct).length,
     total_questions: result.total_questions || detailedResults.length,
     time_taken: Math.round((result.time_taken_ms || 0) / 60000),
     detailed_results: detailedResults,
+    speaking_audio_url: result.speaking_audio_url || '',
     end_time: result.submitted_at
   };
 };

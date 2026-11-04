@@ -4,7 +4,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useNotification } from '../../contexts/NotificationContext';
 import api from '../../services/api';
 import TechnicalCodeEditor from '../../components/TechnicalCodeEditor';
-import { examQuestionAnswerKey } from '../../utils/audioPlayback';
+import { examQuestionAnswerKey, getPlayableAudioUrl } from '../../utils/audioPlayback';
 
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
@@ -331,14 +331,17 @@ const ResultView = ({ result, onBack }) => {
           {results && results.map((q, idx) => (
             <div key={idx} className="mb-8 p-6 rounded-xl shadow border bg-white">
               <div className="mb-2 font-semibold text-indigo-700">Question {idx + 1}</div>
-              {q.question_type === 'audio' ? (
+              {((q.question_type === 'audio' || q.question_type === 'speaking' || q.question_type === 'listening' || q.question_type === 'audio_to_text' || q.question_type === 'text_to_audio') || Boolean(q.student_audio_url || q.speaking_audio_url || q.audio_url)) ? (
                 <>
-                  {q.audio_url && (
-                    <audio controls className="mb-2">
-                      <source src={q.audio_url} type="audio/mpeg" />
-                      Your browser does not support the audio element.
-                    </audio>
-                  )}
+                  {(() => {
+                    const promptUrl = getPlayableAudioUrl(q.audio_url);
+                    return promptUrl ? (
+                      <audio controls key={promptUrl} className="mb-2">
+                        <source src={promptUrl} />
+                        Your browser does not support the audio element.
+                      </audio>
+                    ) : null;
+                  })()}
                   <div className="mb-2"><span className="font-semibold">Prompt:</span> {q.original_text || q.question}</div>
                   <div className="mb-2 text-green-700 font-semibold">Result: Similarity Score: {q.similarity_score}</div>
                   <div className="mb-2">
@@ -353,15 +356,27 @@ const ResultView = ({ result, onBack }) => {
                   {q.extra_words && q.extra_words.length > 0 && (
                     <div className="text-sm text-blue-700 mt-1">Extra: {q.extra_words.join(', ')}</div>
                   )}
-                  {q.student_audio_url && (
-                    <div className="mt-2">
-                      <span className="font-semibold">Your Submitted Audio:</span>
-                      <audio controls className="mt-1">
-                        <source src={q.student_audio_url} type="audio/wav" />
-                        Your browser does not support the audio element.
-                      </audio>
-                    </div>
-                  )}
+                  {(() => {
+                    const sAudio = getPlayableAudioUrl(q.student_audio_url || q.speaking_audio_url || (q.audio_url !== q.original_text ? q.audio_url : null));
+                    return sAudio ? (
+                      <div className="mt-2">
+                        <span className="font-semibold">Your Submitted Audio:</span>
+                        <audio controls key={sAudio} className="mt-1">
+                          <source src={sAudio} />
+                          Your browser does not support the audio element.
+                        </audio>
+                        <a 
+                          href={sAudio} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          download="my-speaking-answer.wav"
+                          className="text-xs text-indigo-600 hover:text-indigo-800 mt-1 inline-block"
+                        >
+                          Download Audio
+                        </a>
+                      </div>
+                    ) : null;
+                  })()}
                 </>
               ) : q.question_type === 'compiler' || q.question_type === 'technical' ? (
                 <>

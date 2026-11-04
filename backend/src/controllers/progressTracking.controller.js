@@ -1,3 +1,4 @@
+const s3Service = require('../services/s3.service');
 const mongoose = require('mongoose');
 const Result = require('../models/Result');
 const Test = require('../models/Test');
@@ -453,14 +454,33 @@ exports.getPracticeAttemptDetails = async (req, res) => {
     }
 
     const answers = Array.isArray(result.answers) ? result.answers : [];
-    const detailed_results = answers.map((ans, idx) => ({
-      question_number: idx + 1,
-      question_text: ans.question_text || ans.question || ans.text || `Question ${idx + 1}`,
-      student_answer: ans.selected_answer || ans.student_answer || ans.user_answer || ans.answer || 'No answer provided',
-      correct_answer: ans.correct_answer || ans.expected_answer || 'N/A',
-      is_correct: Boolean(ans.is_correct),
-      explanation: ans.explanation || '',
-      similarity_score: typeof ans.similarity_score === 'number' ? ans.similarity_score : 0
+    const detailed_results = await Promise.all(answers.map(async (ans, idx) => {
+      const qObj = ans && typeof ans === 'object' ? { ...ans } : { answer: ans };
+      const rawAudio = qObj.student_audio_url || qObj.audio_url || (answers.length === 1 ? result.speaking_audio_url : '') || '';
+      let presigned = '';
+      if (rawAudio && s3Service && typeof s3Service.getPresignedDownloadUrl === 'function' && !rawAudio.startsWith('data:') && !rawAudio.startsWith('/uploads')) {
+        try {
+          presigned = await s3Service.getPresignedDownloadUrl(rawAudio);
+        } catch (_) {}
+      }
+      const qType = qObj.question_type || (rawAudio ? 'speaking' : 'mcq');
+      return {
+        ...qObj,
+        question_number: idx + 1,
+        question_text: qObj.question_text || qObj.question || qObj.text || `Question ${idx + 1}`,
+        question_type: qType,
+        student_answer: qObj.student_text || qObj.selected_answer || qObj.student_answer || qObj.user_answer || qObj.answer || 'No answer provided',
+        student_text: qObj.student_text || qObj.student_answer || '',
+        correct_answer: qObj.original_text || qObj.correct_answer || qObj.expected_answer || 'N/A',
+        original_text: qObj.original_text || qObj.correct_answer || '',
+        is_correct: Boolean(qObj.is_correct),
+        explanation: qObj.explanation || '',
+        similarity_score: typeof qObj.similarity_score === 'number' ? qObj.similarity_score : (qObj.overall_score || 0),
+        student_audio_url: rawAudio,
+        audio_url: rawAudio,
+        speaking_audio_url: result.speaking_audio_url || rawAudio,
+        audio_presigned_url: presigned || rawAudio
+      };
     }));
 
     const timeMinutes = result.time_taken_ms
@@ -473,6 +493,7 @@ exports.getPracticeAttemptDetails = async (req, res) => {
       correct_answers: result.correct_answers ?? detailed_results.filter(q => q.is_correct).length,
       time_taken: `${timeMinutes}m`,
       score: Number(result.percentage ?? result.score ?? 0),
+      speaking_audio_url: result.speaking_audio_url || '',
       submitted_at: result.submitted_at
     };
 

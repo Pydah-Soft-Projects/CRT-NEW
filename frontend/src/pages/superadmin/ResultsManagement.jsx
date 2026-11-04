@@ -29,6 +29,7 @@ import {
     Settings
 } from 'lucide-react';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
+import { getPlayableAudioUrl } from '../../utils/audioPlayback';
 import { useNotification } from '../../contexts/NotificationContext';
 import api from '../../services/api';
 import * as XLSX from 'xlsx';
@@ -2179,67 +2180,75 @@ const ResultsManagement = () => {
                                                                 )}
 
                                                                 {/* Audio-specific details for listening/speaking tests */}
-                                                                {(result.question_type === 'audio' || result.question_type === 'listening' || result.question_type === 'speaking') && (
-                                                                    <div className="mt-4 space-y-3">
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-gray-600">Student Transcript:</label>
-                                                                                <p className="mt-1 p-2 rounded bg-blue-50 text-blue-800">
-                                                                                    {result.student_text || result.student_answer || 'No transcript available'}
-                                                                                </p>
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-gray-600">Original Text:</label>
-                                                                                <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800">
-                                                                                    {result.original_text || result.correct_answer || 'Not available'}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                        
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-gray-600">Similarity Score:</label>
-                                                                                <div className="mt-1 flex items-center gap-2">
-                                                                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                                                        <div 
-                                                                                            className={`h-2 rounded-full ${
-                                                                                                result.similarity_score >= 70 ? 'bg-green-500' : 
-                                                                                                result.similarity_score >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                                                                            }`}
-                                                                                            style={{ width: `${Math.min(result.similarity_score || 0, 100)}%` }}
-                                                                                        ></div>
-                                                                                    </div>
-                                                                                    <span className="text-sm font-medium text-gray-700">
-                                                                                        {result.similarity_score?.toFixed(1) || 0}%
-                                                                                    </span>
+                                                                {(() => {
+                                                                    const isAudioType = result.question_type === 'audio' || 
+                                                                                        result.question_type === 'listening' || 
+                                                                                        result.question_type === 'speaking' || 
+                                                                                        result.question_type === 'audio_to_text' || 
+                                                                                        result.question_type === 'text_to_audio';
+                                                                    const audioUrl = getPlayableAudioUrl(result.student_audio_url || result.audio_url || result.speaking_audio_url || attempt?.speaking_audio_url);
+                                                                    if (!isAudioType && !audioUrl && !result.student_text) return null;
+                                                                    return (
+                                                                        <div className="mt-4 space-y-3">
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-sm font-medium text-gray-600">Student Transcript:</label>
+                                                                                    <p className="mt-1 p-2 rounded bg-blue-50 text-blue-800">
+                                                                                        {result.student_text || result.student_answer || 'No transcript available'}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-sm font-medium text-gray-600">Original Text:</label>
+                                                                                    <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800">
+                                                                                        {result.original_text || result.correct_answer || 'Not available'}
+                                                                                    </p>
                                                                                 </div>
                                                                             </div>
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-gray-600">Student Audio:</label>
-                                                                                {result.student_audio_url ? (
-                                                                                    <div className="mt-1">
-                                                                                        <audio controls className="w-full">
-                                                                                            <source src={result.student_audio_url} type="audio/webm" />
-                                                                                            <source src={result.student_audio_url} type="audio/wav" />
-                                                                                            <source src={result.student_audio_url} type="audio/mp3" />
-                                                                                            Your browser does not support the audio element.
-                                                                                        </audio>
-                                                                                        <a 
-                                                                                            href={result.student_audio_url} 
-                                                                                            target="_blank" 
-                                                                                            rel="noopener noreferrer"
-                                                                                            className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
-                                                                                        >
-                                                                                            Download Audio
-                                                                                        </a>
+                                                                            
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div>
+                                                                                    <label className="text-sm font-medium text-gray-600">Similarity Score:</label>
+                                                                                    <div className="mt-1 flex items-center gap-2">
+                                                                                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                                                            <div 
+                                                                                                className={`h-2 rounded-full ${
+                                                                                                    (result.similarity_score ?? result.marks_obtained ?? 0) >= 70 ? 'bg-green-500' : 
+                                                                                                    (result.similarity_score ?? result.marks_obtained ?? 0) >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                                                }`}
+                                                                                                style={{ width: `${Math.min(result.similarity_score ?? result.marks_obtained ?? 0, 100)}%` }}
+                                                                                            ></div>
+                                                                                        </div>
+                                                                                        <span className="text-sm font-medium text-gray-700">
+                                                                                            {Number(result.similarity_score ?? result.marks_obtained ?? 0).toFixed(1)}%
+                                                                                        </span>
                                                                                     </div>
-                                                                                ) : (
-                                                                                    <p className="mt-1 text-sm text-gray-500">No audio available</p>
-                                                                                )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <label className="text-sm font-medium text-gray-600">Student Audio:</label>
+                                                                                    {audioUrl ? (
+                                                                                        <div className="mt-1">
+                                                                                            <audio controls key={audioUrl} className="w-full">
+                                                                                                <source src={audioUrl} />
+                                                                                                Your browser does not support the audio element.
+                                                                                            </audio>
+                                                                                            <a 
+                                                                                                href={audioUrl} 
+                                                                                                target="_blank" 
+                                                                                                rel="noopener noreferrer"
+                                                                                                download={`student-audio-${result.question_number || 'recording'}.wav`}
+                                                                                                className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
+                                                                                            >
+                                                                                                Download Audio
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <p className="mt-1 text-sm text-gray-500">No audio available</p>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                )}
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         );
                                                     })}

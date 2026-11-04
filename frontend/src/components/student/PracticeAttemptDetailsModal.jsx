@@ -1,3 +1,4 @@
+import { getPlayableAudioUrl } from '../../utils/audioPlayback';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar, Clock, CheckCircle, XCircle, ChevronLeft, Play, Download } from 'lucide-react';
@@ -103,7 +104,7 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
         </div>
 
         {/* Audio-specific details for listening/speaking tests */}
-        {(result.question_type === 'audio' || result.question_type === 'listening' || result.question_type === 'speaking') && (
+        {(result.question_type === 'audio' || result.question_type === 'listening' || result.question_type === 'speaking' || result.question_type === 'audio_to_text' || result.question_type === 'text_to_audio' || result.student_audio_url || result.speaking_audio_url || result.audio_url) && (
           <div className="mt-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -140,16 +141,13 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Student Audio:</label>
-                {result.student_audio_url ? (
+                {(result.student_audio_url || result.speaking_audio_url || result.audio_url) ? (
                   <div className="mt-1">
-                    <audio controls className="w-full">
-                      <source src={result.student_audio_url} type="audio/webm" />
-                      <source src={result.student_audio_url} type="audio/wav" />
-                      <source src={result.student_audio_url} type="audio/mp3" />
+                    <audio controls className="w-full" src={getPlayableAudioUrl(result.student_audio_url || result.speaking_audio_url || result.audio_url)}>
                       Your browser does not support the audio element.
                     </audio>
                     <a 
-                      href={result.student_audio_url} 
+                      href={getPlayableAudioUrl(result.student_audio_url || result.speaking_audio_url || result.audio_url)} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"

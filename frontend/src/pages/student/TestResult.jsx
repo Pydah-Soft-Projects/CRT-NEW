@@ -4,8 +4,10 @@ import { motion } from 'framer-motion'
 import { useNotification } from '../../contexts/NotificationContext'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import api, { getTestResultById } from '../../services/api'
+import { getPlayableAudioUrl } from '../../utils/audioPlayback'
 import { 
-  Volume2, 
+  Volume2,
+  Mic, 
   AudioLines, 
   CheckCircle, 
   XCircle,
@@ -65,11 +67,14 @@ const TestResult = () => {
     if (audioPlayer) {
       audioPlayer.pause()
     }
-    const player = new Audio(`https://{YOUR_S3_BUCKET}.s3.amazonaws.com/${audioUrl}`)
+    const resolvedUrl = getPlayableAudioUrl(audioUrl);
+    if (!resolvedUrl) return;
+    const player = new Audio(resolvedUrl);
     setAudioPlayer(player)
     setPlayingIndex(index)
     player.onended = () => setPlayingIndex(null)
-    player.play()
+    player.onerror = () => setPlayingIndex(null)
+    player.play().catch(e => console.error('Audio play error:', e))
   }
 
   const handleViewQuestion = (question) => {
@@ -388,7 +393,7 @@ const TestResult = () => {
                                 Question {index + 1}
                               </h3>
                               <p className="text-gray-700 text-sm">
-                                {question.question || question.original_text}
+                                {question.question || question.question_text || question.prompt || question.sentence || question.original_text || 'Speaking Prompt'}
                               </p>
                             </div>
                             <button
@@ -399,7 +404,7 @@ const TestResult = () => {
                             </button>
                           </div>
 
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-4 flex-wrap">
                             {question.question_type === 'mcq' ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600">Your Answer:</span>
@@ -417,34 +422,50 @@ const TestResult = () => {
                                 )}
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">Similarity:</span>
-                                <span className={`px-2 py-1 rounded text-sm font-medium ${
-                                  (question.similarity_score || 0) >= 80 
-                                    ? 'bg-green-100 text-green-800'
-                                    : (question.similarity_score || 0) >= 60
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {(question.similarity_score || 0).toFixed(1)}%
-                                </span>
+                              <div className="flex items-center gap-4 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Score / Accuracy:</span>
+                                  <span className={`px-2 py-1 rounded text-sm font-medium ${
+                                    (question.accuracy_score ?? question.similarity_score ?? question.overall_score ?? 0) >= 70 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : (question.accuracy_score ?? question.similarity_score ?? question.overall_score ?? 0) >= 50
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {((question.accuracy_score ?? question.similarity_score ?? question.overall_score ?? 0)).toFixed(0)}%
+                                  </span>
+                                </div>
+                                {question.student_answer && (
+                                  <div className="text-xs text-slate-500">
+                                    <span className="font-semibold text-slate-600">You said:</span> "{question.student_answer}"
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
 
-                          {question.student_audio_url && (
-                            <div className="mt-3">
+                          {/* Audio playback for speaking/listening question */}
+                          {(question.student_audio_url || question.audio_url || question.speaking_audio_url || (index === 0 && result.speaking_audio_url)) && (
+                            <div className="mt-3 flex items-center gap-3">
                               <button
-                                onClick={() => playAudio(question.student_audio_url, index)}
-                                className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                onClick={() => playAudio(question.student_audio_url || question.audio_url || question.speaking_audio_url || result.speaking_audio_url, index)}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                               >
                                 {playingIndex === index ? (
-                                  <AudioLines className="w-4 h-4" />
+                                  <AudioLines className="w-4 h-4 animate-pulse" />
                                 ) : (
                                   <Volume2 className="w-4 h-4" />
                                 )}
-                                {playingIndex === index ? 'Playing...' : 'Play Audio'}
+                                {playingIndex === index ? 'Playing Audio...' : 'Play Recorded Audio'}
                               </button>
+                              <a
+                                href={getPlayableAudioUrl(question.student_audio_url || question.audio_url || question.speaking_audio_url || result.speaking_audio_url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-slate-400 hover:text-slate-600 underline"
+                              >
+                                Download Audio
+                              </a>
                             </div>
                           )}
                         </motion.div>

@@ -378,7 +378,11 @@ exports.submitPracticeTest = async (req, res) => {
       module_id: module_id || 'speaking',
       score: score,
       percentage: score,
-      answers: parsedAnswers,
+      answers: Array.isArray(parsedAnswers) ? parsedAnswers.map(ans => ({
+        ...(typeof ans === 'object' ? ans : { answer: ans }),
+        student_audio_url: ans.student_audio_url || audioUrl,
+        audio_url: ans.audio_url || audioUrl
+      })) : [{ student_audio_url: audioUrl, audio_url: audioUrl, transcription }],
       speaking_audio_url: audioUrl,
       transcription: transcription,
       ai_evaluation: aiEval ? {
@@ -572,12 +576,27 @@ exports.submitSpeakingExam = async (req, res) => {
 
       let transcription = '';
       let evalData = null;
+      let studentAudioUrl = '';
+
       const needsSpeechRecording =
         String(test?.module_id || '').toUpperCase() === 'SPEAKING' ||
+        String(test?.subcategory || '').toLowerCase().includes('speaking') ||
         q.question_type === 'audio_to_text' ||
         q.question_type === 'audio_interactive' ||
+        q.question_type === 'speaking' ||
         q.conversion_type === 'audio_to_text' ||
         q.conversion_type === 'both';
+
+      if (audioBuffer && audioBuffer.length > 0) {
+        try {
+          const ext = filename.split('.').pop() || 'wav';
+          const fileKey = `speaking/${req.user?.id || 'std'}_${test?._id || 'exam'}_q${i}_${Date.now()}.${ext}`;
+          const mimeType = ext === 'webm' ? 'audio/webm' : (ext === 'mp4' ? 'audio/mp4' : 'audio/wav');
+          studentAudioUrl = await s3Service.uploadFile(audioBuffer, fileKey, mimeType);
+        } catch (uploadErr) {
+          console.error(`[submitSpeakingExam] Upload audio error for q${i + 1}:`, uploadErr);
+        }
+      }
 
       if (needsSpeechRecording && audioBuffer && audioBuffer.length > 0) {
         const transcribeRes = await aiService.transcribeAudio(audioBuffer, filename);
@@ -638,6 +657,8 @@ exports.submitSpeakingExam = async (req, res) => {
         question_text: refText,
         question_type: q.question_type || (needsSpeechRecording ? 'speaking' : 'mcq'),
         student_answer: transcription,
+        student_audio_url: studentAudioUrl,
+        audio_url: studentAudioUrl,
         is_correct: qOverall >= 60,
         marks_obtained: qOverall,
         max_marks: 100,
@@ -676,6 +697,7 @@ exports.submitSpeakingExam = async (req, res) => {
       time_taken_ms: Number.isFinite(Number(timeTakenMs)) ? Math.max(0, Number(timeTakenMs)) : 0,
       total_questions: questions.length,
       answers: evaluatedQuestions,
+      speaking_audio_url: evaluatedQuestions.find(eq => eq.student_audio_url)?.student_audio_url || '',
       transcription: evaluatedQuestions.map(eq => eq.transcription).filter(Boolean).join(' | '),
       ai_evaluation: {
         accuracy_score: avgAccuracy,
