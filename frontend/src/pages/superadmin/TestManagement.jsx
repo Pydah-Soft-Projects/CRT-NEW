@@ -29,7 +29,10 @@ import {
   ArrowRight,
   HelpCircle,
   Layers,
-  Check
+  Check,
+  Copy,
+  Link as LinkIcon,
+  Share2
 } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -75,6 +78,128 @@ const MODULE_OPTIONS = [
 /**
  * Modern MultiSelectDropdown component with search, select-all, badges, and responsive dropdown.
  */
+// Safe Date helpers that never throw RangeError: Invalid time value
+const parseSafeDate = (d) => {
+  if (!d) return null;
+  const parsed = new Date(d);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatSafeDate = (d, fallback = '—') => {
+  const parsed = parseSafeDate(d);
+  return parsed ? parsed.toLocaleDateString() : fallback;
+};
+
+const formatSafeDateTime = (d, fallback = '—') => {
+  const parsed = parseSafeDate(d);
+  return parsed ? parsed.toLocaleString() : fallback;
+};
+
+// Clipboard Helpers to copy test details with direct link & access scope
+export const copyTestDetailsToClipboard = async (test) => {
+  if (!test) return;
+  const testId = test._id || test.id;
+  const baseUrl = window.location.origin;
+  const examLink = `${baseUrl}/student/exam/${testId}`;
+  const startDate = parseSafeDate(test.startDateTime);
+  const endDate = parseSafeDate(test.endDateTime);
+  const qCount = Array.isArray(test.questions) ? test.questions.length : (test.question_count || 0);
+
+  // Extract and format Audience Access Scope
+  const scope = test.target_scope_summary || {};
+  const colleges = scope.colleges || (Array.isArray(test.target_college_ids) && test.target_college_ids.length ? `${test.target_college_ids.length} Colleges (${test.target_college_ids.join(', ')})` : 'All Colleges');
+  const courses = scope.courses || (Array.isArray(test.target_course_ids) && test.target_course_ids.length ? `${test.target_course_ids.length} Courses (${test.target_course_ids.join(', ')})` : 'All Courses');
+  const branches = scope.branches || (Array.isArray(test.target_branch_ids) && test.target_branch_ids.length ? `${test.target_branch_ids.length} Branches (${test.target_branch_ids.join(', ')})` : 'All Branches');
+  const years = scope.years || (Array.isArray(test.target_years) && test.target_years.length ? test.target_years.map(y => `Year ${y}`).join(', ') : 'All Years');
+  const semesters = scope.semesters || (Array.isArray(test.target_semesters) && test.target_semesters.length ? test.target_semesters.map(s => `Sem ${s}`).join(', ') : 'All Semesters');
+  const sections = scope.sections || (Array.isArray(test.target_sections) && test.target_sections.length ? test.target_sections.map(sec => `Section ${sec}`).join(', ') : 'All Sections');
+
+  const isAllStudents = scope.is_all_students !== undefined
+    ? scope.is_all_students
+    : (colleges === 'All Colleges' && courses === 'All Courses' && branches === 'All Branches' &&
+       years === 'All Years' && semesters === 'All Semesters' && sections === 'All Sections');
+
+  const accessScopeText = isAllStudents
+    ? [
+        '  • Scope: Open to ALL Enrolled Students',
+        '  • Colleges: All Campuses',
+        '  • Courses & Branches: All Courses & Branches',
+        '  • Academic Batches: All Years, Semesters & Sections',
+        '  • Eligibility: Any enrolled student with an active SDMS or CRT login'
+      ].join('\n')
+    : [
+        `  • Colleges: ${colleges}`,
+        `  • Courses: ${courses}`,
+        `  • Branches: ${branches}`,
+        `  • Academic Years: ${years}`,
+        `  • Semesters: ${semesters}`,
+        `  • Sections: ${sections}`,
+        `  • Eligibility: Restricted to targeted students only (matching the above criteria with active SDMS or CRT login)`
+      ].join('\n');
+
+  const detailsText = 
+`📋 Assessment: ${test.title || 'Online Assessment'}
+📚 Module: ${test.module_id || 'CRT'} • ${test.subcategory || 'General'}
+⏱️ Duration: ${test.duration || 30} mins (${qCount} Questions)
+🗓️ Schedule Window: ${startDate ? startDate.toLocaleDateString() : 'Immediate'} until ${endDate ? endDate.toLocaleDateString() : 'Permanent'}
+
+👥 Target Access Scope (Who Can Access):
+${accessScopeText}
+
+🔗 Direct Student Exam Link:
+${examLink}
+
+💡 Note: Students with an active SDMS or CRT session will be automatically redirected to this exam window upon clicking the link or opening their dashboard.`;
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(detailsText);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = detailsText;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    toast.success('Test details with access scope & exam link copied!', {
+      id: `copy-details-${testId}`,
+      icon: '📋'
+    });
+  } catch (err) {
+    console.error('Failed to copy test details:', err);
+    toast.error('Failed to copy to clipboard');
+  }
+};
+
+export const copyExamLinkToClipboard = async (test) => {
+  if (!test) return;
+  const testId = test._id || test.id;
+  const examLink = `${window.location.origin}/student/exam/${testId}`;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(examLink);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = examLink;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    toast.success('Student exam link copied!', {
+      id: `copy-link-${testId}`,
+      icon: '🔗'
+    });
+  } catch (err) {
+    toast.error('Failed to copy link');
+  }
+};
+
 function MultiSelectDropdown({
   label,
   options = [],
@@ -89,6 +214,8 @@ function MultiSelectDropdown({
   nameKey = 'name',
   codeKey = 'code'
 }) {
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeSelected = Array.isArray(selectedValues) ? selectedValues : [];
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [openUpward, setOpenUpward] = useState(false);
@@ -120,7 +247,7 @@ function MultiSelectDropdown({
 
   // Normalize options to { id, name, code }
   const normalizedOptions = useMemo(() => {
-    return options.map(opt => {
+    return safeOptions.map(opt => {
       if (typeof opt === 'object' && opt !== null) {
         return {
           id: opt[idKey] ?? opt.id ?? opt.value ?? opt.name,
@@ -134,7 +261,7 @@ function MultiSelectDropdown({
         code: ''
       };
     });
-  }, [options, idKey, nameKey, codeKey]);
+  }, [safeOptions, idKey, nameKey, codeKey]);
 
   // Filter options by search
   const filteredOptions = useMemo(() => {
@@ -146,52 +273,58 @@ function MultiSelectDropdown({
   }, [normalizedOptions, searchTerm]);
 
   const toggleOption = (id) => {
-    const isSelected = selectedValues.some(v => String(v) === String(id));
+    const isSelected = safeSelected.some(v => String(v) === String(id));
     let next;
     if (isSelected) {
-      next = selectedValues.filter(v => String(v) !== String(id));
+      next = safeSelected.filter(v => String(v) !== String(id));
     } else {
-      next = [...selectedValues, id];
+      next = [...safeSelected, id];
     }
-    onChange(next);
+    if (typeof onChange === 'function') {
+      onChange(next);
+    }
   };
 
   const handleSelectAll = () => {
-    onChange([]);
+    if (typeof onChange === 'function') {
+      onChange([]);
+    }
     setIsOpen(false);
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
-    onChange([]);
+    if (typeof onChange === 'function') {
+      onChange([]);
+    }
   };
 
   // Label to show on button
   const displayLabel = useMemo(() => {
-    if (selectedValues.length === 0) {
+    if (safeSelected.length === 0) {
       return allLabel;
     }
-    if (selectedValues.length === 1) {
-      const match = normalizedOptions.find(o => String(o.id) === String(selectedValues[0]));
-      return match ? match.name : `${selectedValues[0]}`;
+    if (safeSelected.length === 1) {
+      const match = normalizedOptions.find(o => String(o.id) === String(safeSelected[0]));
+      return match ? match.name : `${safeSelected[0]}`;
     }
-    if (selectedValues.length === 2) {
-      const names = selectedValues
+    if (safeSelected.length === 2) {
+      const names = safeSelected
         .map(v => normalizedOptions.find(o => String(o.id) === String(v))?.name || v)
         .join(', ');
       return names;
     }
-    return `${selectedValues.length} Selected`;
-  }, [selectedValues, normalizedOptions, allLabel]);
+    return `${safeSelected.length} Selected`;
+  }, [safeSelected, normalizedOptions, allLabel]);
 
   return (
     <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`} ref={dropdownRef}>
       {label && (
         <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
           <span>{label}</span>
-          {selectedValues.length > 0 && (
+          {safeSelected.length > 0 && (
             <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
-              {selectedValues.length} selected
+              {safeSelected.length} selected
             </span>
           )}
         </label>
@@ -205,17 +338,17 @@ function MultiSelectDropdown({
         className={`w-full px-3 py-2 text-sm bg-white border rounded-xl flex items-center justify-between gap-2 text-left transition-all ${
           disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200' :
           isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm' :
-          selectedValues.length > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200 hover:border-slate-300'
+          safeSelected.length > 0 ? 'border-indigo-300 bg-indigo-50/20' : 'border-slate-200 hover:border-slate-300'
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span className={`truncate text-sm ${selectedValues.length === 0 ? 'text-slate-600 font-medium' : 'text-slate-900 font-semibold'}`}>
+          <span className={`truncate text-sm ${safeSelected.length === 0 ? 'text-slate-600 font-medium' : 'text-slate-900 font-semibold'}`}>
             {loading ? 'Loading...' : displayLabel}
           </span>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {selectedValues.length > 0 && !disabled && (
+          {safeSelected.length > 0 && !disabled && (
             <span
               onClick={handleClear}
               title="Reset to All"
@@ -258,10 +391,10 @@ function MultiSelectDropdown({
             >
               Select All ({allLabel})
             </button>
-            {selectedValues.length > 0 && (
+            {safeSelected.length > 0 && (
               <button
                 type="button"
-                onClick={() => onChange([])}
+                onClick={() => onChange && onChange([])}
                 className="text-rose-600 hover:text-rose-700 transition-colors"
               >
                 Clear
@@ -275,19 +408,19 @@ function MultiSelectDropdown({
             <div
               onClick={handleSelectAll}
               className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
-                selectedValues.length === 0
+                safeSelected.length === 0
                   ? 'bg-indigo-50 text-indigo-900 font-semibold'
                   : 'hover:bg-slate-50 text-slate-700'
               }`}
             >
               <input
                 type="checkbox"
-                checked={selectedValues.length === 0}
+                checked={safeSelected.length === 0}
                 onChange={handleSelectAll}
                 className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
               />
               <span className="flex-1">{allLabel}</span>
-              {selectedValues.length === 0 && (
+              {safeSelected.length === 0 && (
                 <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-full">
                   Default
                 </span>
@@ -298,7 +431,7 @@ function MultiSelectDropdown({
               <p className="text-center py-3 text-xs text-slate-400">No matching options</p>
             ) : (
               filteredOptions.map(opt => {
-                const isChecked = selectedValues.some(v => String(v) === String(opt.id));
+                const isChecked = safeSelected.some(v => String(v) === String(opt.id));
                 return (
                   <div
                     key={opt.id}
@@ -382,17 +515,20 @@ export default function TestManagement() {
   // Filtered Tests
   const filteredTests = useMemo(() => {
     const now = Date.now();
-    return tests.filter(test => {
-      const titleMatch = (test.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (test.subcategory || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return (Array.isArray(tests) ? tests : []).filter(test => {
+      if (!test) return false;
+      const titleMatch = (test.title || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+        (test.subcategory || '').toLowerCase().includes((searchTerm || '').toLowerCase());
       
       const moduleMatch = filterModule === 'ALL' ||
         (test.module_id || '').toUpperCase().includes(filterModule);
 
       let statusMatch = true;
       if (filterStatus !== 'ALL') {
-        const start = test.startDateTime ? new Date(test.startDateTime).getTime() : 0;
-        const end = test.endDateTime ? new Date(test.endDateTime).getTime() : Infinity;
+        const startDate = parseSafeDate(test.startDateTime);
+        const endDate = parseSafeDate(test.endDateTime);
+        const start = startDate ? startDate.getTime() : 0;
+        const end = endDate ? endDate.getTime() : Infinity;
         if (filterStatus === 'ACTIVE') {
           statusMatch = now >= start && now <= end;
         } else if (filterStatus === 'UPCOMING') {
@@ -413,15 +549,18 @@ export default function TestManagement() {
     let upcoming = 0;
     let totalQuestions = 0;
 
-    tests.forEach(t => {
-      const start = t.startDateTime ? new Date(t.startDateTime).getTime() : 0;
-      const end = t.endDateTime ? new Date(t.endDateTime).getTime() : Infinity;
+    (Array.isArray(tests) ? tests : []).forEach(t => {
+      if (!t) return;
+      const startDate = parseSafeDate(t.startDateTime);
+      const endDate = parseSafeDate(t.endDateTime);
+      const start = startDate ? startDate.getTime() : 0;
+      const end = endDate ? endDate.getTime() : Infinity;
       if (now >= start && now <= end) active++;
       else if (now < start) upcoming++;
       totalQuestions += Array.isArray(t.questions) ? t.questions.length : (t.question_count || 0);
     });
 
-    return { total: tests.length, active, upcoming, totalQuestions };
+    return { total: (Array.isArray(tests) ? tests : []).length, active, upcoming, totalQuestions };
   }, [tests]);
 
   // When in test creation mode, render dedicated full-window page view (No clipping, no overflow-hidden)
@@ -458,8 +597,12 @@ export default function TestManagement() {
           <CreateTestInlineWizard
             onClose={() => setIsCreateOpen(false)}
             onTestCreated={(newTest) => {
-              setTests(prev => [newTest, ...prev]);
+              if (newTest && typeof newTest === 'object') {
+                const item = newTest.data || newTest;
+                setTests(prev => [item, ...(Array.isArray(prev) ? prev : [])]);
+              }
               setIsCreateOpen(false);
+              loadTests();
               toast.success('Test published successfully and added to list!');
             }}
           />
@@ -600,7 +743,7 @@ export default function TestManagement() {
                 No assessments match your current filters. Click below to create your first online test in 3 simple steps.
               </p>
               <button
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => setIsCreateOpen(true)}
                 className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg font-medium text-xs shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -622,22 +765,39 @@ export default function TestManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
-                  {filteredTests.map(test => {
+                  {(Array.isArray(filteredTests) ? filteredTests : []).map(test => {
+                    if (!test) return null;
                     const now = Date.now();
-                    const start = test.startDateTime ? new Date(test.startDateTime) : null;
-                    const end = test.endDateTime ? new Date(test.endDateTime) : null;
-                    const isUpcoming = start && now < start.getTime();
-                    const isClosed = end && now > end.getTime();
+                    const startDate = parseSafeDate(test.startDateTime);
+                    const endDate = parseSafeDate(test.endDateTime);
+                    const isUpcoming = startDate && now < startDate.getTime();
+                    const isClosed = endDate && now > endDate.getTime();
                     const isActive = !isUpcoming && !isClosed;
                     const qCount = Array.isArray(test.questions) ? test.questions.length : (test.question_count || 0);
 
                     return (
-                      <tr key={test._id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={test._id || test.id || String(Math.random())} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-2.5 px-4">
-                          <div className="font-semibold text-xs sm:text-sm text-slate-900">{test.title}</div>
+                          <div className="font-semibold text-xs sm:text-sm text-slate-900">{test.title || 'Untitled Assessment'}</div>
                           {test.description && (
                             <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{test.description}</div>
                           )}
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            {test.target_scope_summary?.is_all_students ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                <Users className="w-2.5 h-2.5" />
+                                <span>All Students</span>
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 cursor-help"
+                                title={`Target Scope:\nColleges: ${test.target_scope_summary?.colleges || 'All'}\nCourses: ${test.target_scope_summary?.courses || 'All'}\nBranches: ${test.target_scope_summary?.branches || 'All'}\nBatches: ${test.target_scope_summary?.years || 'All'}`}
+                              >
+                                <Users className="w-2.5 h-2.5" />
+                                <span>Targeted Audience</span>
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 px-4">
                           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
@@ -650,10 +810,10 @@ export default function TestManagement() {
                         <td className="py-2.5 px-4 text-slate-600 text-[11px]">
                           <div className="flex items-center gap-1 text-slate-700">
                             <Calendar className="w-3 h-3 text-slate-400" />
-                            <span>{start ? start.toLocaleDateString() : 'Immediate'}</span>
+                            <span>{startDate ? startDate.toLocaleDateString() : 'Immediate'}</span>
                           </div>
                           <div className="text-slate-400 mt-0.5">
-                            until {end ? end.toLocaleDateString() : 'Permanent'}
+                            until {endDate ? endDate.toLocaleDateString() : 'Permanent'}
                           </div>
                         </td>
                         <td className="py-2.5 px-4 text-slate-700 font-medium text-xs">
@@ -685,7 +845,27 @@ export default function TestManagement() {
                             </span>
                           )}
                         </td>
-                        <td className="py-4 px-6 text-right space-x-2">
+                        <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyTestDetailsToClipboard(test);
+                            }}
+                            title="Copy Test Details & Link"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyExamLinkToClipboard(test);
+                            }}
+                            title="Copy Student Link Only"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          >
+                            <LinkIcon className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => setPreviewTest(test)}
                             title="Preview Questions"
@@ -798,10 +978,12 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
     async function fetchColleges() {
       try {
         const response = await api.get('/student/sdms/colleges');
-        setColleges(response.data?.data || []);
+        const list = response.data?.data || response.data || [];
+        setColleges(Array.isArray(list) ? list : []);
         setAudienceError('');
       } catch (err) {
         setAudienceError(err.response?.data?.message || 'Unable to load SDMS colleges.');
+        setColleges([]);
       }
     }
     fetchColleges();
@@ -815,15 +997,19 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
     }
     api.get('/student/sdms/courses', { params })
       .then(response => {
-        const loadedCourses = response.data?.data || [];
+        const list = response.data?.data || response.data || [];
+        const loadedCourses = Array.isArray(list) ? list : [];
         setCourses(loadedCourses);
         // prune any selected courses not in new list if specific colleges picked
         if (selectedColleges.length > 0) {
           const validIds = new Set(loadedCourses.map(c => Number(c.id)));
-          setSelectedCourses(prev => prev.filter(id => validIds.has(Number(id))));
+          setSelectedCourses(prev => (Array.isArray(prev) ? prev : []).filter(id => validIds.has(Number(id))));
         }
       })
-      .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS courses.'));
+      .catch(err => {
+        setAudienceError(err.response?.data?.message || 'Unable to load SDMS courses.');
+        setCourses([]);
+      });
   }, [selectedColleges]);
 
   // Fetch branches when selected courses or colleges change
@@ -834,14 +1020,18 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
 
     api.get('/student/sdms/branches', { params })
       .then(response => {
-        const loadedBranches = response.data?.data || [];
+        const list = response.data?.data || response.data || [];
+        const loadedBranches = Array.isArray(list) ? list : [];
         setBranches(loadedBranches);
         if (selectedCourses.length > 0) {
           const validIds = new Set(loadedBranches.map(b => Number(b.id)));
-          setSelectedBranches(prev => prev.filter(id => validIds.has(Number(id))));
+          setSelectedBranches(prev => (Array.isArray(prev) ? prev : []).filter(id => validIds.has(Number(id))));
         }
       })
-      .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS branches.'));
+      .catch(err => {
+        setAudienceError(err.response?.data?.message || 'Unable to load SDMS branches.');
+        setBranches([]);
+      });
   }, [selectedColleges, selectedCourses]);
 
   // Fetch years when selected branches, courses, or colleges change
@@ -853,10 +1043,14 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
 
     api.get('/student/sdms/years', { params })
       .then(response => {
-        const loadedYears = response.data?.data || [];
+        const list = response.data?.data || response.data || [];
+        const loadedYears = Array.isArray(list) ? list : [];
         setYears(loadedYears.map(Number));
       })
-      .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS years.'));
+      .catch(err => {
+        setAudienceError(err.response?.data?.message || 'Unable to load SDMS years.');
+        setYears([]);
+      });
   }, [selectedColleges, selectedCourses, selectedBranches]);
 
   // Fetch semesters and sections when years change
@@ -872,10 +1066,16 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
       api.get('/student/sdms/sections', { params })
     ])
       .then(([semesterResponse, sectionResponse]) => {
-        setSemesters(semesterResponse.data?.data || [1, 2]);
-        setSections(sectionResponse.data?.data || ['A', 'B', 'C', 'D']);
+        const semList = semesterResponse?.data?.data || semesterResponse?.data;
+        const secList = sectionResponse?.data?.data || sectionResponse?.data;
+        setSemesters(Array.isArray(semList) ? semList : [1, 2]);
+        setSections(Array.isArray(secList) ? secList : ['A', 'B', 'C', 'D']);
       })
-      .catch(err => setAudienceError(err.response?.data?.message || 'Unable to load SDMS semester and section options.'));
+      .catch(err => {
+        setAudienceError(err.response?.data?.message || 'Unable to load SDMS semester and section options.');
+        setSemesters([1, 2]);
+        setSections(['A', 'B', 'C', 'D']);
+      });
   }, [selectedColleges, selectedCourses, selectedBranches, selectedYears]);
 
   // Calculate real-time SDMS student count based on active multi-selections
@@ -1200,23 +1400,23 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
         module_id: moduleId,
         subcategory: subcategory,
         duration: parseInt(duration, 10) || 30,
-        startDateTime: new Date(startDateTime),
-        endDateTime: new Date(endDateTime),
+        startDateTime: parseSafeDate(startDateTime) || new Date(),
+        endDateTime: parseSafeDate(endDateTime) || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         test_type: 'online_exam',
-        target_college_ids: selectedColleges.map(Number),
-        target_course_ids: selectedCourses.map(Number),
-        target_branch_ids: selectedBranches.map(Number),
-        target_years: selectedYears.map(Number),
-        target_semesters: selectedSemesters.map(Number),
-        target_sections: selectedSections.map(String),
-        questions: questions,
-        notify_students: notifyStudents
+        target_college_ids: (Array.isArray(selectedColleges) ? selectedColleges : []).map(Number).filter(n => Number.isSafeInteger(n) && n > 0),
+        target_course_ids: (Array.isArray(selectedCourses) ? selectedCourses : []).map(Number).filter(n => Number.isSafeInteger(n) && n > 0),
+        target_branch_ids: (Array.isArray(selectedBranches) ? selectedBranches : []).map(Number).filter(n => Number.isSafeInteger(n) && n > 0),
+        target_years: (Array.isArray(selectedYears) ? selectedYears : []).map(Number).filter(n => Number.isSafeInteger(n) && n > 0),
+        target_semesters: (Array.isArray(selectedSemesters) ? selectedSemesters : []).map(Number).filter(n => Number.isSafeInteger(n) && n > 0),
+        target_sections: (Array.isArray(selectedSections) ? selectedSections : []).map(String).filter(Boolean),
+        questions: Array.isArray(questions) ? questions : [],
+        notify_students: Boolean(notifyStudents)
       };
 
       const res = await createOnlineTest(payload);
       toast.success('Online Test Published Successfully!');
       if (onTestCreated) {
-        onTestCreated(res.data?.data || res.data);
+        onTestCreated(res?.data?.data || res?.data || res);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create online test');
@@ -1359,7 +1559,7 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
               {/* Subcategories / Topics Pills */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-xs font-medium text-slate-400 mr-1">Topic:</span>
-                {MODULE_OPTIONS.find(m => m.id === moduleId)?.topics.map(topic => (
+                {(MODULE_OPTIONS.find(m => m.id === moduleId)?.topics || []).map(topic => (
                   <button
                     key={topic.id}
                     type="button"
@@ -1507,7 +1707,7 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                 <MultiSelectDropdown
                   label="Year"
                   allLabel="All Years"
-                  options={years.map(y => ({ id: y, name: `Year ${y}` }))}
+                  options={(Array.isArray(years) ? years : []).map(y => ({ id: y, name: `Year ${y}` }))}
                   selectedValues={selectedYears}
                   onChange={setSelectedYears}
                 />
@@ -1515,7 +1715,7 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                 <MultiSelectDropdown
                   label="Semester"
                   allLabel="All Semesters"
-                  options={semesters.map(s => ({ id: s, name: `Semester ${s}` }))}
+                  options={(Array.isArray(semesters) ? semesters : []).map(s => ({ id: s, name: `Semester ${s}` }))}
                   selectedValues={selectedSemesters}
                   onChange={setSelectedSemesters}
                 />
@@ -1523,7 +1723,7 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                 <MultiSelectDropdown
                   label="Section"
                   allLabel="All Sections"
-                  options={sections.map(sec => ({ id: sec, name: `Section ${sec}` }))}
+                  options={(Array.isArray(sections) ? sections : []).map(sec => ({ id: sec, name: `Section ${sec}` }))}
                   selectedValues={selectedSections}
                   onChange={setSelectedSections}
                 />
@@ -1979,11 +2179,11 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs">
                 <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
                   <span className="text-slate-400 block mb-0.5">Start Date</span>
-                  <strong className="text-slate-800">{new Date(startDateTime).toLocaleString()}</strong>
+                  <strong className="text-slate-800">{formatSafeDateTime(startDateTime, 'Immediate')}</strong>
                 </div>
                 <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
                   <span className="text-slate-400 block mb-0.5">End Date</span>
-                  <strong className="text-slate-800">{new Date(endDateTime).toLocaleString()}</strong>
+                  <strong className="text-slate-800">{formatSafeDateTime(endDateTime, 'Permanent')}</strong>
                 </div>
                 <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
                   <span className="text-slate-400 block mb-0.5">Target Audience</span>
@@ -1991,7 +2191,7 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                 </div>
                 <div className="bg-white/80 p-3 rounded-xl border border-indigo-100">
                   <span className="text-slate-400 block mb-0.5">Questions Count</span>
-                  <strong className="text-emerald-600">{questions.length} Questions</strong>
+                  <strong className="text-emerald-600">{(Array.isArray(questions) ? questions.length : 0)} Questions</strong>
                 </div>
               </div>
 
@@ -1999,12 +2199,12 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
               <div className="bg-white/70 p-3.5 rounded-xl border border-indigo-100 text-xs space-y-1">
                 <span className="font-bold text-slate-700 block mb-1">Audience Scope:</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
-                  <div>Colleges: <strong className="text-slate-800">{selectedColleges.length > 0 ? `${selectedColleges.length} Selected` : 'All Colleges'}</strong></div>
-                  <div>Courses: <strong className="text-slate-800">{selectedCourses.length > 0 ? `${selectedCourses.length} Selected` : 'All Courses'}</strong></div>
-                  <div>Branches: <strong className="text-slate-800">{selectedBranches.length > 0 ? `${selectedBranches.length} Selected` : 'All Branches'}</strong></div>
-                  <div>Academic Years: <strong className="text-slate-800">{selectedYears.length > 0 ? selectedYears.map(y => `Year ${y}`).join(', ') : 'All Years'}</strong></div>
-                  <div>Semesters: <strong className="text-slate-800">{selectedSemesters.length > 0 ? selectedSemesters.map(s => `Sem ${s}`).join(', ') : 'All Semesters'}</strong></div>
-                  <div>Sections: <strong className="text-slate-800">{selectedSections.length > 0 ? selectedSections.join(', ') : 'All Sections'}</strong></div>
+                  <div>Colleges: <strong className="text-slate-800">{Array.isArray(selectedColleges) && selectedColleges.length > 0 ? `${selectedColleges.length} Selected` : 'All Colleges'}</strong></div>
+                  <div>Courses: <strong className="text-slate-800">{Array.isArray(selectedCourses) && selectedCourses.length > 0 ? `${selectedCourses.length} Selected` : 'All Courses'}</strong></div>
+                  <div>Branches: <strong className="text-slate-800">{Array.isArray(selectedBranches) && selectedBranches.length > 0 ? `${selectedBranches.length} Selected` : 'All Branches'}</strong></div>
+                  <div>Academic Years: <strong className="text-slate-800">{Array.isArray(selectedYears) && selectedYears.length > 0 ? selectedYears.map(y => `Year ${y}`).join(', ') : 'All Years'}</strong></div>
+                  <div>Semesters: <strong className="text-slate-800">{Array.isArray(selectedSemesters) && selectedSemesters.length > 0 ? selectedSemesters.map(s => `Sem ${s}`).join(', ') : 'All Semesters'}</strong></div>
+                  <div>Sections: <strong className="text-slate-800">{Array.isArray(selectedSections) && selectedSections.length > 0 ? selectedSections.join(', ') : 'All Sections'}</strong></div>
                 </div>
               </div>
             </div>
@@ -2162,6 +2362,71 @@ function PreviewTestModal({ test, onClose }) {
             </div>
           </div>
 
+          {/* Target Access Scope Breakdown */}
+          {(() => {
+            const scope = test.target_scope_summary || {
+              is_all_students: !(test.target_college_ids?.length || test.target_course_ids?.length || test.target_branch_ids?.length || test.target_years?.length || test.target_semesters?.length || test.target_sections?.length),
+              colleges: test.target_college_ids?.length ? `${test.target_college_ids.length} Colleges` : 'All Colleges',
+              courses: test.target_course_ids?.length ? `${test.target_course_ids.length} Courses` : 'All Courses',
+              branches: test.target_branch_ids?.length ? `${test.target_branch_ids.length} Branches` : 'All Branches',
+              years: test.target_years?.length ? test.target_years.map(y => `Year ${y}`).join(', ') : 'All Years',
+              semesters: test.target_semesters?.length ? test.target_semesters.map(s => `Sem ${s}`).join(', ') : 'All Semesters',
+              sections: test.target_sections?.length ? test.target_sections.map(s => `Section ${s}`).join(', ') : 'All Sections'
+            };
+
+            return (
+              <div className="bg-gradient-to-br from-indigo-50/60 to-slate-50 border border-indigo-100 rounded-2xl p-4 text-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-indigo-950 flex items-center gap-1.5 text-xs">
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    Target Access Scope (Who Can Access)
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${scope.is_all_students ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'}`}>
+                    {scope.is_all_students ? 'Open To All Students' : 'Targeted Audience Only'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-slate-600">
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Colleges</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.colleges || 'All Colleges'}</strong>
+                  </div>
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Courses</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.courses || 'All Courses'}</strong>
+                  </div>
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Branches</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.branches || 'All Branches'}</strong>
+                  </div>
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Academic Years</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.years || 'All Years'}</strong>
+                  </div>
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Semesters</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.semesters || 'All Semesters'}</strong>
+                  </div>
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Sections</span>
+                    <strong className="text-slate-800 text-[11px] line-clamp-2">{scope.sections || 'All Sections'}</strong>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-500 bg-white/80 p-2.5 rounded-xl border border-indigo-50 flex items-center justify-between gap-3">
+                  <span className="flex-1">
+                    👥 <strong>Eligibility:</strong> {scope.is_all_students ? 'All registered students can take this test.' : 'Only students belonging to the selected colleges/courses/branches can access this test.'}
+                  </span>
+                  <button
+                    onClick={() => copyTestDetailsToClipboard(test)}
+                    className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 transition-colors"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>Copy Full Scope & Link</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
             Questions ({questions.length})
           </h4>
@@ -2227,7 +2492,23 @@ function PreviewTestModal({ test, onClose }) {
           )}
         </div>
 
-        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => copyTestDetailsToClipboard(test)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-xs"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy Details & Link</span>
+            </button>
+            <button
+              onClick={() => copyExamLinkToClipboard(test)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+              <span>Copy Link Only</span>
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"

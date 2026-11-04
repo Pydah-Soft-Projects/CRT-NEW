@@ -142,6 +142,61 @@ exports.getOnlineExams = async (req, res) => {
   }
 };
 
+exports.getActiveExam = async (req, res) => {
+  try {
+    const now = new Date();
+    // Find active online exams within the current time window or immediate
+    const tests = await Test.find({
+      status: 'active',
+      test_type: 'online_exam',
+      $or: [
+        { startDateTime: { $exists: false } },
+        { startDateTime: null },
+        { startDateTime: { $lte: now } }
+      ]
+    })
+      .sort({ startDateTime: -1, created_at: -1 })
+      .lean();
+
+    if (!tests.length) {
+      return res.json({ success: true, has_active_exam: false, test: null });
+    }
+
+    const ownerFilter = getStudentIdentityFilter(req);
+    let completedSet = new Set();
+    if (ownerFilter.sdms_student_id || ownerFilter.user_id) {
+      const [resultIds, attemptIds] = await Promise.all([
+        Result.distinct('test_id', { ...ownerFilter, test_id: { $ne: null } }),
+        ExamAttempt.distinct('test_id', { ...ownerFilter, status: 'completed', test_id: { $ne: null } })
+      ]);
+      completedSet = new Set([...resultIds.map(String), ...attemptIds.map(String)]);
+    }
+
+    for (const test of tests) {
+      // Check if closed
+      if (test.endDateTime && new Date(test.endDateTime).getTime() < now.getTime()) {
+        continue;
+      }
+      // Check if already completed
+      if (completedSet.has(String(test._id))) {
+        continue;
+      }
+      // Check if assigned to this student (SDMS or CRT login)
+      if (await isAssignedToStudent(test, req)) {
+        return res.json({
+          success: true,
+          has_active_exam: true,
+          test: toStudentTest(test)
+        });
+      }
+    }
+
+    return res.json({ success: true, has_active_exam: false, test: null });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.getCompletedExams = async (req, res) => {
   try {
     const ownerFilter = getStudentIdentityFilter(req);

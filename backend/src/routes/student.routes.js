@@ -14,6 +14,7 @@ router.use(authenticateToken);
 router.get('/tests', studentController.getStudentTests);
 router.get('/test/:id', studentController.getTestDetails);
 router.get('/online-exams', studentController.getOnlineExams);
+router.get('/active-exam', studentController.getActiveExam);
 router.get('/completed-exams', studentController.getCompletedExams);
 router.get('/test-history', studentController.getTestHistory);
 router.get('/profile', studentController.getProfile);

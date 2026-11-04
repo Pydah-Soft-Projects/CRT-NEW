@@ -12,6 +12,7 @@ import ProtectedRoute from './components/common/ProtectedRoute'
 import LoadingSpinner from './components/common/LoadingSpinner'
 import ErrorBoundary from './components/common/ErrorBoundary'
 import NotificationToast from './components/common/NotificationToast'
+import ActiveExamAutoOpener from './components/student/ActiveExamAutoOpener'
 
 const Login = lazy(() => import('./pages/auth/Login'))
 const GetStarted = lazy(() => import('./pages/auth/GetStarted'))
@@ -79,6 +80,7 @@ function AppContent() {
         }}
       />
       <NotificationToast />
+      <ActiveExamAutoOpener />
       <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
         <Routes>
           {/* Public Routes */}

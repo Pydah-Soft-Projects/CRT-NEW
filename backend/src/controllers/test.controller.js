@@ -68,6 +68,54 @@ const getResultIdentity = (req) => {
   };
 };
 
+const formatTargetScopeSummary = (test, collegeMap = {}, courseMap = {}, branchMap = {}) => {
+  const colIds = Array.isArray(test.target_college_ids) ? test.target_college_ids.map(Number).filter(n => n > 0) : [];
+  const courseIds = Array.isArray(test.target_course_ids) ? test.target_course_ids.map(Number).filter(n => n > 0) : [];
+  const branchIds = Array.isArray(test.target_branch_ids) ? test.target_branch_ids.map(Number).filter(n => n > 0) : [];
+  const years = Array.isArray(test.target_years) ? test.target_years.map(Number).filter(n => n > 0) : [];
+  const sems = Array.isArray(test.target_semesters) ? test.target_semesters.map(Number).filter(n => n > 0) : [];
+  const secs = Array.isArray(test.target_sections) ? test.target_sections.map(s => String(s).trim()).filter(Boolean) : [];
+
+  const collegeNames = colIds.map(id => collegeMap[id] || `College #${id}`);
+  const courseNames = courseIds.map(id => courseMap[id] || `Course #${id}`);
+  const branchNames = branchIds.map(id => branchMap[id] || `Branch #${id}`);
+
+  const hasSpecific = colIds.length || courseIds.length || branchIds.length || years.length || sems.length || secs.length;
+
+  return {
+    is_all_students: !hasSpecific,
+    colleges: collegeNames.length ? collegeNames.join(', ') : 'All Colleges',
+    courses: courseNames.length ? courseNames.join(', ') : 'All Courses',
+    branches: branchNames.length ? branchNames.join(', ') : 'All Branches',
+    years: years.length ? years.map(y => `Year ${y}`).join(', ') : 'All Years',
+    semesters: sems.length ? sems.map(s => `Sem ${s}`).join(', ') : 'All Semesters',
+    sections: secs.length ? secs.map(s => `Section ${s}`).join(', ') : 'All Sections'
+  };
+};
+
+const buildTargetScopeSummary = async (test, collegeMap = null, courseMap = null, branchMap = null) => {
+  if (collegeMap && courseMap && branchMap) {
+    return formatTargetScopeSummary(test, collegeMap, courseMap, branchMap);
+  }
+  collegeMap = { ...collegeMap };
+  courseMap = { ...courseMap };
+  branchMap = { ...branchMap };
+  try {
+    const [colleges, courses, branches] = await Promise.all([
+      sdmsService.getColleges().catch(() => []),
+      sdmsService.getCourses().catch(() => []),
+      sdmsService.getBranches().catch(() => [])
+    ]);
+    (colleges || []).forEach(c => { if (c && c.id) collegeMap[c.id] = c.name || c.code; });
+    (courses || []).forEach(c => { if (c && c.id) courseMap[c.id] = c.name || c.code; });
+    (branches || []).forEach(b => { if (b && b.id) branchMap[b.id] = b.name || b.code; });
+  } catch (e) {
+    // Continue with available maps
+  }
+
+  return formatTargetScopeSummary(test, collegeMap, courseMap, branchMap);
+};
+
 exports.getModules = async (req, res) => {
   return res.json({
     success: true,
@@ -196,10 +244,38 @@ exports.createOnlineTest = async (req, res) => {
 
     await test.save();
 
+    // Broadcast online exam publication to all active students (SDMS & CRT) for immediate auto-open
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('online_exam_published', {
+          test_id: test._id.toString(),
+          title: test.title,
+          module_id: test.module_id,
+          subcategory: test.subcategory,
+          duration: test.duration,
+          startDateTime: test.startDateTime,
+          endDateTime: test.endDateTime,
+          target_college_ids: test.target_college_ids || [],
+          target_course_ids: test.target_course_ids || [],
+          target_branch_ids: test.target_branch_ids || [],
+          target_years: test.target_years || [],
+          target_semesters: test.target_semesters || [],
+          target_sections: test.target_sections || []
+        });
+        console.log(`📢 Real-time broadcast: online_exam_published for test "${test.title}" (${test._id})`);
+      }
+    } catch (socketErr) {
+      console.warn('Socket broadcast warning:', socketErr.message);
+    }
+
+    const testObj = test.toObject();
+    testObj.target_scope_summary = await buildTargetScopeSummary(test);
+
     return res.status(201).json({
       success: true,
       message: 'Online test created and published successfully',
-      data: test
+      data: testObj
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -362,9 +438,27 @@ exports.getAllTests = async (req, res) => {
     }
     const filter = andConditions.length ? { $and: andConditions } : {};
     const tests = await Test.find(filter).sort({ created_at: -1 }).lean();
+
+    let collegeMap = {};
+    let courseMap = {};
+    let branchMap = {};
+    try {
+      const [colleges, courses, branches] = await Promise.all([
+        sdmsService.getColleges().catch(() => []),
+        sdmsService.getCourses().catch(() => []),
+        sdmsService.getBranches().catch(() => [])
+      ]);
+      (colleges || []).forEach(c => { if (c && c.id) collegeMap[c.id] = c.name || c.code; });
+      (courses || []).forEach(c => { if (c && c.id) courseMap[c.id] = c.name || c.code; });
+      (branches || []).forEach(b => { if (b && b.id) branchMap[b.id] = b.name || b.code; });
+    } catch (e) {
+      // Continue without names
+    }
+
     const formatted = tests.map(t => ({
       ...t,
-      question_count: Array.isArray(t.questions) ? t.questions.length : 0
+      question_count: Array.isArray(t.questions) ? t.questions.length : 0,
+      target_scope_summary: formatTargetScopeSummary(t, collegeMap, courseMap, branchMap)
     }));
     return res.json({ success: true, data: formatted });
   } catch (error) {

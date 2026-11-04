@@ -17,10 +17,10 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="max-w-lg w-full bg-white shadow-lg rounded-2xl p-6 border border-slate-200">
             <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-3">
                 <svg
                   className="h-6 w-6 text-red-600"
                   fill="none"
@@ -35,18 +35,43 @@ class ErrorBoundary extends React.Component {
                   />
                 </svg>
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+              <h3 className="text-base font-bold text-gray-900">
                 Something went wrong
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                We're sorry, but something unexpected happened. Please try refreshing the page.
+              <p className="mt-1 text-xs text-gray-500">
+                An unexpected error occurred while rendering this view.
               </p>
-              <div className="mt-6">
+
+              {this.state.error && (
+                <div className="mt-4 p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 text-left font-mono overflow-auto max-h-36">
+                  {this.state.error.message || String(this.state.error)}
+                </div>
+              )}
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <button
+                  type="button"
+                  onClick={() => this.setState({ hasError: false, error: null })}
+                  className="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
                   onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
                 >
                   Refresh Page
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    this.setState({ hasError: false, error: null });
+                    window.location.href = '/';
+                  }}
+                  className="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                >
+                  Go to Home
                 </button>
               </div>
             </div>
@@ -59,4 +84,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary 
+export default ErrorBoundary
