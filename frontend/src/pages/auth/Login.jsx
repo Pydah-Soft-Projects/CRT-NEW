@@ -95,7 +95,7 @@ const Login = () => {
             <div className="text-center">
               <motion.img
                 src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-                alt="VERSANT Logo"
+                alt="Study Edge Logo"
                 className="h-16 w-auto mx-auto mb-4 drop-shadow-lg"
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -105,7 +105,7 @@ const Login = () => {
                 Sign in to your account
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                Welcome back to VERSANT
+                Welcome back to Study Edge
               </p>
             </div>
 
