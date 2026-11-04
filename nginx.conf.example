@@ -3,7 +3,7 @@
 
 server {
     listen 80 default_server;
-    server_name 13.206.203.113 localhost _;
+    server_name crt.pydah.edu.in 13.206.203.113 localhost _;
 
     client_max_body_size 50M;
 
