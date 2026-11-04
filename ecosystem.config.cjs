@@ -1,8 +1,10 @@
+const path = require('path');
+
 module.exports = {
   apps: [
     {
       name: 'crt-backend',
-      cwd: './backend',
+      cwd: path.resolve(__dirname, 'backend'),
       script: 'src/server.js',
       instances: 1,
       exec_mode: 'fork',
@@ -14,17 +16,18 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 5000
       },
-      env_file: './backend/.env',
-      error_file: './logs/backend-error.log',
-      out_file: './logs/backend-out.log',
+      env_file: path.resolve(__dirname, 'backend/.env'),
+      error_file: path.resolve(__dirname, 'logs/backend-error.log'),
+      out_file: path.resolve(__dirname, 'logs/backend-out.log'),
       merge_logs: true,
       time: true
     },
     {
       name: 'crt-frontend',
+      cwd: path.resolve(__dirname, 'frontend'),
       script: 'serve',
       env: {
-        PM2_SERVE_PATH: './frontend/dist',
+        PM2_SERVE_PATH: path.resolve(__dirname, 'frontend/dist'),
         PM2_SERVE_PORT: 3000,
         PM2_SERVE_SPA: 'true',
         PM2_SERVE_HOMEPAGE: './index.html'
@@ -34,11 +37,10 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '150M',
-      error_file: './logs/frontend-error.log',
-      out_file: './logs/frontend-out.log',
+      error_file: path.resolve(__dirname, 'logs/frontend-error.log'),
+      out_file: path.resolve(__dirname, 'logs/frontend-out.log'),
       merge_logs: true,
       time: true
     }
   ]
 };
-

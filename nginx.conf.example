@@ -2,8 +2,8 @@
 # Symlink to /etc/nginx/sites-enabled/crt
 
 server {
-    listen 80;
-    server_name 13.206.203.113 crt.pydahsoft.in; # Replace or add your domain name
+    listen 80 default_server;
+    server_name _ localhost 13.206.203.113 crt.pydahsoft.in;
 
     client_max_body_size 50M;
 
