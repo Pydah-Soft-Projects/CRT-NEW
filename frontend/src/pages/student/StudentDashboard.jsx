@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import api from '../../services/api';
+import { formatPhotoUrl } from '../../utils/photoUtils';
 import { 
   BrainCircuit, 
   BookOpen, 
@@ -65,6 +66,7 @@ const getScoreColor = (score) => {
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [photoError, setPhotoError] = useState(false);
   const [summary, setSummary] = useState(null);
   const [onlineExams, setOnlineExams] = useState([]);
   const [completedExamIds, setCompletedExamIds] = useState([]);
@@ -122,6 +124,7 @@ export default function StudentDashboard() {
   }
 
   const studentName = userProfile?.name || user?.name || user?.username || 'Student';
+  const photoUrl = !photoError ? formatPhotoUrl(userProfile?.photo || userProfile?.student_photo || user?.photo || user?.student_photo) : null;
 
   // Stats safe fallback
   const totalCompleted = summary?.total_tests_completed || 0;
@@ -151,10 +154,20 @@ export default function StudentDashboard() {
         className="bg-white rounded-2xl p-3 sm:p-7 border border-slate-200 shadow-sm relative overflow-hidden min-w-0 max-w-full"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 min-w-0">
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight truncate">
-              Welcome back, {studentName}!
-            </h1>
+          <div className="min-w-0 flex items-center gap-2.5 sm:gap-3.5">
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={studentName}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover border border-blue-200 shadow-sm shrink-0"
+                onError={() => setPhotoError(true)}
+              />
+            ) : null}
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight truncate">
+                Welcome back, {studentName}!
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useNotification } from '../../contexts/NotificationContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import api from '../../services/api';
+import { formatPhotoUrl } from '../../utils/photoUtils';
 import { 
   User, 
   Mail, 
@@ -46,6 +47,7 @@ const getScoreColor = (score) => {
 export default function StudentProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [photoError, setPhotoError] = useState(false);
   const { error: showError } = useNotification();
 
   useEffect(() => {
@@ -135,8 +137,17 @@ export default function StudentProfile() {
         <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 sm:gap-6">
           {/* Avatar and Basic Header */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left shrink-0">
-            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md mb-2 sm:mb-3">
-              <User className="h-7 w-7 sm:h-10 sm:w-10" />
+            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md mb-2 sm:mb-3 border border-indigo-100 flex-shrink-0">
+              {(!photoError && formatPhotoUrl(profile.photo || profile.student_photo)) ? (
+                <img
+                  src={formatPhotoUrl(profile.photo || profile.student_photo)}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                  onError={() => setPhotoError(true)}
+                />
+              ) : (
+                <User className="h-7 w-7 sm:h-10 sm:w-10" />
+              )}
             </div>
             <h1 className="text-sm sm:text-lg font-bold text-slate-900 leading-snug">{profile.name}</h1>
             <p className="text-[11px] sm:text-xs text-slate-500 font-medium break-all">{profile.email}</p>

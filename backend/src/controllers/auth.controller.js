@@ -24,6 +24,8 @@ const createStudentLoginResponse = (student, res) => {
     username: student.username,
     name: student.name,
     email: student.email,
+    photo: student.photo || student.student_photo || null,
+    student_photo: student.student_photo || student.photo || null,
     role: 'student',
     role_name: 'student',
     permissions,
@@ -34,8 +36,9 @@ const createStudentLoginResponse = (student, res) => {
     semester: student.semester,
     section: student.section
   };
+  const { photo, student_photo, ...tokenIdentity } = identity;
   const tokenPayload = {
-    ...identity,
+    ...tokenIdentity,
     sub: String(student.id)
   };
   const accessToken = jwt.sign(tokenPayload, env.JWT_SECRET_KEY, { expiresIn: env.JWT_EXPIRES_IN });
@@ -304,6 +307,8 @@ exports.getMe = async (req, res) => {
         username: student.username,
         name: student.name,
         email: student.email,
+        photo: student.photo || student.student_photo || null,
+        student_photo: student.student_photo || student.photo || null,
         role: 'student',
         role_name: 'student',
         permissions: {},

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -79,8 +80,10 @@ const DIFFICULTY_LEVELS = [
 ];
 
 export default function CRTModules() {
-  const [selectedModuleId, setSelectedModuleId] = useState('aptitude');
-  const [view, setView] = useState('topics'); // 'topics', 'test_list', 'taking_module', 'result'
+  const [searchParams] = useSearchParams();
+  const initialModuleParam = searchParams.get('module');
+  const [selectedModuleId, setSelectedModuleId] = useState(() => initialModuleParam || null);
+  const [view, setView] = useState(() => initialModuleParam ? 'topics' : 'modules'); // 'modules', 'topics', 'test_list', 'taking_module', 'result'
   
   // Selected configuration
   const [activeTopic, setActiveTopic] = useState(null);
@@ -103,7 +106,16 @@ export default function CRTModules() {
   const [loading, setLoading] = useState(false);
   const { error: showError, success } = useNotification();
 
-  const currentCategory = CRT_CATEGORIES.find(c => c.id === selectedModuleId) || CRT_CATEGORIES[0];
+  const currentCategory = CRT_CATEGORIES.find(c => c.id === (selectedModuleId || 'aptitude')) || CRT_CATEGORIES[0];
+
+  const handleSelectModule = (moduleId) => {
+    setSelectedModuleId(moduleId);
+    setView('topics');
+  };
+
+  const handleBackToModules = () => {
+    setView('modules');
+  };
 
   // 1. When student clicks a topic or level: open question count popup
   const handleSelectTopicAndLevel = (topic, level = 1) => {
@@ -199,11 +211,17 @@ export default function CRTModules() {
             <LoadingSpinner />
             <p className="text-xs sm:text-sm text-slate-500 font-medium">Connecting to question bank...</p>
           </div>
+        ) : view === 'modules' ? (
+          <CRTModulesSelectionView
+            categories={CRT_CATEGORIES}
+            onSelectModule={handleSelectModule}
+          />
         ) : view === 'topics' ? (
           <CRTTopicsWithLevelsView
             categories={CRT_CATEGORIES}
-            selectedModuleId={selectedModuleId}
+            selectedModuleId={selectedModuleId || 'aptitude'}
             onSelectModule={setSelectedModuleId}
+            onBackToModules={handleBackToModules}
             onSelectTopicAndLevel={handleSelectTopicAndLevel}
           />
         ) : view === 'test_list' && activeTopic ? (
@@ -258,45 +276,120 @@ export default function CRTModules() {
 }
 
 /**
- * View 1: Topics with all Levels displayed clearly
+ * View 1: Module Selection View - Compact, fit-to-screen eye view
  */
-function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule, onSelectTopicAndLevel }) {
+function CRTModulesSelectionView({ categories, onSelectModule }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-2.5 sm:space-y-3.5 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
+        <div>
+          <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+            CRT Practice Modules
+          </h1>
+          <p className="text-[10px] sm:text-xs text-slate-500">
+            Select a module to practice topics
+          </p>
+        </div>
+        <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 shrink-0">
+          {categories.length} Modules
+        </span>
+      </div>
+
+      {/* Modules Grid: 3 columns on tablet/desktop, 3 compact cards on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        {categories.map((cat) => (
+          <div
+            key={cat.id}
+            onClick={() => onSelectModule(cat.id)}
+            className="bg-white rounded-xl p-2.5 sm:p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-indigo-400 active:scale-[0.98] transition-all flex sm:flex-col justify-between items-center sm:items-stretch cursor-pointer group gap-2"
+          >
+            <div className="flex sm:flex-col items-center sm:items-stretch gap-2.5 sm:gap-1.5 flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1.5">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${cat.color} flex items-center justify-center text-white text-base shadow-xs shrink-0 group-hover:scale-105 transition-transform`}>
+                  <span>{cat.icon}</span>
+                </div>
+                <span className="hidden sm:inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 shrink-0">
+                  {cat.topics.length} Topics
+                </span>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:hidden">
+                  <h3 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                    {cat.name}
+                  </h3>
+                  <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0">
+                    {cat.topics.length} Topics
+                  </span>
+                </div>
+                <h3 className="hidden sm:block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug truncate">
+                  {cat.name}
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 line-clamp-1 leading-tight">
+                  {cat.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="sm:mt-2 sm:pt-1.5 sm:border-t sm:border-slate-100 flex items-center justify-end sm:justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700 shrink-0">
+              <span className="hidden sm:inline">3 Levels</span>
+              <span className="flex items-center gap-0.5">
+                <span>Start</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * View 2: CRT Topics with all Levels displayed clearly inside the selected module
+ */
+function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule, onBackToModules, onSelectTopicAndLevel }) {
   const currentCategory = categories.find(c => c.id === selectedModuleId) || categories[0];
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1.5 sm:pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight">
-            CRT Practice Tests
-          </h1>
-          <p className="text-[11px] sm:text-xs text-slate-500">
-            Select a topic and difficulty level to take automated practice tests.
-          </p>
-        </div>
+      {/* Top Breadcrumb & Back to Modules Button */}
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={onBackToModules}
+          className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs"
+        >
+          <ChevronLeft className="w-3.5 h-3.5 text-slate-500" />
+          <span>All Modules</span>
+        </button>
+
+        <span className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
+          Module: <strong className="text-slate-800">{currentCategory.name}</strong>
+        </span>
       </div>
 
-      {/* Module Tabs (Aptitude, Reasoning, Technical) */}
-      <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-white border border-slate-200 rounded-lg sm:rounded-xl overflow-x-auto">
-        {categories.map(cat => {
-          const isActive = cat.id === selectedModuleId;
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => onSelectModule(cat.id)}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
-                isActive
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.name}</span>
-            </button>
-          );
-        })}
+      {/* Active Category Banner */}
+      <div className="bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr ${currentCategory.color} flex items-center justify-center text-white text-lg sm:text-xl shadow-xs shrink-0`}>
+            <span>{currentCategory.icon}</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">
+                {currentCategory.name}
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                {currentCategory.topics.length} Topics
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs text-slate-600 mt-0.5">
+              {currentCategory.description}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Topics Grid with all levels shown for each topic */}

@@ -839,6 +839,8 @@ exports.getProfile = async (req, res) => {
           profileData = {
             name: sdmsStudent.name || req.user.name,
             email: sdmsStudent.email || req.user.email,
+            photo: sdmsStudent.photo || sdmsStudent.student_photo || null,
+            student_photo: sdmsStudent.student_photo || sdmsStudent.photo || null,
             roll_number: sdmsStudent.roll_number || req.user.username,
             campus: sdmsStudent.college_name || 'SDMS Campus',
             course: sdmsStudent.course_name || (req.user.course_id ? `Course ${req.user.course_id}` : 'General'),
@@ -858,6 +860,8 @@ exports.getProfile = async (req, res) => {
         profileData = {
           name: req.user.name || req.user.username || 'Student',
           email: req.user.email || '',
+          photo: req.user.photo || req.user.student_photo || null,
+          student_photo: req.user.student_photo || req.user.photo || null,
           roll_number: req.user.username || String(req.user.sdms_student_id),
           campus: req.user.college_name || 'SDMS Campus',
           course: req.user.course_name || (req.user.course_id ? `Course ${req.user.course_id}` : 'General'),
@@ -879,6 +883,8 @@ exports.getProfile = async (req, res) => {
       profileData = {
         name: student?.name || req.user.name || req.user.username || 'Student',
         email: student?.email || req.user.email || '',
+        photo: student?.photo || student?.student_photo || null,
+        student_photo: student?.student_photo || student?.photo || null,
         roll_number: student?.roll_number || student?.student_id || req.user.username || '',
         campus: student?.campus_id?.name || student?.college_name || 'Main Campus',
         course: student?.course_name || 'General',

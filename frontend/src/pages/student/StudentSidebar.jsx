@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useFeatures } from '../../contexts/FeatureContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatPhotoUrl } from '../../utils/photoUtils';
 
 
 const StudentSidebar = () => {
@@ -20,6 +21,8 @@ const StudentSidebar = () => {
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [photoError, setPhotoError] = useState(false);
+    const photoUrl = !photoError ? formatPhotoUrl(user?.photo || user?.student_photo) : null;
 
     // Default standard student navigation links
     const DEFAULT_STUDENT_NAV = [
@@ -124,9 +127,18 @@ const StudentSidebar = () => {
                     <div className="flex items-center space-x-2">
                         <motion.div 
                             whileHover={{ scale: 1.05 }}
-                            className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg"
+                            className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-md bg-blue-600 flex-shrink-0 border border-blue-200"
                         >
-                            <User className="w-5 h-5 text-white" />
+                            {photoUrl ? (
+                                <img
+                                    src={photoUrl}
+                                    alt={user?.name || 'Student'}
+                                    className="w-full h-full object-cover"
+                                    onError={() => setPhotoError(true)}
+                                />
+                            ) : (
+                                <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            )}
                         </motion.div>
                         <AnimatePresence>
                             {!isCollapsed && (
@@ -311,8 +323,17 @@ const StudentSidebar = () => {
                                 <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                             </button>
                             <div className="flex items-center space-x-1.5 sm:space-x-2">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-                                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden bg-blue-600 flex items-center justify-center shadow-sm flex-shrink-0 border border-blue-200">
+                                    {photoUrl ? (
+                                        <img
+                                            src={photoUrl}
+                                            alt={user?.name || 'Student'}
+                                            className="w-full h-full object-cover"
+                                            onError={() => setPhotoError(true)}
+                                        />
+                                    ) : (
+                                        <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                    )}
                                 </div>
                                 <span className="hidden sm:inline text-xs sm:text-sm font-medium text-gray-700 max-w-[120px] truncate">{user?.name}</span>
                             </div>

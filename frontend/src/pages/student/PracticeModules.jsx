@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -115,8 +116,10 @@ const DIFFICULTY_LEVELS = [
 ];
 
 export default function PracticeModules() {
-  const [selectedModuleId, setSelectedModuleId] = useState('grammar');
-  const [view, setView] = useState('topics'); // 'topics', 'test_list', 'taking_module', 'result'
+  const [searchParams] = useSearchParams();
+  const initialModuleParam = searchParams.get('module');
+  const [selectedModuleId, setSelectedModuleId] = useState(() => initialModuleParam || null);
+  const [view, setView] = useState(() => initialModuleParam ? 'topics' : 'modules'); // 'modules', 'topics', 'test_list', 'taking_module', 'result'
   
   // Selected configuration
   const [activeTopic, setActiveTopic] = useState(null);
@@ -139,7 +142,16 @@ export default function PracticeModules() {
   const [loading, setLoading] = useState(false);
   const { error: showError, success } = useNotification();
 
-  const currentModule = VERSANT_MODULES.find(m => m.id === selectedModuleId) || VERSANT_MODULES[0];
+  const currentModule = VERSANT_MODULES.find(m => m.id === (selectedModuleId || 'grammar')) || VERSANT_MODULES[0];
+
+  const handleSelectModule = (moduleId) => {
+    setSelectedModuleId(moduleId);
+    setView('topics');
+  };
+
+  const handleBackToModules = () => {
+    setView('modules');
+  };
 
   // 1. Topic/Level clicked -> open question count modal
   const handleSelectTopicAndLevel = (topic, level = 1) => {
@@ -233,11 +245,17 @@ export default function PracticeModules() {
             <LoadingSpinner />
             <p className="text-xs sm:text-sm text-slate-500 font-medium">Connecting to question bank...</p>
           </div>
+        ) : view === 'modules' ? (
+          <VersantModulesSelectionView
+            modules={VERSANT_MODULES}
+            onSelectModule={handleSelectModule}
+          />
         ) : view === 'topics' ? (
           <VersantTopicsWithLevelsView
             modules={VERSANT_MODULES}
-            selectedModuleId={selectedModuleId}
+            selectedModuleId={selectedModuleId || 'grammar'}
             onSelectModule={setSelectedModuleId}
+            onBackToModules={handleBackToModules}
             onSelectTopicAndLevel={handleSelectTopicAndLevel}
           />
         ) : view === 'test_list' && activeTopic ? (
@@ -291,46 +309,114 @@ export default function PracticeModules() {
 }
 
 /**
- * View 1: Versant Topics with all Levels displayed clearly
+ * View 1: Module Selection View - Compact, fit-to-screen eye view
  */
-function VersantTopicsWithLevelsView({ modules, selectedModuleId, onSelectModule, onSelectTopicAndLevel }) {
+function VersantModulesSelectionView({ modules, onSelectModule }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-2.5 sm:space-y-3.5 max-w-4xl mx-auto">
+      {/* Header: Concise & single line on mobile */}
+      <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-slate-200">
+        <div>
+          <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+            Versant Practice Modules
+          </h1>
+          <p className="text-[10px] sm:text-xs text-slate-500">
+            Select a module to practice topics
+          </p>
+        </div>
+        <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 shrink-0">
+          {modules.length} Modules
+        </span>
+      </div>
+
+      {/* Modules Grid: 2 columns on mobile, 3 columns on tablet/desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+        {modules.map((mod) => {
+          const IconComponent = mod.icon;
+          return (
+            <div
+              key={mod.id}
+              onClick={() => onSelectModule(mod.id)}
+              className="bg-white rounded-xl p-2.5 sm:p-3.5 border border-slate-200/90 shadow-2xs hover:shadow-sm hover:border-indigo-400 active:scale-[0.98] transition-all flex flex-col justify-between cursor-pointer group"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr ${mod.color} flex items-center justify-center text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform`}>
+                    <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 shrink-0">
+                    {mod.topics.length} Topics
+                  </span>
+                </div>
+
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug line-clamp-1">
+                  {mod.name.replace(' Mastery', '').replace(' Skills', '').replace(' Proficiency', '').replace(' Expression', '').replace(' & Idioms', '')}
+                </h3>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 line-clamp-1 leading-tight">
+                  {mod.description}
+                </p>
+              </div>
+
+              <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                <span>3 Levels</span>
+                <span className="flex items-center gap-0.5">
+                  <span className="hidden sm:inline">Start</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * View 2: Versant Topics with all Levels displayed clearly inside the selected module
+ */
+function VersantTopicsWithLevelsView({ modules, selectedModuleId, onSelectModule, onBackToModules, onSelectTopicAndLevel }) {
   const currentModule = modules.find(m => m.id === selectedModuleId) || modules[0];
+  const IconComponent = currentModule.icon;
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1.5 sm:pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Versant Practice Tests
-          </h1>
-          <p className="text-[11px] sm:text-xs text-slate-500">
-            Select an English communication topic and difficulty level to take practice tests.
-          </p>
-        </div>
+      {/* Top Breadcrumb & Back to Modules Button */}
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={onBackToModules}
+          className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs"
+        >
+          <ChevronLeft className="w-3.5 h-3.5 text-slate-500" />
+          <span>All Modules</span>
+        </button>
+
+        <span className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
+          Module: <strong className="text-slate-800">{currentModule.name}</strong>
+        </span>
       </div>
 
-      {/* Module Tabs (Grammar, Reading, Listening, Speaking, Writing, Vocabulary) */}
-      <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-white border border-slate-200 rounded-lg sm:rounded-xl overflow-x-auto">
-        {modules.map(mod => {
-          const isActive = mod.id === selectedModuleId;
-          const IconComponent = mod.icon;
-          return (
-            <button
-              key={mod.id}
-              type="button"
-              onClick={() => onSelectModule(mod.id)}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
-                isActive
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <IconComponent className="w-3.5 h-3.5" />
-              <span>{mod.name.replace(' Mastery', '').replace(' Skills', '').replace(' Proficiency', '').replace(' Expression', '')}</span>
-            </button>
-          );
-        })}
+      {/* Active Module Banner */}
+      <div className="bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr ${currentModule.color} flex items-center justify-center text-white shadow-xs shrink-0`}>
+            <IconComponent className="w-4.5 h-4.5 sm:w-5.5 sm:h-5.5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">
+                {currentModule.name}
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                {currentModule.topics.length} Topics
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs text-slate-600 mt-0.5">
+              {currentModule.description}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Topics Grid with all levels shown for each topic */}
