@@ -54,7 +54,7 @@ function AppContent() {
   const isPublicRoute = location.pathname === '/' || location.pathname === '/login'
   
   return (
-    <div className={isPublicRoute ? "min-h-screen bg-gray-50 overflow-y-auto" : "h-screen bg-gray-50 overflow-hidden"}>
+    <div className={isPublicRoute ? "min-h-screen w-full max-w-full bg-gray-50 overflow-y-auto overflow-x-hidden" : "h-screen w-full max-w-full bg-gray-50 overflow-hidden"}>
       <Toaster 
         position="top-right"
         toastOptions={{

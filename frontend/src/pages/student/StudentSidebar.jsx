@@ -102,7 +102,7 @@ const StudentSidebar = () => {
 
 
     return (
-        <div className="flex w-full h-screen overflow-hidden">
+        <div className="flex w-full max-w-full h-screen overflow-hidden touch-pan-y overscroll-x-none">
             {/* Modern Collapsible Sidebar */}
             <motion.div
                 initial={false}
@@ -282,7 +282,7 @@ const StudentSidebar = () => {
             </AnimatePresence>
             
             {/* Main Content */}
-            <div className={`flex-1 min-w-0 w-full bg-[#fefefe] transition-all duration-300 flex flex-col h-screen overflow-hidden ${
+            <div className={`flex-1 min-w-0 w-full max-w-full bg-[#fefefe] transition-all duration-300 flex flex-col h-screen overflow-hidden touch-pan-y overscroll-x-none ${
                 isDesktop ? (isCollapsed ? 'ml-[70px]' : 'ml-[260px]') : 'ml-0'
             }`}>
                 {/* Header */}
@@ -321,7 +321,7 @@ const StudentSidebar = () => {
                 </header>
                 
                 {/* Content Area */}
-                <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 xl:p-8 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar">
+                <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 xl:p-8 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar touch-pan-y overscroll-x-none">
                     <Outlet />
                 </div>
             </div>

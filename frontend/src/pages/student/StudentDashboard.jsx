@@ -143,12 +143,12 @@ export default function StudentDashboard() {
   const recentActivities = summary?.recent_activities || [];
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-3.5 sm:space-y-6 pb-10 overflow-x-hidden min-w-0">
+    <div className="w-full max-w-full sm:max-w-7xl mx-auto space-y-3.5 sm:space-y-6 pb-10 overflow-x-hidden min-w-0 touch-pan-y overscroll-x-none">
       {/* Top Welcome Banner */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-3.5 sm:p-7 border border-slate-200 shadow-sm relative overflow-hidden min-w-0"
+        className="bg-white rounded-2xl p-3 sm:p-7 border border-slate-200 shadow-sm relative overflow-hidden min-w-0 max-w-full"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 min-w-0">
           <div className="min-w-0">
