@@ -25,13 +25,13 @@ import {
 } from 'lucide-react';
 
 const ProfileCard = ({ icon, title, value }) => (
-  <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 sm:p-4 flex items-center space-x-3 transition-colors border border-slate-200/60">
-    <div className="p-2 sm:p-2.5 rounded-lg bg-white shadow-sm border border-slate-200/70 text-indigo-600 shrink-0">
-      {React.cloneElement(icon, { className: 'h-4 w-4 sm:h-5 sm:w-5' })}
+  <div className="bg-slate-50 hover:bg-slate-100/80 rounded-lg sm:rounded-xl p-2 sm:p-3.5 flex items-center space-x-2 sm:space-x-3 transition-colors border border-slate-200/60">
+    <div className="p-1.5 sm:p-2 rounded-lg bg-white shadow-sm border border-slate-200/70 text-indigo-600 shrink-0">
+      {React.cloneElement(icon, { className: 'h-3.5 w-3.5 sm:h-4 sm:w-4' })}
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">{title}</p>
-      <p className="text-xs sm:text-sm font-bold text-slate-800 break-words">{value || 'N/A'}</p>
+      <p className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{title}</p>
+      <p className="text-xs sm:text-sm font-bold text-slate-800 truncate">{value || 'N/A'}</p>
     </div>
   </div>
 );
@@ -114,12 +114,12 @@ export default function StudentProfile() {
   const moduleList = analytics.modules || [];
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 pb-12">
+    <div className="w-full max-w-6xl mx-auto space-y-3 sm:space-y-6 pb-6 sm:pb-12">
       {/* Back to Dashboard Navigation */}
       <div className="flex items-center justify-between">
         <Link
           to="/student"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors shadow-sm"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Dashboard</span>
@@ -130,24 +130,24 @@ export default function StudentProfile() {
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-sm"
+        className="bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-6 border border-slate-200 shadow-sm"
       >
-        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 sm:gap-6">
           {/* Avatar and Basic Header */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left shrink-0">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md mb-3">
-              <User className="h-10 w-10 sm:h-12 sm:w-12" />
+            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md mb-2 sm:mb-3">
+              <User className="h-7 w-7 sm:h-10 sm:w-10" />
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">{profile.name}</h1>
-            <p className="text-xs text-slate-500 font-medium break-all">{profile.email}</p>
-            <div className="inline-flex items-center gap-1 mt-2.5 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-bold">
+            <h1 className="text-sm sm:text-lg font-bold text-slate-900 leading-snug">{profile.name}</h1>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-medium break-all">{profile.email}</p>
+            <div className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] sm:text-[11px] font-bold">
               <CheckCircle2 className="w-3 h-3 text-indigo-600" />
               <span>Verified Student</span>
             </div>
           </div>
 
           {/* Detailed Info Grid */}
-          <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
             <ProfileCard icon={<Hash />} title="Roll Number / PIN" value={profile.roll_number} />
             <ProfileCard icon={<Building />} title="Campus / College" value={profile.campus} />
             <ProfileCard icon={<BookOpen />} title="Course" value={profile.course} />
@@ -159,117 +159,117 @@ export default function StudentProfile() {
       </motion.div>
 
       {/* Advanced Practice Test Analytics Section */}
-      <div className="space-y-4">
+      <div className="space-y-2.5 sm:space-y-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
             <div className="p-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">
               Practice Analytics & Mastery
             </h2>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="hidden sm:block text-xs text-slate-500">
             Real-time performance metrics tracking your practice test attempts, score distribution, and module proficiencies.
           </p>
         </div>
 
         {/* 4 Summary Highlight Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {/* Card 1: Tests Attempted */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Practice Tests</span>
-              <Target className="w-4 h-4 text-blue-500" />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 mb-1">
+              <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">Practice Tests</span>
+              <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <div className="text-xl sm:text-3xl font-extrabold text-slate-900">
                 {analytics.total_practice_tests}
               </div>
-              <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Tests completed so far
+              <div className="text-[9px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                Tests completed
               </div>
             </div>
           </div>
 
           {/* Card 2: Scored Well (>=60%) */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Scored Well (≥60%)</span>
-              <Trophy className="w-4 h-4 text-emerald-500" />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 mb-1">
+              <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">Mastery (≥60%)</span>
+              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600">
+              <div className="text-xl sm:text-3xl font-extrabold text-emerald-600">
                 {analytics.scored_well_count}
                 <span className="text-xs font-semibold text-slate-400 ml-1">/ {analytics.total_practice_tests}</span>
               </div>
-              <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
+              <div className="text-[9px] sm:text-[11px] font-bold text-emerald-700 mt-0.5 truncate">
                 {analytics.scored_well_rate}% mastery rate
               </div>
             </div>
           </div>
 
           {/* Card 3: Average Score */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Average Score</span>
-              <Award className="w-4 h-4 text-indigo-500" />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 mb-1">
+              <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">Average Score</span>
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-indigo-600">
+              <div className="text-xl sm:text-3xl font-extrabold text-indigo-600">
                 {analytics.average_score}%
               </div>
-              <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Across all practice exams
+              <div className="text-[9px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                Across evaluations
               </div>
             </div>
           </div>
 
           {/* Card 4: Best Score */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Highest Score</span>
-              <Sparkles className="w-4 h-4 text-amber-500" />
+          <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-400 mb-1">
+              <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">Highest Score</span>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-amber-600">
+              <div className="text-xl sm:text-3xl font-extrabold text-amber-600">
                 {analytics.best_score}%
               </div>
-              <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Personal best performance
+              <div className="text-[9px] sm:text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                Personal best
               </div>
             </div>
           </div>
         </div>
 
         {/* Accuracy and Questions Solved Strip */}
-        <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
-            <span className="font-semibold text-slate-800">
-              Question Solving Accuracy:
+        <div className="bg-indigo-50/70 border border-indigo-100 rounded-lg sm:rounded-xl p-2.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+            <span className="font-semibold text-slate-800 text-[11px] sm:text-xs">
+              Question Accuracy:
             </span>
-            <span className="font-bold text-indigo-700 text-sm">
+            <span className="font-bold text-indigo-700 text-xs sm:text-sm">
               {analytics.overall_accuracy}%
             </span>
-            <span className="text-slate-500">
-              ({analytics.total_correct_answers} correct out of {analytics.total_questions_attempted} questions)
+            <span className="text-slate-500 text-[10px] sm:text-xs">
+              ({analytics.total_correct_answers}/{analytics.total_questions_attempted} correct)
             </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 text-[10px] sm:text-[11px]">
             <Link
               to="/student/crt"
-              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
+              className="font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
             >
-              Take CRT Practice
+              CRT Practice
             </Link>
             <span className="text-slate-300">•</span>
             <Link
               to="/student/practice"
-              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
+              className="font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
             >
-              Take Versant Practice
+              Versant Practice
             </Link>
           </div>
         </div>
@@ -310,44 +310,44 @@ export default function StudentProfile() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
               {moduleList.map((m) => {
                 const scoreBadge = getScoreColor(m.average_score);
                 return (
                   <div
                     key={m.key}
-                    className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                    className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
                   >
                     <div>
                       {/* Top Header of Module Card */}
-                      <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
-                          <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5 ${
+                          <span className={`inline-block text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1 ${
                             m.category === 'CRT' 
                               ? 'bg-blue-50 text-blue-700 border border-blue-200' 
                               : 'bg-purple-50 text-purple-700 border border-purple-200'
                           }`}>
                             {m.category} Module
                           </span>
-                          <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                          <h4 className="text-xs sm:text-base font-bold text-slate-900 leading-snug">
                             {m.name}
                           </h4>
                         </div>
-                        <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded-lg shrink-0">
+                        <span className="text-[10px] sm:text-xs font-bold bg-slate-100 text-slate-700 px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg shrink-0">
                           {m.tests_attempted} Test{m.tests_attempted !== 1 ? 's' : ''}
                         </span>
                       </div>
 
                       {/* Scored Well Metric Bar */}
-                      <div className="space-y-1.5 my-3">
-                        <div className="flex items-center justify-between text-xs">
+                      <div className="space-y-1 my-2">
+                        <div className="flex items-center justify-between text-[11px] sm:text-xs">
                           <span className="text-slate-500 font-medium">Scored Well (≥60%):</span>
                           <span className="font-bold text-emerald-700">
-                            {m.scored_well_count} of {m.tests_attempted} ({m.scored_well_rate}%)
+                            {m.scored_well_count}/{m.tests_attempted} ({m.scored_well_rate}%)
                           </span>
                         </div>
                         {/* Progress Bar */}
-                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 sm:h-2 overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               m.scored_well_rate >= 75 ? 'bg-emerald-500' :
@@ -360,16 +360,16 @@ export default function StudentProfile() {
                       </div>
 
                       {/* Scores Grid */}
-                      <div className="grid grid-cols-2 gap-2 my-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                      <div className="grid grid-cols-2 gap-2 my-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-center">
                         <div>
-                          <div className="text-[10px] uppercase font-bold text-slate-400">Avg Score</div>
-                          <div className={`text-base font-extrabold ${m.average_score >= 60 ? 'text-indigo-600' : 'text-slate-700'}`}>
+                          <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400">Avg Score</div>
+                          <div className={`text-sm sm:text-base font-extrabold ${m.average_score >= 60 ? 'text-indigo-600' : 'text-slate-700'}`}>
                             {m.average_score}%
                           </div>
                         </div>
                         <div className="border-l border-slate-200">
-                          <div className="text-[10px] uppercase font-bold text-slate-400">Best Score</div>
-                          <div className={`text-base font-extrabold ${m.best_score >= 60 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                          <div className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400">Best Score</div>
+                          <div className={`text-sm sm:text-base font-extrabold ${m.best_score >= 60 ? 'text-emerald-600' : 'text-slate-700'}`}>
                             {m.best_score}%
                           </div>
                         </div>
@@ -377,15 +377,15 @@ export default function StudentProfile() {
 
                       {/* Level Distribution Pills */}
                       {m.levels && (
-                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          <span className="text-[10px] font-semibold text-slate-400">Levels:</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[1] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
+                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                          <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400">Levels:</span>
+                          <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[1] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
                             L1: {m.levels[1] || 0}
                           </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[2] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
+                          <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[2] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
                             L2: {m.levels[2] || 0}
                           </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[3] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
+                          <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded ${m.levels[3] > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
                             L3: {m.levels[3] || 0}
                           </span>
                         </div>
@@ -393,7 +393,7 @@ export default function StudentProfile() {
                     </div>
 
                     {/* Footer / Accuracy */}
-                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                    <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500">
                       <span>Accuracy: <strong className="text-slate-800">{m.accuracy}%</strong></span>
                       {m.latest_attempt_at && (
                         <span>Last: {new Date(m.latest_attempt_at).toLocaleDateString()}</span>

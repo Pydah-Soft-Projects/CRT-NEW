@@ -220,45 +220,45 @@ const PracticeModuleTaking = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="px-6 lg:px-10 py-12">
+      <main className="px-2.5 sm:px-6 lg:px-10 py-3 sm:py-8">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 truncate">{module.name}</h1>
+            <div className="flex justify-between items-center mb-3 sm:mb-4">
+              <h1 className="text-base sm:text-2xl font-bold text-gray-800 truncate">{module.name}</h1>
             </div>
             {!isAudioModule && cheatWarning && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-center">
+              <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 rounded mb-3 text-center text-xs sm:text-sm">
                 <strong>Tab switching or leaving the exam is not allowed!</strong> ({cheatCount} warning{cheatCount > 1 ? 's' : ''})
               </div>
             )}
-            <div ref={examRef} className={`bg-white rounded-2xl shadow-lg mx-auto p-4 sm:p-8 w-full min-h-[350px] flex flex-col select-none ${
+            <div ref={examRef} className={`bg-white rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg mx-auto p-3.5 sm:p-8 w-full min-h-[300px] flex flex-col select-none ${
               isCompilerQuestion
                 ? 'max-w-6xl' 
                 : 'max-w-md justify-center'
             }`}>
-              <div className="text-center mb-6 text-sm font-semibold text-gray-500">
+              <div className="text-center mb-3 sm:mb-6 text-xs sm:text-sm font-semibold text-gray-500">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </div>
               <div className={isCompilerQuestion ? 'text-left' : 'text-center'}>
                 {currentQuestion.question_type === 'audio' && currentQuestion.audio_url && (
-                  <audio controls className="mx-auto mb-4">
+                  <audio controls className="mx-auto mb-3 sm:mb-4 w-full max-w-sm">
                     <source src={currentQuestion.audio_url} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                 )}
-                <p className="text-lg sm:text-xl text-gray-800 mb-8 break-words">{currentQuestion.question}</p>
+                <p className="text-xs sm:text-base md:text-lg font-bold text-gray-800 mb-4 sm:mb-8 break-words leading-snug">{currentQuestion.question}</p>
                 {isCompilerQuestion && currentQuestion.instructions && (
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm text-blue-800"><strong>Instructions:</strong> {currentQuestion.instructions}</p>
+                  <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded text-xs sm:text-sm">
+                    <p className="text-blue-800"><strong>Instructions:</strong> {currentQuestion.instructions}</p>
                   </div>
                 )}
               </div>
               {!isCompilerQuestion && currentQuestion.question_type === 'mcq' && currentQuestion.options && (
-                <div className="space-y-4 max-w-lg mx-auto w-full">
+                <div className="space-y-2 sm:space-y-3 max-w-lg mx-auto w-full">
                   {Object.entries(currentQuestion.options).map(([key, value]) => (
                     <label
                       key={key}
                       className={clsx(
-                        'flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all w-full',
+                        'flex items-center p-2.5 sm:p-3.5 rounded-lg border-2 cursor-pointer transition-all w-full text-xs sm:text-sm',
                         {
                           'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-300': answers[currentQuestion.question_id] === value,
                           'border-gray-200 hover:border-indigo-400': answers[currentQuestion.question_id] !== value,
@@ -271,10 +271,10 @@ const PracticeModuleTaking = () => {
                         value={value}
                         checked={answers[currentQuestion.question_id] === value}
                         onChange={() => handleAnswerChange(currentQuestion.question_id, value)}
-                        className="h-5 w-5 mr-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                        className="h-4 w-4 mr-3 text-indigo-600 border-gray-300 focus:ring-indigo-500 shrink-0"
                       />
-                      <span className="font-semibold text-gray-700">{key}.</span>
-                      <span className="ml-3 text-gray-800">{value}</span>
+                      <span className="font-semibold text-gray-700 shrink-0">{key}.</span>
+                      <span className="ml-2 text-gray-800 break-words">{value}</span>
                     </label>
                   ))}
                 </div>
@@ -290,26 +290,26 @@ const PracticeModuleTaking = () => {
                   />
                 </div>
               )}
-              {/* Add more question types as needed */}
-              <div className="flex justify-between mt-8">
+              {/* Navigation buttons */}
+              <div className="flex justify-between mt-5 sm:mt-8 gap-2">
                 <button
                   disabled={currentQuestionIndex === 0}
                   onClick={() => setCurrentQuestionIndex(i => Math.max(0, i - 1))}
-                  className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 disabled:opacity-50"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 {currentQuestionIndex < questions.length - 1 ? (
                   <button
                     onClick={() => setCurrentQuestionIndex(i => Math.min(questions.length - 1, i + 1))}
-                    className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                    className="px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
                   >
                     Next
                   </button>
                 ) : (
                   <button
                     onClick={handleSubmit}
-                    className="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700"
+                    className="px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg bg-green-600 text-white font-bold hover:bg-green-700"
                   >
                     Submit
                   </button>
@@ -326,9 +326,9 @@ const PracticeModuleTaking = () => {
 const ResultView = ({ result, onBack }) => {
   if (!result) {
     return (
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">An error occurred while calculating your results.</h1>
-        <button onClick={onBack} className="mt-8 px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">
+      <div className="text-center py-6">
+        <h1 className="text-base sm:text-xl font-bold">An error occurred while calculating your results.</h1>
+        <button onClick={onBack} className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs sm:text-sm font-semibold hover:bg-indigo-700 transition">
           Back to Modules
         </button>
       </div>
@@ -337,29 +337,27 @@ const ResultView = ({ result, onBack }) => {
   const { correct_answers, total_questions, average_score, results } = result;
   const scorePercentage = average_score || 0;
   const renderWordDiff = (expected, got) => {
-    const expectedWords = expected.split(' ');
-    const gotWords = got.split(' ');
     return (
       <span>{got}</span>
     );
   };
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
-      <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
-        <h1 className="text-3xl font-bold text-gray-800">Practice Test Submitted!</h1>
-        <p className="text-gray-600 mt-2">Here are your results:</p>
-        <div className="my-8">
-          <p className="text-6xl font-bold text-indigo-600">{correct_answers}<span className="text-4xl text-gray-500">/{total_questions}</span></p>
-          <p className="text-xl font-semibold text-gray-700">Questions Correct</p>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto px-2.5 sm:px-4 py-4 sm:py-8">
+      <div className="bg-white p-4 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg text-center">
+        <h1 className="text-lg sm:text-3xl font-bold text-gray-800">Practice Test Submitted!</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">Here are your results:</p>
+        <div className="my-4 sm:my-8">
+          <p className="text-3xl sm:text-6xl font-bold text-indigo-600">{correct_answers}<span className="text-xl sm:text-4xl text-gray-400">/{total_questions}</span></p>
+          <p className="text-sm sm:text-lg font-semibold text-gray-700 mt-1">Questions Correct</p>
         </div>
-        <div className="bg-gray-100 p-6 rounded-lg mb-8">
-          <h3 className="text-lg font-semibold">Your Score</h3>
-          <p className="text-4xl font-bold text-green-600 mt-2">{scorePercentage.toFixed(0)}%</p>
+        <div className="bg-gray-50 p-3 sm:p-6 rounded-lg mb-4 sm:mb-8 border border-gray-100">
+          <h3 className="text-xs sm:text-base font-semibold text-gray-600">Your Score</h3>
+          <p className="text-2xl sm:text-4xl font-bold text-green-600 mt-1">{scorePercentage.toFixed(0)}%</p>
         </div>
-        <div className="mt-8 text-left">
+        <div className="mt-4 sm:mt-8 text-left">
           {results && results.map((q, idx) => (
-            <div key={idx} className="mb-8 p-6 rounded-xl shadow border bg-white">
-              <div className="mb-2 font-semibold text-indigo-700">Question {idx + 1}</div>
+            <div key={idx} className="mb-3 sm:mb-6 p-3 sm:p-5 rounded-xl shadow-xs border bg-white">
+              <div className="mb-1.5 font-semibold text-indigo-700 text-xs sm:text-sm">Question {idx + 1}</div>
               {((q.question_type === 'audio' || q.question_type === 'speaking' || q.question_type === 'listening' || q.question_type === 'audio_to_text' || q.question_type === 'text_to_audio') || Boolean(q.student_audio_url || q.speaking_audio_url || q.audio_url)) ? (
                 <>
                   {(() => {

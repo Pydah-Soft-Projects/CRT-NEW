@@ -913,20 +913,20 @@ const OnlineExamTaking = () => {
   );
 
   if (alreadyAttempted) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-12 max-w-md mx-4 text-center"
+        className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 p-5 sm:p-10 max-w-md w-full text-center"
       >
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="w-20 h-20 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6"
+          className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6"
         >
-          <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-7 h-7 sm:w-10 sm:h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
         </motion.div>
@@ -935,7 +935,7 @@ const OnlineExamTaking = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-2xl font-bold text-slate-800 mb-4"
+          className="text-lg sm:text-2xl font-bold text-slate-800 mb-2 sm:mb-4"
         >
           Test Already Attempted
         </motion.h2>
@@ -944,7 +944,7 @@ const OnlineExamTaking = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-slate-600 mb-8 leading-relaxed"
+          className="text-xs sm:text-sm text-slate-600 mb-5 sm:mb-8 leading-relaxed"
         >
           You have already completed this test. Each test can only be attempted once.
         </motion.p>
@@ -953,27 +953,27 @@ const OnlineExamTaking = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="space-y-4"
+          className="space-y-2.5 sm:space-y-4"
         >
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/student/exams')}
-            className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl font-semibold shadow-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center justify-center"
+            className="w-full px-5 py-2.5 sm:py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold shadow-md hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center justify-center"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
             Go to Exams
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/student/dashboard')}
-            className="w-full px-8 py-3 border-2 border-slate-300 text-slate-700 rounded-2xl font-medium hover:bg-slate-50 transition-all duration-300 flex items-center justify-center"
+            className="w-full px-5 py-2 sm:py-2.5 border-2 border-slate-300 text-slate-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-medium hover:bg-slate-50 transition-all duration-300 flex items-center justify-center"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             Back to Dashboard
@@ -993,25 +993,25 @@ const OnlineExamTaking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 fixed inset-0 overflow-auto">
-      <main className="w-full h-full px-2.5 sm:px-4 py-3 sm:py-6 overflow-x-hidden">
+      <main className="w-full h-full px-2 sm:px-4 py-2 sm:py-6 overflow-x-hidden">
         {/* Header with Timer */}
-        <header className="pb-6 mb-6 border-b border-gradient-to-r from-transparent via-slate-200 to-transparent flex justify-between items-center">
+        <header className="pb-2.5 sm:pb-6 mb-3 sm:mb-6 border-b border-gradient-to-r from-transparent via-slate-200 to-transparent flex justify-between items-center gap-2">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-sm sm:text-xl font-bold text-slate-800 tracking-wide truncate max-w-[50vw]"
+            className="text-xs sm:text-xl font-bold text-slate-800 tracking-wide truncate max-w-[45vw]"
           >
             {exam.name}
           </motion.h1>
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2 sm:space-x-6">
             <motion.span
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-gradient-to-r from-blue-100 to-indigo-100 text-slate-700 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border border-blue-200"
+              className="bg-gradient-to-r from-blue-100 to-indigo-100 text-slate-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold shadow-sm border border-blue-200 shrink-0"
             >
-              Question {currentQuestionIndex + 1} of {questions.length}
+              Q {currentQuestionIndex + 1}/{questions.length}
             </motion.span>
             {/* Timer Display - Top Right */}
             {examDuration > 0 ? (
@@ -1019,16 +1019,16 @@ const OnlineExamTaking = () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className={`px-4 py-2 rounded-xl border-2 font-semibold text-sm shadow-lg backdrop-blur-sm transition-all duration-500 ${timeRemaining <= 300
+                className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold text-xs sm:text-sm shadow-md backdrop-blur-sm transition-all duration-500 shrink-0 ${timeRemaining <= 300
                     ? timeRemaining <= 60
                       ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300 text-red-600 animate-pulse shadow-red-200'
                       : 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300 text-amber-600 shadow-amber-200'
                     : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 text-blue-600 shadow-blue-200'
                   }`}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-1.5 sm:space-x-3">
                   <motion.svg
-                    className="w-6 h-6"
+                    className="w-4 h-4 sm:w-6 sm:h-6"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                     animate={{ rotate: timeRemaining <= 60 ? [0, 10, -10, 0] : 0 }}
@@ -1044,13 +1044,13 @@ const OnlineExamTaking = () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="px-4 py-2 rounded-xl border-2 font-semibold text-sm bg-gradient-to-r from-slate-50 to-gray-50 border-slate-300 text-slate-600 shadow-lg"
+                className="px-2.5 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold text-xs sm:text-sm bg-gradient-to-r from-slate-50 to-gray-50 border-slate-300 text-slate-600 shadow-md shrink-0"
               >
-                <div className="flex items-center space-x-3">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <div className="flex items-center space-x-1.5 sm:space-x-3">
+                  <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                   </svg>
-                  <span>No Time Limit</span>
+                  <span>No Limit</span>
                 </div>
               </motion.div>
             )}
@@ -1061,7 +1061,7 @@ const OnlineExamTaking = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8"
+          className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-3xl shadow-sm sm:shadow-xl border border-white/20 p-3 sm:p-6 lg:p-8"
         >
           {/* Warning Messages */}
           {!isAudioTest && cheatWarning && (
@@ -1100,10 +1100,10 @@ const OnlineExamTaking = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-8"
+            className="mb-4 sm:mb-8"
           >
-            <div className="flex justify-between text-xs text-slate-600 mb-3">
-              <span className="font-medium">Progress: {(() => {
+            <div className="flex justify-between text-xs text-slate-600 mb-2 sm:mb-3">
+              <span className="font-medium text-[11px] sm:text-xs">Progress: {(() => {
                 const compilerQuestionsAnswered = questions.filter(q =>
                   (q.question_type === 'compiler' || q.question_type === 'technical' || q.test_cases?.length > 0) &&
                   codeTestResults[q.question_id || q._id]
@@ -1118,7 +1118,7 @@ const OnlineExamTaking = () => {
 
                 return compilerQuestionsAnswered + otherQuestionsAnswered + recordingQuestionsAnswered;
               })()} / {questions.length} answered</span>
-              <span className="font-semibold text-slate-700">{Math.round(((() => {
+              <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">{Math.round(((() => {
                 const compilerQuestionsAnswered = questions.filter(q =>
                   (q.question_type === 'compiler' || q.question_type === 'technical' || q.test_cases?.length > 0) &&
                   codeTestResults[q.question_id || q._id]
@@ -1134,9 +1134,9 @@ const OnlineExamTaking = () => {
                 return (compilerQuestionsAnswered + otherQuestionsAnswered + recordingQuestionsAnswered) / questions.length;
               })()) * 100)}%</span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-2 sm:h-3 overflow-hidden">
               <motion.div
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full shadow-sm"
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 sm:h-3 rounded-full shadow-sm"
                 initial={{ width: 0 }}
                 animate={{ width: `${(() => {
                   const compilerQuestionsAnswered = questions.filter(q =>
@@ -1158,7 +1158,7 @@ const OnlineExamTaking = () => {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-8">
             {/* Main Question Area */}
             <div className="lg:col-span-2">
               <motion.div
@@ -1774,7 +1774,7 @@ const OnlineExamTaking = () => {
 
                   {/* Navigation Buttons */}
                   <motion.div
-                    className="flex justify-between mt-10"
+                    className="flex justify-between mt-5 sm:mt-10 gap-2.5"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.8 }}
@@ -1782,11 +1782,11 @@ const OnlineExamTaking = () => {
                     <motion.button
                       onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
                       disabled={currentQuestionIndex === 0}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-8 py-3 border-2 border-slate-300 text-sm font-medium rounded-2xl text-slate-700 bg-white/80 backdrop-blur-sm hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-4 sm:px-8 py-2 sm:py-3 border-2 border-slate-300 text-xs sm:text-sm font-medium rounded-xl sm:rounded-2xl text-slate-700 bg-white/80 backdrop-blur-sm hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm sm:shadow-lg transition-all duration-300"
                     >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                       Previous
@@ -1816,15 +1816,15 @@ const OnlineExamTaking = () => {
                             return (compilerQuestionsAnswered + otherQuestionsAnswered) !== questions.length;
                           }
                         })()}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`px-8 py-3 border-2 border-transparent text-sm font-medium rounded-2xl shadow-lg text-white flex items-center transition-all duration-300 ${timeRemaining <= 60
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`px-4 sm:px-8 py-2 sm:py-3 border-2 border-transparent text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg text-white flex items-center transition-all duration-300 ${timeRemaining <= 60
                             ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 animate-pulse'
                             : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
                           } disabled:bg-gradient-to-r disabled:from-gray-400 disabled:to-gray-500`}
                       >
                         {isSubmitting ? 'Submitting...' : autoSubmitted ? 'Auto-Submitting...' : 'Submit Exam'}
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </motion.button>
@@ -1832,12 +1832,12 @@ const OnlineExamTaking = () => {
                       <motion.button
                         onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
                         disabled={currentQuestionIndex === questions.length - 1}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-8 py-3 border-2 border-transparent text-sm font-medium rounded-2xl shadow-lg text-white bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 flex items-center transition-all duration-300"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="px-4 sm:px-8 py-2 sm:py-3 border-2 border-transparent text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg text-white bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 flex items-center transition-all duration-300"
                       >
                         Next
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </motion.button>
@@ -1854,9 +1854,9 @@ const OnlineExamTaking = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <div className="bg-white/80 backdrop-blur-sm p-3.5 sm:p-5 rounded-2xl shadow-md border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-sm sm:shadow-md border border-slate-200">
                 <motion.h5
-                  className="text-center mb-3 sm:mb-5 font-semibold text-slate-700 text-sm sm:text-base"
+                  className="text-center mb-2.5 sm:mb-5 font-bold text-slate-700 text-xs sm:text-base"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
@@ -1864,7 +1864,7 @@ const OnlineExamTaking = () => {
                   Question Navigation
                 </motion.h5>
                 <motion.div
-                  className="grid grid-cols-5 gap-2 sm:gap-2.5 mb-3 sm:mb-5"
+                  className="grid grid-cols-6 sm:grid-cols-5 gap-1.5 sm:gap-2.5 mb-2.5 sm:mb-5"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.6 }}
@@ -1873,9 +1873,9 @@ const OnlineExamTaking = () => {
                     <motion.button
                       key={index}
                       onClick={() => setCurrentQuestionIndex(index)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm relative ${index === currentQuestionIndex
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl text-[11px] sm:text-sm font-semibold transition-all duration-300 shadow-sm relative ${index === currentQuestionIndex
                           ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-blue-200'
                           : answers[examQuestionAnswerKey(questions[index], index)] ||
                             recordings[examQuestionAnswerKey(questions[index], index)] ||
@@ -1887,7 +1887,7 @@ const OnlineExamTaking = () => {
                       {index + 1}
                       {/* Show microphone icon for recorded questions in listening modules */}
                       {(exam?.module_id === 'LISTENING' || exam?.module_id === 'SPEAKING') && recordings[examQuestionAnswerKey(questions[index], index)] && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-red-500 rounded-full flex items-center justify-center">
                           <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                             <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />

@@ -196,31 +196,31 @@ const TechnicalTestTaking = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="py-6">
-          <div className="w-full px-4 sm:px-6 lg:px-8">
+      <main className="py-3 sm:py-6">
+          <div className="w-full px-2.5 sm:px-6 lg:px-8">
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-8"
+              className="mb-3 sm:mb-6"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{test.name}</h1>
-                  <p className="text-gray-600 mt-2">Technical Test - {test.questions.length} questions</p>
+                  <h1 className="text-base sm:text-2xl font-bold text-gray-900 truncate">{test.name}</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Technical Test • {test.questions.length} questions</p>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Question {currentQuestionIndex + 1} of {test.questions.length}</p>
-                    <p className="text-sm text-gray-600">
+                <div className="flex items-center justify-between sm:justify-end space-x-3">
+                  <div className="text-left sm:text-right">
+                    <p className="text-xs text-gray-600">Q {currentQuestionIndex + 1} of {test.questions.length}</p>
+                    <p className="text-[11px] text-gray-500">
                       {Object.keys(testResults).length} completed
                     </p>
                   </div>
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 disabled:opacity-50"
+                    className="bg-green-600 text-white px-3.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
                     {submitting ? 'Submitting...' : 'Submit Test'}
                   </button>
@@ -233,16 +233,16 @@ const TechnicalTestTaking = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mb-6"
+              className="mb-3 sm:mb-6"
             >
-              <div className="flex space-x-2 overflow-x-auto pb-2">
+              <div className="flex space-x-1.5 sm:space-x-2 overflow-x-auto pb-1.5">
                 {test.questions.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestionIndex(index)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                    className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded text-xs sm:text-sm font-medium whitespace-nowrap ${
                       currentQuestionIndex === index
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-blue-600 text-white'
                         : testResults[index]
                         ? 'bg-green-100 text-green-800'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -262,29 +262,29 @@ const TechnicalTestTaking = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-8"
             >
               {/* Question Statement */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              <div className="bg-white rounded-xl shadow-sm p-3.5 sm:p-6 border border-gray-100">
+                <h2 className="text-sm sm:text-lg font-bold text-gray-900 mb-2 sm:mb-4">
                   Question {currentQuestionIndex + 1}
                 </h2>
                 <div className="prose max-w-none">
-                  <pre className="whitespace-pre-wrap text-gray-700 bg-gray-50 p-4 rounded-md">
+                  <pre className="whitespace-pre-wrap text-gray-700 bg-gray-50 p-2.5 sm:p-4 rounded-lg text-xs sm:text-sm font-mono">
                     {currentQuestion.question}
                   </pre>
                 </div>
               </div>
 
               {/* Code Editor */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Your Solution</h3>
+              <div className="bg-white rounded-xl shadow-sm p-3.5 sm:p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-2.5 sm:mb-4 gap-2">
+                  <h3 className="text-xs sm:text-base font-bold text-gray-900">Your Solution</h3>
                   <div className="flex items-center space-x-2">
                     <select
                       value={answers[currentQuestionIndex]?.language || 'python'}
                       onChange={(e) => handleLanguageChange(currentQuestionIndex, e.target.value)}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      className="px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
                     >
                       <option value="python">Python</option>
                       <option value="java">Java</option>
@@ -294,7 +294,7 @@ const TechnicalTestTaking = () => {
                     </select>
                     <button
                       onClick={() => runCode(currentQuestionIndex)}
-                      className="bg-blue-500 text-white px-4 py-1 rounded-md text-sm hover:bg-blue-600"
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-xs sm:text-sm font-semibold hover:bg-blue-700"
                     >
                       Run Code
                     </button>
@@ -304,7 +304,7 @@ const TechnicalTestTaking = () => {
                 <textarea
                   value={answers[currentQuestionIndex]?.code || ''}
                   onChange={(e) => handleCodeChange(currentQuestionIndex, e.target.value)}
-                  className="w-full h-64 p-4 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-48 sm:h-64 p-2.5 sm:p-4 border border-gray-300 rounded-lg font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={`# Write your ${answers[currentQuestionIndex]?.language || 'python'} code here\n\n`}
                 />
               </div>
@@ -316,30 +316,30 @@ const TechnicalTestTaking = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="mt-8 bg-white rounded-lg shadow-md p-6"
+                className="mt-3.5 sm:mt-8 bg-white rounded-xl shadow-sm p-3.5 sm:p-6 border border-gray-100"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Test Results</h3>
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2.5 sm:mb-4">Test Results</h3>
                 
                 {codeOutput[currentQuestionIndex].status === 'running' && (
                   <div className="text-center py-4">
                     <LoadingSpinner size="md" />
-                    <p className="text-gray-600 mt-2">Running test cases...</p>
+                    <p className="text-gray-600 mt-2 text-xs sm:text-sm">Running test cases...</p>
                   </div>
                 )}
 
                 {codeOutput[currentQuestionIndex].status === 'completed' && (
-                  <div className="space-y-4">
+                  <div className="space-y-2.5 sm:space-y-4">
                     {codeOutput[currentQuestionIndex].results.map((result, index) => (
                       <div
                         key={index}
-                        className={`border rounded-lg p-4 ${
+                        className={`border rounded-lg p-2.5 sm:p-4 ${
                           result.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">Test Case {index + 1}</span>
+                          <span className="font-semibold text-xs sm:text-sm">Test Case {index + 1}</span>
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
                               result.passed
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'

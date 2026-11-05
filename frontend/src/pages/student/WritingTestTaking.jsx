@@ -270,16 +270,16 @@ const WritingTestTaking = () => {
 
   if (!isLaptop) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
-          <FaExclamationTriangle className="mx-auto h-16 w-16 text-red-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Laptop Required</h2>
-          <p className="text-gray-600 mb-6">
-            Writing tests can only be taken on a laptop or desktop computer for the best experience.
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg text-center max-w-sm sm:max-w-md w-full">
+          <FaExclamationTriangle className="mx-auto h-10 w-10 sm:h-16 sm:w-16 text-amber-500 mb-3 sm:mb-4" />
+          <h2 className="text-base sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4">Laptop Required</h2>
+          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
+            Writing tests require physical keyboard input and can only be taken on a laptop or desktop computer.
           </p>
           <button
             onClick={() => navigate('/student/practice')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700"
           >
             Back to Practice
           </button>

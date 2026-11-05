@@ -102,20 +102,7 @@ const StudentSidebar = () => {
 
 
     return (
-        <div className="flex">
-            {/* Mobile Menu Toggle */}
-            <div className="lg:hidden fixed top-4 left-4 z-50">
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={toggleSidebar}
-                    className="p-3 bg-white text-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-                >
-                    {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </motion.button>
-            </div>
-
+        <div className="flex w-full h-screen overflow-hidden">
             {/* Modern Collapsible Sidebar */}
             <motion.div
                 initial={false}
@@ -133,13 +120,13 @@ const StudentSidebar = () => {
                 }}
             >
                 {/* Header with User Profile */}
-                <div className="p-2 sm:p-3 border-b border-gray-200/50 flex-shrink-0">
+                <div className="p-2 sm:p-3 border-b border-gray-200/50 flex-shrink-0 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <motion.div 
                             whileHover={{ scale: 1.05 }}
                             className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg"
                         >
-                            <User className="w-6 h-6 text-white" />
+                            <User className="w-5 h-5 text-white" />
                         </motion.div>
                         <AnimatePresence>
                             {!isCollapsed && (
@@ -151,13 +138,23 @@ const StudentSidebar = () => {
                                     className="overflow-hidden"
                                 >
                                     <div>
-                                        <p className="font-semibold text-gray-800 text-sm">{user?.name || 'Student'}</p>
-                                        <p className="text-xs text-gray-500">Student</p>
+                                        <p className="font-semibold text-gray-800 text-xs sm:text-sm truncate">{user?.name || 'Student'}</p>
+                                        <p className="text-[10px] sm:text-xs text-gray-500">Student Portal</p>
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
+
+                    {!isDesktop && (
+                        <button
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="p-1 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label="Close menu"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Navigation Items */}
@@ -285,50 +282,46 @@ const StudentSidebar = () => {
             </AnimatePresence>
             
             {/* Main Content */}
-            <div className={`flex-1 bg-[#fefefe] transition-all duration-300 flex flex-col h-screen overflow-hidden ${
+            <div className={`flex-1 min-w-0 w-full bg-[#fefefe] transition-all duration-300 flex flex-col h-screen overflow-hidden ${
                 isDesktop ? (isCollapsed ? 'ml-[70px]' : 'ml-[260px]') : 'ml-0'
             }`}>
                 {/* Header */}
-                <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm shadow-sm flex items-center h-16 px-4 border-b border-gray-200/70 flex-shrink-0">
+                <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm shadow-sm flex items-center h-14 lg:h-16 px-3 sm:px-4 border-b border-gray-200/70 flex-shrink-0">
                     <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center space-x-4">
-                        <button
-                                className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-all duration-200"
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <button
+                                className="lg:hidden p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100/70 transition-all duration-200"
                                 onClick={toggleSidebar}
-                        >
+                                aria-label="Toggle menu"
+                            >
                                 <Menu className="h-5 w-5" />
-                        </button>
-                            <div className="flex items-center space-x-3">
-                                <div className="w-16 h-12 bg-transparent rounded-lg flex items-center justify-center">
-                            <img 
-                                src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png" 
-                                alt="Logo" 
-                                        className=" h-10 w-auto" 
-                            />
-                        </div>
-                                <span className="text-lg font-semibold text-gray-800">
-                                    <span className="hidden lg:inline">PYDAH Training and Placements Program</span>
-                                    <span className="lg:hidden">PYDAH TPO</span>
+                            </button>
+                            <div className="flex items-center space-x-2 sm:space-x-2.5">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm font-black text-xs sm:text-sm">
+                                    SE
+                                </div>
+                                <span className="text-sm sm:text-base font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 bg-clip-text text-transparent tracking-tight">
+                                    Study Edge
                                 </span>
                             </div>
-                    </div>
+                        </div>
                         
-                        <div className="flex items-center space-x-4">
-                            <button className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-all duration-200">
-                            <Bell className="h-5 w-5" />
-                        </button>
-                        <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <User className="h-4 w-4 text-white" />
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <button className="p-1.5 sm:p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-all duration-200">
+                                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                            <div className="flex items-center space-x-1.5 sm:space-x-2">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                                 </div>
-                                <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+                                <span className="hidden sm:inline text-xs sm:text-sm font-medium text-gray-700 max-w-[120px] truncate">{user?.name}</span>
                             </div>
                         </div>
                     </div>
                 </header>
                 
                 {/* Content Area */}
-                <div className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 w-full overflow-y-auto overflow-x-hidden">
+                <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 xl:p-8 w-full max-w-full overflow-y-auto overflow-x-hidden no-scrollbar">
                     <Outlet />
                 </div>
             </div>

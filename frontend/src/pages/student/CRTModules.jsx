@@ -264,21 +264,21 @@ function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule,
   const currentCategory = categories.find(c => c.id === selectedModuleId) || categories[0];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1.5 sm:pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight">
             CRT Practice Tests
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-[11px] sm:text-xs text-slate-500">
             Select a topic and difficulty level to take automated practice tests.
           </p>
         </div>
       </div>
 
       {/* Module Tabs (Aptitude, Reasoning, Technical) */}
-      <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-xl overflow-x-auto">
+      <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-white border border-slate-200 rounded-lg sm:rounded-xl overflow-x-auto">
         {categories.map(cat => {
           const isActive = cat.id === selectedModuleId;
           return (
@@ -286,7 +286,7 @@ function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule,
               key={cat.id}
               type="button"
               onClick={() => onSelectModule(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
                 isActive
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -300,41 +300,41 @@ function CRTTopicsWithLevelsView({ categories, selectedModuleId, onSelectModule,
       </div>
 
       {/* Topics Grid with all levels shown for each topic */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 pt-1">
         {currentCategory.topics.map(topic => (
           <div
             key={topic.id}
-            className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow hover:border-indigo-200 transition-all flex flex-col justify-between"
+            className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-sm hover:shadow hover:border-indigo-200 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-1">
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900">
                   {topic.name}
                 </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
                   3 Levels
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 leading-snug mb-3">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 leading-snug mb-2 sm:mb-3">
                 {topic.desc}
               </p>
             </div>
 
             {/* Clickable Level Badges for this Topic */}
-            <div className="pt-2.5 border-t border-slate-100 space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <div className="pt-2 border-t border-slate-100 space-y-1">
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 Choose Level to Start:
               </span>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
                 {DIFFICULTY_LEVELS.map(lvl => (
                   <button
                     key={lvl.id}
                     type="button"
                     onClick={() => onSelectTopicAndLevel(topic, lvl.id)}
-                    className="py-1.5 px-2 rounded-lg border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/70 text-slate-700 hover:text-indigo-700 text-center transition-all group"
+                    className="py-1 px-1.5 rounded-md sm:rounded-lg border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/70 text-slate-700 hover:text-indigo-700 text-center transition-all group"
                   >
-                    <span className="text-xs font-bold block">{lvl.shortName}</span>
-                    <span className="text-[9px] text-slate-400 group-hover:text-indigo-600 block truncate">
+                    <span className="text-[11px] sm:text-xs font-bold block">{lvl.shortName}</span>
+                    <span className="text-[8px] sm:text-[9px] text-slate-400 group-hover:text-indigo-600 block truncate">
                       {lvl.id === 1 ? 'Basic' : lvl.id === 2 ? 'Medium' : 'Advanced'}
                     </span>
                   </button>
@@ -505,25 +505,25 @@ function CRTTestsListView({
       </div>
 
       {/* Topic Header Card */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-indigo-600">
             {category.name}
           </span>
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">
+          <h2 className="text-sm sm:text-lg font-bold text-slate-900 leading-snug">
             {topic.name}
           </h2>
-          <span className="text-xs font-semibold text-slate-500">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500">
             {levelObj.name} • {questionCount} questions per test
           </span>
         </div>
-        <div className="text-[11px] text-slate-400 font-medium bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl w-fit">
+        <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg sm:rounded-xl w-fit">
           Questions are drawn dynamically and do not repeat across tests
         </div>
       </div>
 
       {/* Practice Tests 1, 2, 3, 4, 5 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
         {tests.map(testNum => {
           const testKey = `${category.id}_${topic.id}_${level}_${testNum}`;
           const prevScore = completedTests[testKey];
@@ -532,20 +532,20 @@ function CRTTestsListView({
           return (
             <div
               key={testNum}
-              className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-indigo-200 shadow-sm transition-all flex items-center justify-between gap-3"
+              className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 hover:border-indigo-200 shadow-sm transition-all flex items-center justify-between gap-2.5"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-slate-900">
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                     Practice Test {testNum}
                   </span>
                   {isDone && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 shrink-0">
                       {prevScore}% Score
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">
                   {questionCount} Questions • Level {level} • ~{questionCount} mins
                 </p>
               </div>
@@ -553,14 +553,14 @@ function CRTTestsListView({
               <button
                 type="button"
                 onClick={() => onLaunchTest(testNum)}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all shadow-sm ${
                   isDone
                     ? 'bg-slate-100 hover:bg-indigo-50 text-indigo-700 border border-slate-200'
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100'
                 }`}
               >
-                <span>{isDone ? 'Retake' : 'Start Test'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>{isDone ? 'Retake' : 'Start'}</span>
+                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
           );
@@ -638,9 +638,9 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5 sm:space-y-4">
       {/* Top Header */}
-      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+      <div className="bg-white p-2.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -648,53 +648,53 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
                 onBack();
               }
             }}
-            className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
           </button>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 block">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-indigo-600 block">
               {topic?.name} • Practice Test {testNumber}
             </span>
-            <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+            <h2 className="text-xs sm:text-base font-extrabold text-slate-900">
               Q{currentIndex + 1} of {questions.length}
             </h2>
           </div>
         </div>
 
         {/* Timer & Progress */}
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg border border-slate-200">
+            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
             <span className="font-mono text-xs font-bold text-slate-800">
               {formatTimer(timeLeft)}
             </span>
           </div>
 
-          <div className="text-xs font-semibold text-slate-600">
+          <div className="text-[11px] sm:text-xs font-semibold text-slate-600">
             Answered: <strong className="text-indigo-600">{answeredCount}</strong>/{questions.length}
           </div>
         </div>
       </div>
 
       {/* Main Question Card + Navigator */}
-      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Question Area */}
-        <div className="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="space-y-3">
+        <div className="lg:col-span-3 bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-3 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
                 Question {currentIndex + 1}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Multiple Choice</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">Multiple Choice</span>
             </div>
 
-            <h3 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 leading-snug">
+            <h3 className="text-xs sm:text-base md:text-lg font-bold text-slate-900 leading-snug">
               {currentQ?.question || currentQ?.text}
             </h3>
 
             {/* Options with A, B, C, D */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-1.5 sm:space-y-2 pt-1">
               {currentQ?.options?.map((opt, oIdx) => {
                 const isSelected = answers[qId] === opt;
                 return (
@@ -702,21 +702,21 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
                     key={oIdx}
                     type="button"
                     onClick={() => handleSelectOption(opt)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between ${
+                    className={`w-full text-left p-2.5 sm:p-3 rounded-lg sm:rounded-xl border transition-all flex items-center justify-between ${
                       isSelected
                         ? 'border-indigo-600 bg-indigo-50/70 text-indigo-950 font-semibold shadow-sm'
                         : 'border-slate-200 hover:border-slate-300 bg-white text-slate-800'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-bold shrink-0 ${
                         isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
                       }`}>
                         {String.fromCharCode(65 + oIdx)}
                       </span>
                       <span className="text-xs sm:text-sm break-words">{opt}</span>
                     </div>
-                    {isSelected && <CheckCircle className="w-4 h-4 text-indigo-600 shrink-0 ml-2" />}
+                    {isSelected && <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 shrink-0 ml-1.5" />}
                   </button>
                 );
               })}
@@ -724,12 +724,12 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
           </div>
 
           {/* Action Row */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-2.5 sm:pt-4 border-t border-slate-100">
             <button
               type="button"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex(prev => prev - 1)}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
@@ -738,15 +738,15 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
               <button
                 type="button"
                 onClick={handleSubmitTest}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all"
+                className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all"
               >
-                Submit Practice Test
+                Submit Test
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
+                className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
               >
                 Next Question
               </button>
@@ -755,9 +755,9 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
         </div>
 
         {/* Question Palette Sidebar */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 h-fit">
+        <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-2.5 sm:space-y-3 h-fit">
           <div className="flex items-center justify-between">
-            <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+            <h4 className="text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider">
               Questions ({questions.length})
             </h4>
             <span className="text-xs text-indigo-600 font-bold">
@@ -765,7 +765,7 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
             </span>
           </div>
 
-          <div className="grid grid-cols-5 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+          <div className="grid grid-cols-6 sm:grid-cols-5 gap-1 sm:gap-1.5 max-h-40 sm:max-h-56 overflow-y-auto pr-0.5">
             {questions.map((q, idx) => {
               const id = q._id || q.id || q.question_id || idx;
               const isAnswered = answers[id] !== undefined;
@@ -776,7 +776,7 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
                   key={idx}
                   type="button"
                   onClick={() => setCurrentIndex(idx)}
-                  className={`w-8 h-8 rounded-lg font-bold text-xs transition-all flex items-center justify-center ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg font-bold text-[11px] sm:text-xs transition-all flex items-center justify-center ${
                     isCurrent
                       ? 'ring-2 ring-indigo-600 bg-indigo-600 text-white'
                       : isAnswered
@@ -793,7 +793,7 @@ function CRTTestTakingView({ category, topic, level, testNumber, questions, onSu
           <button
             type="button"
             onClick={handleSubmitTest}
-            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold transition-all"
+            className="w-full mt-1.5 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all shadow-sm"
           >
             Submit Test
           </button>
@@ -810,81 +810,81 @@ function CRTResultView({ category, topic, level, testNumber, result, onRetake, o
   const isPassed = (result?.score || 0) >= 60;
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4 max-w-2xl mx-auto">
-      <div className="bg-white p-5 sm:p-8 rounded-2xl border border-slate-200 shadow-md text-center space-y-4">
-        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full mx-auto flex items-center justify-center text-2xl ${
+    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3 sm:space-y-4 max-w-2xl mx-auto">
+      <div className="bg-white p-3.5 sm:p-8 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-center space-y-3 sm:space-y-4">
+        <div className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full mx-auto flex items-center justify-center text-xl sm:text-2xl ${
           isPassed ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
         }`}>
-          {isPassed ? <Award className="w-8 h-8" /> : <RotateCcw className="w-8 h-8" />}
+          {isPassed ? <Award className="w-5 h-5 sm:w-8 sm:h-8" /> : <RotateCcw className="w-5 h-5 sm:w-8 sm:h-8" />}
         </div>
 
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {topic?.name} • Practice Test {testNumber}
           </span>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
+          <h2 className="text-base sm:text-2xl font-extrabold text-slate-900 mt-0.5">
             {isPassed ? 'Outstanding Performance!' : 'Keep Practicing!'}
           </h2>
-          <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Saved to your database test history!</span>
+          <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600" />
+            <span>Saved to your test history!</span>
           </div>
         </div>
 
         {/* Score Ring / Metric */}
-        <div className="flex items-center justify-center gap-6 py-2">
+        <div className="flex items-center justify-center gap-4 sm:gap-6 py-1 sm:py-2">
           <div>
-            <div className={`text-3xl sm:text-4xl font-black ${isPassed ? 'text-emerald-600' : 'text-slate-900'}`}>
+            <div className={`text-2xl sm:text-4xl font-black ${isPassed ? 'text-emerald-600' : 'text-slate-900'}`}>
               {result.score}%
             </div>
-            <span className="text-[10px] text-slate-400 font-semibold uppercase">Score</span>
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase">Score</span>
           </div>
 
-          <div className="h-10 w-px bg-slate-200"></div>
+          <div className="h-8 sm:h-10 w-px bg-slate-200"></div>
 
           <div>
-            <div className="text-3xl sm:text-4xl font-black text-slate-900">
+            <div className="text-2xl sm:text-4xl font-black text-slate-900">
               {result.correctCount} / {result.totalQuestions}
             </div>
-            <span className="text-[10px] text-slate-400 font-semibold uppercase">Correct</span>
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase">Correct</span>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-1 sm:pt-2">
           <button
             onClick={onRetake}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all"
+            className="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs shadow-sm transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Retake Test {testNumber}</span>
+            <span>Retake Test</span>
           </button>
 
           <button
             onClick={onNextTest}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all"
+            className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs shadow-sm transition-all"
           >
-            <span>Next: Practice Test {testNumber + 1}</span>
+            <span>Next Test {testNumber + 1}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={onBack}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors"
           >
-            Back to Tests List
+            Back to List
           </button>
         </div>
       </div>
 
       {/* Answer Key & Explanation Review */}
       {Array.isArray(result?.questions) && (
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+        <div className="bg-white p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-2.5 sm:space-y-3">
+          <h3 className="text-[10px] sm:text-xs font-bold text-slate-900 uppercase tracking-wider">
             Review ({result.questions.length} Questions)
           </h3>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2 sm:space-y-2.5">
             {result.questions.map((q, idx) => {
               const qId = q._id || q.id || q.question_id || idx;
               const userAns = result.answers?.[qId];
@@ -893,7 +893,7 @@ function CRTResultView({ category, topic, level, testNumber, result, onRetake, o
               return (
                 <div
                   key={idx}
-                  className={`p-3 rounded-xl border text-left space-y-1.5 ${
+                  className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl border text-left space-y-1 ${
                     isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-rose-200 bg-rose-50/30'
                   }`}
                 >
@@ -902,17 +902,17 @@ function CRTResultView({ category, topic, level, testNumber, result, onRetake, o
                       Q{idx + 1}. {q.question || q.text}
                     </p>
                     {isCorrect ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 text-[10px] font-bold bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
-                        <CheckCircle className="w-3 h-3" /> Correct
+                      <span className="inline-flex items-center gap-0.5 text-emerald-700 text-[9px] sm:text-[10px] font-bold bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
+                        <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Correct
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-rose-700 text-[10px] font-bold bg-rose-100 px-1.5 py-0.5 rounded-full shrink-0">
-                        <XCircle className="w-3 h-3" /> Incorrect
+                      <span className="inline-flex items-center gap-0.5 text-rose-700 text-[9px] sm:text-[10px] font-bold bg-rose-100 px-1.5 py-0.5 rounded-full shrink-0">
+                        <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Incorrect
                       </span>
                     )}
                   </div>
 
-                  <div className="text-[11px] space-y-0.5 text-slate-700">
+                  <div className="text-[10px] sm:text-[11px] space-y-0.5 text-slate-700">
                     <div>
                       <span className="text-slate-500">Your Answer: </span>
                       <strong className={isCorrect ? 'text-emerald-700' : 'text-rose-700'}>
@@ -920,11 +920,11 @@ function CRTResultView({ category, topic, level, testNumber, result, onRetake, o
                       </strong>
                     </div>
                     <div>
-                      <span className="text-slate-500">Correct Answer: </span>
+                      <span className="text-slate-500">Correct: </span>
                       <strong className="text-emerald-700">{q.correct_answer}</strong>
                     </div>
                     {q.explanation && (
-                      <div className="text-slate-500 pt-0.5 text-[10px] italic">
+                      <div className="text-slate-500 pt-0.5 text-[9px] sm:text-[10px] italic">
                         💡 {q.explanation}
                       </div>
                     )}

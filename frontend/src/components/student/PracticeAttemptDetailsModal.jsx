@@ -44,40 +44,40 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
     const isCorrect = result.is_correct;
     
     return (
-      <div key={index} className="border border-gray-100 rounded-lg p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h5 className="font-medium text-gray-900">
+      <div key={index} className="border border-gray-100 rounded-lg p-2.5 sm:p-4">
+        <div className="flex justify-between items-start mb-1.5 sm:mb-2">
+          <h5 className="font-semibold text-xs sm:text-base text-gray-900">
             Question {result.question_number}
           </h5>
           <div className={`flex items-center gap-1 ${
             isCorrect ? 'text-green-600' : 'text-red-600'
           }`}>
             {isCorrect ? (
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             ) : (
-              <XCircle className="w-5 h-5" />
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
-            <span className="text-sm font-medium">
+            <span className="text-xs sm:text-sm font-semibold">
               {isCorrect ? 'Correct' : 'Incorrect'}
             </span>
           </div>
         </div>
         
-        <div className="mb-3">
-          <p className="text-gray-700 mb-2">
+        <div className="mb-2 sm:mb-3">
+          <p className="text-gray-700 text-xs sm:text-sm mb-1.5 sm:mb-2">
             {result.question_text || 'Question text not available'}
           </p>
         </div>
 
         {/* MCQ Options */}
         {result.question_type === 'mcq' && result.options && (
-          <div className="mb-4">
-            <label className="text-sm font-medium text-gray-600 mb-2 block">Options:</label>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="mb-3 sm:mb-4">
+            <label className="text-xs sm:text-sm font-medium text-gray-600 mb-1.5 block">Options:</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs sm:text-sm">
               {Object.entries(result.options).map(([key, value]) => (
                 <div key={key} className={`p-2 rounded ${
-                  result.correct_answer === key ? 'bg-green-50 text-green-800' : 
-                  result.student_answer === key ? 'bg-red-50 text-red-800' : 'bg-gray-50'
+                  result.correct_answer === key ? 'bg-green-50 text-green-800 font-semibold' : 
+                  result.student_answer === key ? 'bg-red-50 text-red-800 font-semibold' : 'bg-gray-50'
                 }`}>
                   {key}: {value}
                 </div>
@@ -86,18 +86,18 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
           <div>
-            <label className="text-sm font-medium text-gray-600">Student's Answer:</label>
-            <p className={`mt-1 p-2 rounded ${
+            <label className="text-xs sm:text-sm font-medium text-gray-600">Student's Answer:</label>
+            <p className={`mt-1 p-2 rounded text-xs sm:text-sm ${
               isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
             }`}>
               {result.student_answer || 'No answer provided'}
             </p>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-600">Correct Answer:</label>
-            <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800">
+            <label className="text-xs sm:text-sm font-medium text-gray-600">Correct Answer:</label>
+            <p className="mt-1 p-2 rounded bg-gray-50 text-gray-800 text-xs sm:text-sm">
               {result.correct_answer || 'Not available'}
             </p>
           </div>
@@ -200,55 +200,55 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-6xl w-full max-h-[92vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+        <div className="p-3 sm:p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1 sm:p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               )}
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
+              <div className="min-w-0">
+                <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
                   Attempt Details
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
                   {attempt?.test_name} • {attempt?.module_id}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="text-right">
-                <div className={`text-2xl font-bold ${getScoreColor(attempt?.score || 0)}`}>
+                <div className={`text-base sm:text-2xl font-bold ${getScoreColor(attempt?.score || 0)}`}>
                   {attempt?.score?.toFixed(1) || 0}%
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-[10px] sm:text-xs text-gray-500">
                   {attempt?.correct_answers}/{attempt?.total_questions} correct
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
+        <div className="p-3 sm:p-6 overflow-y-auto max-h-[75vh]">
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <LoadingSpinner size="lg" />
