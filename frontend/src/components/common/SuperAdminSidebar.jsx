@@ -138,7 +138,7 @@ const SuperAdminSidebar = () => {
               className="text-lg font-bold bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
             >
-              Study Edge
+              Campo
             </h1>
             <p className="text-xs text-[var(--text-muted,#7D96A4)] font-medium capitalize">
               {user?.role_name || (user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal')}
@@ -268,12 +268,15 @@ const SuperAdminSidebar = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
-          className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0"
+          className="p-4 border-b border-[var(--border,#DCEBF2)] bg-[var(--primary-light,#F4FAFD)] flex-shrink-0"
         >
-          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Study Edge
+          <h1 
+            className="text-lg font-bold bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+          >
+            Campo
           </h1>
-          <p className="text-xs text-gray-600 font-medium capitalize">
+          <p className="text-xs text-[var(--text-muted,#7D96A4)] font-medium capitalize">
             {user?.role_name || (user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal')}
           </p>
 

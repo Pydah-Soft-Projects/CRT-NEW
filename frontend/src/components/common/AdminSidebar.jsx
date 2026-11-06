@@ -237,7 +237,7 @@ const AdminSidebar = () => {
             className="text-2xl font-bold bg-clip-text text-transparent"
             style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
           >
-            Study Edge
+            Campo
           </h1>
           <p className="text-sm text-[var(--text-muted,#7D96A4)] font-medium capitalize">{user?.role?.replace('_', ' ')} Portal</p>
         </motion.div>
