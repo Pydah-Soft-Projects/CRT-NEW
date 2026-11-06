@@ -14,8 +14,8 @@ import React from 'react';
  */
 const SkeletonLoader = ({ type = 'dashboard', count = 5, className = '' }) => {
   // Shimmer pulse base classes
-  const pulse = 'animate-pulse bg-slate-200/80 rounded';
-  const cardPulse = 'animate-pulse bg-white border border-slate-200/80 shadow-xs rounded-xl';
+  const pulse = 'animate-pulse bg-[var(--border,#DCEBF2)]/70 rounded';
+  const cardPulse = 'animate-pulse bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] shadow-xs rounded-xl';
 
   if (type === 'tests') {
     return (

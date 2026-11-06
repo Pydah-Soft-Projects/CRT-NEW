@@ -9,6 +9,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Centralized Theme Runtime Loader -->
+    <script>
+      (function() {
+        var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        var themeServer = isLocal ? 'http://localhost:7000' : 'https://ui-theme.pydah.edu.in';
+        var script = document.createElement('script');
+        script.src = themeServer + '/themes/theme-loader.js';
+        script.setAttribute('data-theme-server', themeServer);
+        script.setAttribute('data-poll-interval', isLocal ? '5' : '30');
+        document.head.appendChild(script);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -205,25 +205,25 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-6xl w-full max-h-[92vh] overflow-hidden flex flex-col"
+        className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-xl sm:rounded-2xl shadow-2xl max-w-6xl w-full max-h-[92vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="p-3 sm:p-6 border-b border-gray-200">
+        <div className="p-3 sm:p-6 border-b border-[var(--border,#DCEBF2)]">
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="p-1 sm:p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                  className="p-1 sm:p-2 hover:bg-[var(--background,#F4FAFD)] rounded-full transition-colors shrink-0 text-[var(--text-primary,#183040)]"
                 >
                   <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               )}
               <div className="min-w-0">
-                <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
+                <h3 className="text-sm sm:text-xl font-bold text-[var(--text-primary,#183040)] truncate">
                   Attempt Details
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+                <p className="text-xs sm:text-sm text-[var(--text-muted,#7D96A4)] mt-0.5 truncate">
                   {attempt?.test_name} • {attempt?.module_id}
                 </p>
               </div>
@@ -233,13 +233,13 @@ const PracticeAttemptDetailsModal = ({ isOpen, onClose, attempt, onBack }) => {
                 <div className={`text-base sm:text-2xl font-bold ${getScoreColor(attempt?.score || 0)}`}>
                   {attempt?.score?.toFixed(1) || 0}%
                 </div>
-                <div className="text-[10px] sm:text-xs text-gray-500">
+                <div className="text-[10px] sm:text-xs text-[var(--text-muted,#7D96A4)]">
                   {attempt?.correct_answers}/{attempt?.total_questions} correct
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 sm:p-2 hover:bg-[var(--background,#F4FAFD)] rounded-full transition-colors text-[var(--text-muted,#7D96A4)]"
               >
                 <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>

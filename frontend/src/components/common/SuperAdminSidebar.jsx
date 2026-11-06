@@ -126,18 +126,21 @@ const SuperAdminSidebar = () => {
 
       {/* Sidebar - Always visible on large screens */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:z-50">
-        <div className="flex flex-col flex-grow bg-gradient-to-b from-white to-gray-50 shadow-2xl border-r border-gray-200">
+        <div className="flex flex-col flex-grow bg-[var(--sidebar,#FFFFFF)] shadow-2xl border-r border-[var(--border,#DCEBF2)]">
           {/* Logo/Brand */}
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
-            className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0"
+            className="p-4 border-b border-[var(--border,#DCEBF2)] bg-[var(--primary-light,#F4FAFD)] flex-shrink-0"
           >
-            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 
+              className="text-lg font-bold bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+            >
               Study Edge
             </h1>
-            <p className="text-xs text-gray-600 font-medium capitalize">
+            <p className="text-xs text-[var(--text-muted,#7D96A4)] font-medium capitalize">
               {user?.role_name || (user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal')}
             </p>
 
@@ -158,10 +161,11 @@ const SuperAdminSidebar = () => {
                     <Link
                       to={link.path}
                       onClick={() => setIsMobileMenuOpen(false)}
+                      style={isActive(link.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                       className={`group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden
                         ${isActive(link.path)
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                          : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-blue-50 hover:text-gray-900 hover:shadow-md'
+                          ? 'text-white shadow-lg transform scale-105'
+                          : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-xs'
                         }
                       `}
                     >
@@ -169,7 +173,8 @@ const SuperAdminSidebar = () => {
                       {isActive(link.path) && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl"
+                          className="absolute inset-0 rounded-xl"
+                          style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
                           initial={false}
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         />
@@ -178,22 +183,12 @@ const SuperAdminSidebar = () => {
                       <link.icon className={`mr-3 h-4 w-4 transition-all duration-300 relative z-10
                         ${isActive(link.path)
                           ? 'text-white'
-                          : 'text-gray-500 group-hover:text-blue-600 group-hover:scale-110'
+                          : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)] group-hover:scale-110'
                         }`}
                       />
                       <span className="relative z-10 transition-all duration-300 group-hover:translate-x-1 font-semibold text-sm">
                         {link.name}
                       </span>
-
-                      {/* Hover effect */}
-                      {!isActive(link.path) && (
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          whileHover={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                        />
-                      )}
                     </Link>
                   </motion.div>
                 ))}
@@ -212,22 +207,25 @@ const SuperAdminSidebar = () => {
             <Link
               to="/superadmin/profile"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center mb-3 p-2.5 bg-gradient-to-r from-gray-50 to-blue-50/80 hover:from-blue-50 hover:to-indigo-50 border border-gray-200/80 rounded-2xl transition-all duration-200 group shadow-sm"
+              className="flex items-center mb-3 p-2.5 bg-[var(--surface,#FFFFFF)] hover:bg-[var(--primary-light,#F4FAFD)] border border-[var(--border,#DCEBF2)] rounded-2xl transition-all duration-200 group shadow-xs"
               title="View Profile"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0 text-white font-bold text-sm">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center shadow-xs flex-shrink-0 text-white font-bold text-sm"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+              >
                 {user?.name?.charAt(0)?.toUpperCase() || 'S'}
               </div>
               <div className="ml-3 min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                <p className="text-sm font-semibold text-[var(--text-primary,#183040)] truncate group-hover:text-[var(--primary)] transition-colors">
                   {user?.name || 'Super Admin'}
                 </p>
                 <div className="flex items-center justify-between gap-1 mt-0.5">
-                  <p className="text-xs text-gray-500 capitalize truncate">
+                  <p className="text-xs text-[var(--text-muted,#7D96A4)] capitalize truncate">
                     {user?.role_name || user?.role?.replace('_', ' ') || 'Admin'}
                   </p>
                   {user?.emp_no && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold shrink-0">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[var(--primary-50,#E8F4FA)] text-[var(--primary)] border border-[var(--border,#DCEBF2)] rounded text-[10px] font-semibold shrink-0">
                       <span>HRMS ID:</span>
                       <span>{user.emp_no}</span>
                     </span>
@@ -296,10 +294,11 @@ const SuperAdminSidebar = () => {
                   <Link
                     to={link.path}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    style={isActive(link.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                     className={`group flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden
                       ${isActive(link.path)
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-blue-50 hover:text-gray-900 hover:shadow-md'
+                        ? 'text-white shadow-lg transform scale-105'
+                        : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-xs'
                       }
                     `}
                   >
@@ -307,7 +306,8 @@ const SuperAdminSidebar = () => {
                     {isActive(link.path) && (
                       <motion.div
                         layoutId="activeTabMobile"
-                        className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl"
+                        className="absolute inset-0 rounded-xl"
+                        style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
                         initial={false}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                       />
@@ -316,22 +316,12 @@ const SuperAdminSidebar = () => {
                     <link.icon className={`mr-3 h-4 w-4 transition-all duration-300 relative z-10
                       ${isActive(link.path)
                         ? 'text-white'
-                        : 'text-gray-500 group-hover:text-blue-600 group-hover:scale-110'
+                        : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)] group-hover:scale-110'
                       }`}
                     />
                     <span className="relative z-10 transition-all duration-300 group-hover:translate-x-1 font-semibold text-sm">
                       {link.name}
                     </span>
-
-                    {/* Hover effect */}
-                    {!isActive(link.path) && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileHover={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.2 }}
-                      />
-                    )}
                   </Link>
                 </motion.div>
               ))}
@@ -351,7 +341,7 @@ const SuperAdminSidebar = () => {
               handleLogout()
               setIsMobileMenuOpen(false)
             }}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold px-3 py-2.5 rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white font-semibold px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 text-sm"
           >
             <motion.div
               whileHover={{ rotate: 180 }}
@@ -367,21 +357,24 @@ const SuperAdminSidebar = () => {
       </motion.div>
       
       {/* Main Content */}
-      <div className="flex-1 bg-gray-50 w-full lg:ml-64 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 bg-[var(--background,#F4FAFD)] w-full lg:ml-64 flex flex-col h-screen overflow-hidden">
         {/* Mobile menu header */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[var(--navbar,#FFFFFF)] border-b border-[var(--border,#DCEBF2)] shadow-xs flex-shrink-0">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
+            className="p-2 rounded-lg text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] focus:outline-none"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold text-xs flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-full text-white font-semibold text-xs flex items-center justify-center shadow-xs"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+            >
               {user?.name?.charAt(0)?.toUpperCase() || 'S'}
             </div>
-            <span className="text-sm font-semibold text-gray-800 truncate max-w-[150px]">{user?.name}</span>
+            <span className="text-sm font-semibold text-[var(--text-primary,#183040)] truncate max-w-[150px]">{user?.name}</span>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">

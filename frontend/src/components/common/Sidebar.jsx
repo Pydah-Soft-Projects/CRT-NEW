@@ -116,21 +116,21 @@ const Sidebar = () => {
       {/* Sidebar */}
       <div
         className={
-          `fixed top-16 sm:top-20 left-0 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-4/5 max-w-xs bg-background shadow-xl z-40 flex flex-col rounded-tr-3xl rounded-br-3xl border-r border-border text-text transition-colors duration-300
+          `fixed top-16 sm:top-20 left-0 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-4/5 max-w-xs bg-[var(--sidebar,#FFFFFF)] shadow-xl z-40 flex flex-col rounded-tr-3xl rounded-br-3xl border-r border-[var(--border,#DCEBF2)] text-[var(--sidebar-text,#183040)] transition-colors duration-300
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:w-64 lg:translate-x-0`
         }
         style={{ willChange: 'transform' }}
       >
         {/* Mobile close button */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border,#DCEBF2)]">
           <img
             src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
             alt="VERSANT Logo"
             className="h-8 w-auto"
           />
           <button
-            className="lg:hidden ml-2 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="lg:hidden ml-2 p-2 rounded-full hover:bg-[var(--primary-light,#F4FAFD)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             style={{ minWidth: 44, minHeight: 44 }}
             onClick={closeSidebar}
             aria-label="Close sidebar"
@@ -148,14 +148,15 @@ const Sidebar = () => {
                   key={item.name}
                   to={item.href}
                   onClick={closeSidebar}
+                  style={isActive(item.href) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                   className={`group flex items-center px-3 py-2 text-base font-medium rounded-lg transition-all duration-300 animate-fade-in
                     ${isActive(item.href)
-                      ? 'bg-highlight text-text shadow-lg border border-border scale-105'
-                      : 'text-text hover:bg-highlight hover:text-text hover:shadow-md border border-transparent hover:scale-105'}
+                      ? 'text-white shadow-md scale-105'
+                      : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-xs hover:scale-105'}
                   `}
-                  style={{ marginBottom: '2px' }}
+                  style={{ marginBottom: '2px', ...(isActive(item.href) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}) }}
                 >
-                  <Icon className={`mr-3 h-5 w-5 transition-colors duration-200 ${isActive(item.href) ? 'text-secondary' : 'text-text group-hover:text-secondary'}`} />
+                  <Icon className={`mr-3 h-5 w-5 transition-colors duration-200 ${isActive(item.href) ? 'text-white' : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)]'}`} />
                   <span className="transition-transform duration-300 group-hover:translate-x-1">{item.name}</span>
                 </Link>
               )
@@ -164,18 +165,21 @@ const Sidebar = () => {
         </nav>
         {/* User info at bottom */}
         <div className="px-4 pb-6 mt-auto">
-          <div className="flex items-center bg-gray-50 rounded-xl p-3 shadow border border-border mb-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="flex items-center bg-[var(--surface,#FFFFFF)] rounded-xl p-3 shadow-xs border border-[var(--border,#DCEBF2)] mb-3">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center shadow-xs"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+            >
               <UserCheck className="h-4 w-4 text-white" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-              <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+              <p className="text-sm font-medium text-[var(--text-primary,#183040)]">{user?.name}</p>
+              <p className="text-xs text-[var(--text-muted,#7D96A4)] capitalize">{user?.role?.replace('_', ' ')}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-secondary text-text font-medium px-4 py-2 rounded-lg hover:bg-tertiary hover:text-text transition-all duration-300 shadow-sm border border-border hover:scale-105"
+            className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white font-medium px-4 py-2 rounded-lg hover:bg-slate-800 transition-all duration-300 shadow-sm border border-[var(--border,#DCEBF2)] hover:scale-105"
           >
             Logout
           </button>

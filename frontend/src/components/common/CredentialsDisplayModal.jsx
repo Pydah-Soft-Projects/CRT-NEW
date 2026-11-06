@@ -52,11 +52,11 @@ const CredentialsDisplayModal = ({ isOpen, onClose, credentials, entityName }) =
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+                className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
             >
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">{entityName} Credentials</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                <div className="p-4 border-b border-[var(--border,#DCEBF2)] flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-[var(--text-primary,#183040)]">{entityName} Credentials</h2>
+                    <button onClick={onClose} className="text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)]">
                         <X size={24} />
                     </button>
                 </div>
@@ -64,33 +64,34 @@ const CredentialsDisplayModal = ({ isOpen, onClose, credentials, entityName }) =
                     <div className="flex justify-end gap-2 mb-4">
                         <button 
                             onClick={handleCopyToClipboard}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--text-primary,#183040)] bg-[var(--background,#F4FAFD)] border border-[var(--border,#DCEBF2)] rounded-lg hover:bg-slate-100"
                         >
                             <Clipboard size={16} /> Copy
                         </button>
                         <button 
                             onClick={handleDownloadCSV}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                            style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                         >
                             <Download size={16} /> Download CSV
                         </button>
                     </div>
-                    <div className="overflow-x-auto border rounded-lg">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="overflow-x-auto border border-[var(--border,#DCEBF2)] rounded-xl">
+                        <table className="min-w-full divide-y divide-[var(--border,#DCEBF2)]">
+                            <thead className="bg-[var(--background,#F4FAFD)]">
                                 <tr>
                                     {credentials.length > 0 && Object.keys(credentials[0]).map(key => (
-                                        <th key={key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th key={key} className="px-6 py-3 text-left text-xs font-semibold text-[var(--text-secondary,#486273)] uppercase tracking-wider">
                                             {key.replace(/_/g, ' ')}
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-[var(--surface,#FFFFFF)] divide-y divide-[var(--border,#DCEBF2)]">
                                 {credentials.map((cred, index) => (
                                     <tr key={index}>
                                         {Object.values(cred).map((value, i) => (
-                                            <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-primary,#183040)]">
                                                 {value}
                                             </td>
                                         ))}
