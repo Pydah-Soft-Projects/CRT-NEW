@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNotification } from '../../contexts/NotificationContext'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
-import { Eye, EyeOff, Lock, User } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, Sparkles } from 'lucide-react'
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false)
+  const [loginStage, setLoginStage] = useState('authenticating') // 'authenticating' | 'launching'
   const { login } = useAuth()
   const { success, error: showError } = useNotification()
   const navigate = useNavigate()
@@ -24,10 +24,12 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true)
+    setLoginStage('authenticating')
     try {
       const user = await login(data.username, data.password)
       console.log('Login returned user:', user)
       if (user) {
+        setLoginStage('launching')
         success('Login successful!')
         // Check for redirect query param
         const redirectParam = searchParams.get('redirect')
@@ -50,7 +52,6 @@ const Login = () => {
       }
     } catch (err) {
       showError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -69,15 +70,53 @@ const Login = () => {
         transition={{ duration: 20, repeat: Infinity, repeatType: 'mirror' }}
       />
 
-      {/* Loading Spinner Overlay */}
+      {/* Loading Overlay while authenticating and launching dashboard */}
       {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70">
-          <div className="relative flex flex-col items-center">
-            <div className="relative flex items-center justify-center" style={{ width: '10rem', height: '10rem' }}>
-              <LoadingSpinner size="lg" message="Signing in..." />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-xs w-full text-center border border-white/60 flex flex-col items-center"
+          >
+            {/* Animated Logo / Spinner */}
+            <div className="relative flex items-center justify-center w-20 h-20 mb-4">
+              <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
+              <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 border-r-blue-600 animate-spin" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md">
+                <Sparkles className="w-6 h-6 animate-pulse text-indigo-100" />
+              </div>
             </div>
-          </div>
-        </div>
+
+            <h3 className="text-base font-bold text-slate-800 tracking-tight">
+              {loginStage === 'launching' ? 'Welcome Back!' : 'Signing you in...'}
+            </h3>
+
+            <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+              <span>
+                {loginStage === 'launching'
+                  ? 'Launching your dashboard...'
+                  : 'Verifying your credentials...'}
+              </span>
+            </p>
+
+            {/* Smooth animated progress bar */}
+            <div className="w-full bg-slate-100 rounded-full h-1.5 mt-5 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                initial={{ width: "25%" }}
+                animate={{ width: loginStage === 'launching' ? "95%" : "70%" }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
       )}
 
       <motion.div
@@ -185,9 +224,16 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-0.5"
+                  className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-0.5 cursor-pointer"
                 >
-                  Sign in
+                  {isLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Signing in...</span>
+                    </span>
+                  ) : (
+                    'Sign in'
+                  )}
                 </button>
               </motion.div>
               {/* Remove any <Link> or text related to forgot/reset password from the login form */}

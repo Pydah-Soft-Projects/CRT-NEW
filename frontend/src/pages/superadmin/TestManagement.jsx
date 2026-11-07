@@ -32,7 +32,8 @@ import {
   Check,
   Copy,
   Link as LinkIcon,
-  Share2
+  Share2,
+  Loader2
 } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -1662,7 +1663,11 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
 
                 {/* Real-time Student Count Badge */}
                 <div className="bg-indigo-100/70 border border-indigo-200 text-indigo-800 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto shadow-sm">
-                  <span>🎯</span>
+                  {audienceLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-700" />
+                  ) : (
+                    <span>🎯</span>
+                  )}
                   <span>
                     {audienceLoading
                       ? 'Counting SDMS students...'
@@ -1819,9 +1824,13 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
                   type="button"
                   onClick={handleAutoPullBank}
                   disabled={isLoadingBank}
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  {isLoadingBank ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
                   <span>{isLoadingBank ? 'Pulling 25...' : '⚡ Auto-Pull 25 from Bank'}</span>
                 </button>
 
@@ -2294,11 +2303,11 @@ function CreateTestInlineWizard({ onClose, onTestCreated }) {
             type="button"
             onClick={handlePublishTest}
             disabled={submitting}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-200 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {submitting ? (
               <>
-                <LoadingSpinner />
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
                 <span>Publishing Test...</span>
               </>
             ) : (

@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState, useContext } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthContext } from '../../contexts/AuthContext'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import { Loader2 } from 'lucide-react'
 import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -106,7 +106,11 @@ const SSOLogin = () => {
             alt="Study Edge Logo"
             className="h-14 w-auto mx-auto mb-6"
           />
-          <LoadingSpinner size="lg" />
+          <div className="relative flex items-center justify-center w-14 h-14 mx-auto my-3">
+            <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin" />
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+          </div>
           <p className="mt-6 text-gray-600 text-sm font-medium">Checking session…</p>
         </div>
       </div>
@@ -150,7 +154,11 @@ const SSOLogin = () => {
           className="h-14 w-auto mx-auto mb-6"
         />
 
-        <LoadingSpinner size="lg" />
+        <div className="relative flex items-center justify-center w-14 h-14 mx-auto my-3">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin" />
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+        </div>
 
         <p className="mt-6 text-gray-600 text-sm font-medium">{status}</p>
         <p className="mt-1 text-gray-400 text-xs">You'll be redirected automatically.</p>
