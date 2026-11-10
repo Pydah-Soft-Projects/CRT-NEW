@@ -158,12 +158,12 @@ const EmailCollectionPrompt = ({ user, onEmailUpdated }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+              className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
             >
               {/* Close button */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute top-4 right-4 text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -174,18 +174,19 @@ const EmailCollectionPrompt = ({ user, onEmailUpdated }) => {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", damping: 15 }}
-                  className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
                 >
                   <Mail className="w-8 h-8 text-white" />
                 </motion.div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                <h2 className="text-2xl font-bold text-[var(--text-primary,#183040)] mb-2">
                   Welcome! Let's Get Started
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-[var(--text-secondary,#486273)]">
                   Add your email address to receive important updates and notifications about your studies
                 </p>
-                <div className="mt-3 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-700 font-medium">
+                <div className="mt-3 px-4 py-2 bg-[var(--primary-50,#E8F4FA)] rounded-lg border border-[var(--border,#DCEBF2)]">
+                  <p className="text-sm text-[var(--primary-900,#082B3D)] font-medium">
                     📧 This will only take a moment and helps us keep you informed
                   </p>
                 </div>
@@ -194,19 +195,19 @@ const EmailCollectionPrompt = ({ user, onEmailUpdated }) => {
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-[var(--text-primary,#183040)] mb-2">
                     Email Address
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-[var(--border,#DCEBF2)] bg-[var(--surface,#FFFFFF)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] text-[var(--text-primary,#183040)] transition-all duration-200"
                     placeholder="Enter your email address"
                     required
                     autoFocus
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--text-muted,#7D96A4)] mt-1">
                     We'll use this to send you important updates about your studies
                   </p>
                 </div>
@@ -216,14 +217,15 @@ const EmailCollectionPrompt = ({ user, onEmailUpdated }) => {
                   <button
                     type="button"
                     onClick={handleSkip}
-                    className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                    className="flex-1 px-4 py-3 text-[var(--text-secondary,#486273)] border border-[var(--border,#DCEBF2)] rounded-lg hover:bg-[var(--background,#F4FAFD)] transition-all duration-200 font-medium"
                   >
                     Skip for Now
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting || !email}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                    className="flex-1 px-4 py-3 text-white rounded-lg hover:opacity-90 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>

@@ -86,19 +86,19 @@ const StudentUploadVerificationModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Student Upload Verification</h2>
+      <div className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-2xl shadow-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6 border-b border-[var(--border,#DCEBF2)] pb-4">
+          <h2 className="text-2xl font-bold text-[var(--text-primary,#183040)]">Student Upload Verification</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-red-600 text-2xl font-bold transition-colors"
+            className="text-[var(--text-muted,#7D96A4)] hover:text-[var(--danger,#C94C4C)] text-2xl font-bold transition-colors"
           >
             &times;
           </button>
         </div>
 
         <div className="mb-6">
-          <p className="text-gray-600 mb-4">
+          <p className="text-[var(--text-secondary,#486273)] mb-4">
             Verify that students were successfully uploaded to the database and clean up any failed uploads.
           </p>
           
@@ -106,7 +106,8 @@ const StudentUploadVerificationModal = ({
             <button
               onClick={handleVerifyUpload}
               disabled={isVerifying || !uploadedStudents.length}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+              className="px-6 py-2 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm"
             >
               {isVerifying ? 'Verifying...' : 'Verify Uploads'}
             </button>
@@ -115,7 +116,7 @@ const StudentUploadVerificationModal = ({
               <button
                 onClick={handleCleanupFailed}
                 disabled={isCleaning || !verificationResults.verification_results.some(r => !r.fully_uploaded)}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-[var(--danger,#C94C4C)] text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm"
               >
                 {isCleaning ? 'Cleaning...' : 'Cleanup Failed Uploads'}
               </button>
@@ -126,57 +127,57 @@ const StudentUploadVerificationModal = ({
         {verificationResults && (
           <div className="space-y-6">
             {/* Summary */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold mb-3">Upload Summary</h3>
+            <div className="bg-[var(--background,#F4FAFD)] border border-[var(--border,#DCEBF2)] rounded-xl p-4">
+              <h3 className="text-lg font-semibold text-[var(--text-primary,#183040)] mb-3">Upload Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">
+                  <div className="text-2xl font-bold text-[var(--text-primary,#183040)]">
                     {verificationResults.summary.total_students}
                   </div>
-                  <div className="text-sm text-gray-600">Total Students</div>
+                  <div className="text-sm text-[var(--text-secondary,#486273)]">Total Students</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-[var(--success,#258265)]">
                     {verificationResults.summary.successful_uploads}
                   </div>
-                  <div className="text-sm text-gray-600">Successful</div>
+                  <div className="text-sm text-[var(--text-secondary,#486273)]">Successful</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-2xl font-bold text-[var(--danger,#C94C4C)]">
                     {verificationResults.summary.failed_uploads}
                   </div>
-                  <div className="text-sm text-gray-600">Failed</div>
+                  <div className="text-sm text-[var(--text-secondary,#486273)]">Failed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-[var(--primary)]">
                     {verificationResults.summary.success_rate.toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600">Success Rate</div>
+                  <div className="text-sm text-[var(--text-secondary,#486273)]">Success Rate</div>
                 </div>
               </div>
             </div>
 
             {/* Detailed Results */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Detailed Results</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
+              <h3 className="text-lg font-semibold text-[var(--text-primary,#183040)] mb-3">Detailed Results</h3>
+              <div className="overflow-x-auto border border-[var(--border,#DCEBF2)] rounded-xl">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-4 py-2 text-left">Email</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">User Account</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">Student Profile</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+                    <tr className="bg-[var(--background,#F4FAFD)] text-[var(--text-secondary,#486273)] text-xs font-semibold uppercase">
+                      <th className="border-b border-[var(--border,#DCEBF2)] px-4 py-2 text-left">Email</th>
+                      <th className="border-b border-[var(--border,#DCEBF2)] px-4 py-2 text-center">User Account</th>
+                      <th className="border-b border-[var(--border,#DCEBF2)] px-4 py-2 text-center">Student Profile</th>
+                      <th className="border-b border-[var(--border,#DCEBF2)] px-4 py-2 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[var(--border,#DCEBF2)]">
                     {verificationResults.verification_results.map((result, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-2">
+                      <tr key={index} className="hover:bg-[var(--background,#F4FAFD)] transition-colors">
+                        <td className="px-4 py-2 text-sm text-[var(--text-primary,#183040)]">
                           {result.email}
                         </td>
-                        <td className="border border-gray-300 px-4 py-2 text-center">
-                          <span className={`font-semibold ${result.user_account_exists ? 'text-green-600' : 'text-red-600'}`}>
+                        <td className="px-4 py-2 text-center">
+                          <span className={`font-semibold ${result.user_account_exists ? 'text-[var(--success,#258265)]' : 'text-[var(--danger,#C94C4C)]'}`}>
                             {result.user_account_exists ? '✓' : '✗'}
                           </span>
                         </td>

@@ -310,10 +310,10 @@ const StudentSidebar = () => {
                             </button>
                             <div className="flex items-center space-x-2 sm:space-x-2.5">
                                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm font-black text-xs sm:text-sm">
-                                    SE
+                                    C
                                 </div>
                                 <span className="text-sm sm:text-base font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 bg-clip-text text-transparent tracking-tight">
-                                    Study Edge
+                                    Campo
                                 </span>
                             </div>
                         </div>

@@ -200,18 +200,18 @@ const AdminSidebar = () => {
   if (loading) {
     return (
       <div className="flex">
-        <div className="fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-white to-gray-50 shadow-2xl z-30 flex flex-col border-r border-gray-200">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="fixed top-0 left-0 h-screen w-64 bg-[var(--sidebar,#FFFFFF)] shadow-2xl z-30 flex flex-col border-r border-[var(--border,#DCEBF2)]">
+          <div className="p-6 border-b border-[var(--border,#DCEBF2)] bg-[var(--primary-light,#F4FAFD)]">
             <div className="animate-pulse">
-              <div className="h-8 bg-gray-300 rounded mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded"></div>
+              <div className="h-8 bg-slate-200 rounded mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded"></div>
             </div>
           </div>
           <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--primary)] border-t-transparent"></div>
           </div>
         </div>
-        <div className="ml-64 flex-1 bg-gray-50 w-full">
+        <div className="ml-64 flex-1 bg-[var(--background,#F4FAFD)] w-full">
           <Outlet />
         </div>
       </div>
@@ -224,19 +224,22 @@ const AdminSidebar = () => {
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 80, damping: 18 }}
-        className="fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-white to-gray-50 shadow-2xl z-30 flex flex-col border-r border-gray-200"
+        className="fixed top-0 left-0 h-screen w-64 bg-[var(--sidebar,#FFFFFF)] shadow-2xl z-30 flex flex-col border-r border-[var(--border,#DCEBF2)]"
       >
         {/* Logo/Brand */}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
-          className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50"
+          className="p-6 border-b border-[var(--border,#DCEBF2)] bg-[var(--primary-light,#F4FAFD)]"
         >
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Study Edge
+          <h1 
+            className="text-2xl font-bold bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+          >
+            Campo
           </h1>
-          <p className="text-sm text-gray-600 font-medium capitalize">{user?.role?.replace('_', ' ')} Portal</p>
+          <p className="text-sm text-[var(--text-muted,#7D96A4)] font-medium capitalize">{user?.role?.replace('_', ' ')} Portal</p>
         </motion.div>
 
         <nav className="flex-1 flex flex-col justify-between">
@@ -252,17 +255,19 @@ const AdminSidebar = () => {
               >
                 <Link
                   to={link.path}
+                  style={isActive(link.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                   className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden
                     ${isActive(link.path)
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-blue-50 hover:text-gray-900 hover:shadow-md'}
+                      ? 'text-white shadow-lg transform scale-105'
+                      : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-sm'}
                   `}
                 >
                   {/* Active indicator */}
                   {isActive(link.path) && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl"
+                      className="absolute inset-0 rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
                       initial={false}
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
@@ -271,22 +276,12 @@ const AdminSidebar = () => {
                   <link.icon className={`mr-3 h-5 w-5 transition-all duration-300 relative z-10
                     ${isActive(link.path) 
                       ? 'text-white' 
-                      : 'text-gray-500 group-hover:text-blue-600 group-hover:scale-110'
+                      : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)] group-hover:scale-110'
                     }`} 
                   />
                   <span className="relative z-10 transition-all duration-300 group-hover:translate-x-1 font-semibold">
                     {link.name}
                   </span>
-                  
-                  {/* Hover effect */}
-                  {!isActive(link.path) && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileHover={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
                 </Link>
               </motion.div>
             ))}
@@ -300,21 +295,24 @@ const AdminSidebar = () => {
           transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
           className="px-4 pb-6 mt-auto"
         >
-          <div className="flex items-center mb-4 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
+          <div className="flex items-center mb-4 p-3 bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-xl shadow-xs">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center shadow-xs"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+            >
               <span className="text-white text-sm font-medium">
                 {user?.name?.charAt(0)?.toUpperCase() || 'A'}
               </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-600 capitalize">{user?.role?.replace('_', ' ')}</p>
+              <p className="text-sm font-semibold text-[var(--text-primary,#183040)]">{user?.name}</p>
+              <p className="text-xs text-[var(--text-muted,#7D96A4)] capitalize">{user?.role?.replace('_', ' ')}</p>
             </div>
           </div>
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold px-4 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white font-semibold px-4 py-3 rounded-xl hover:bg-slate-800 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2"
           >
             <motion.div
               whileHover={{ rotate: 180 }}
@@ -326,7 +324,7 @@ const AdminSidebar = () => {
           </button>
         </motion.div>
       </motion.div>
-      <div className="ml-64 flex-1 bg-gray-50 w-full">
+      <div className="ml-64 flex-1 bg-[var(--background,#F4FAFD)] w-full">
         <Outlet />
       </div>
     </div>

@@ -111,11 +111,11 @@ const GetStarted = () => {
             >
               <div className="flex items-center space-x-2 md:space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-lg">SE</span>
+                  <span className="text-white font-bold text-lg">C</span>
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Pydah Apex
+                    Campo
                   </h1>
                   <p className="text-xs md:text-sm text-gray-500 font-medium">Education & Beyond</p>
                 </div>
@@ -247,7 +247,7 @@ const GetStarted = () => {
               >
                 Welcome to{' '}
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Pydah Apex
+                  Campo
                 </span>
               </motion.h1>
 
@@ -268,7 +268,7 @@ const GetStarted = () => {
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="text-sm sm:text-base text-gray-500 mb-8 sm:mb-12 max-w-3xl mx-auto px-2"
               >
-                From foundational grammar to advanced programming logic, Pydah Apex offers an immersive learning experience that adapts to your pace and goals.
+                From foundational grammar to advanced programming logic, Campo offers an immersive learning experience that adapts to your pace and goals.
               </motion.p>
 
               {/* Urgency Message */}
@@ -374,7 +374,7 @@ const GetStarted = () => {
               className="bg-white rounded-2xl p-8 md:p-12 shadow-lg w-full"
             >
               <h3 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 text-center">
-                Why Choose Pydah Apex?
+                Why Choose Campo?
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {benefits.map((benefit, index) => (
@@ -410,10 +410,10 @@ const GetStarted = () => {
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
                   <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-6">
-                    About Pydah Apex
+                    About Campo
                   </h2>
                   <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-                    Pydah Apex is a comprehensive learning platform designed to transform how students approach English language learning and cognitive skill development. Our mission is to provide an immersive, adaptive learning experience that caters to individual needs and learning styles.
+                    Campo is a comprehensive learning platform designed to transform how students approach English language learning and cognitive skill development. Our mission is to provide an immersive, adaptive learning experience that caters to individual needs and learning styles.
                   </p>
                   <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                     With cutting-edge technology and expert-curated content, we help students master essential skills from foundational grammar to advanced programming logic, ensuring they're well-prepared for academic and professional success.
@@ -472,10 +472,10 @@ const GetStarted = () => {
               >
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                    <span className="text-white font-bold text-lg">SE</span>
+                    <span className="text-white font-bold text-lg">C</span>
                   </div>
                   <div className="hidden sm:block">
-                    <h1 className="text-xl font-bold text-white">Pydah Apex</h1>
+                    <h1 className="text-xl font-bold text-white">Campo</h1>
                     <p className="text-gray-400 text-sm font-medium">Education & Beyond</p>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ const GetStarted = () => {
               className="border-t border-gray-800 mt-8 pt-6 text-center"
             >
               <p className="text-gray-400 text-base">
-                © 2025 Pydah Apex. All rights reserved. | Empowering minds through comprehensive learning.
+                © 2025 Campo. All rights reserved. | Empowering minds through comprehensive learning.
               </p>
             </motion.div>
           </div>

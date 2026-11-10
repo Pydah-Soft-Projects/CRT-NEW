@@ -189,13 +189,14 @@ const CampusAdminSidebar = () => {
                     <Link
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
+                      style={isActive(item.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                       className={`group flex items-center justify-center px-2 py-2 sm:py-3 mx-1 rounded-lg transition-all duration-300 relative ${isActive(item.path)
-                          ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                          ? 'text-white shadow-md'
+                          : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)]'
                         }`}
                     >
                       {React.createElement(iconMap[item.icon] || LayoutDashboard, {
-                        className: `w-6 h-6 transition-all duration-300 ${isActive(item.path) ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
+                        className: `w-6 h-6 transition-all duration-300 ${isActive(item.path) ? 'text-white' : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)]'
                           }`
                       })}
 
@@ -210,7 +211,7 @@ const CampusAdminSidebar = () => {
                           >
                             <span className="text-sm font-medium truncate">{item.name}</span>
                             {item.badge && (
-                              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                              <span className="bg-[var(--danger,#C94C4C)] text-white text-xs px-1.5 py-0.5 rounded-full">
                                 {item.badge}
                               </span>
                             )}

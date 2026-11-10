@@ -19,8 +19,77 @@ html {
   font-weight: 400;
 
   color-scheme: light;
-  color: #5d4037;
-  background-color: #FFF8E1;
+  color: var(--text-primary, #183040);
+  background-color: var(--background, #F4FAFD);
+
+  /* Centralized Theme Master Tokens (Fallback before sync) */
+  --primary: #1677A8;
+  --primary-hover: #105F87;
+  --primary-light: #E8F5FC;
+  --primary-rgb: 22, 119, 168;
+
+  --secondary: #299FC1;
+  --secondary-rgb: 41, 159, 193;
+
+  --accent: #E59A3A;
+  --accent-rgb: 229, 154, 58;
+
+  /* Primary Shade Scale (50 - 900) */
+  --primary-50: #F1F6F8;
+  --primary-100: #E0EEF5;
+  --primary-200: #BBDFF1;
+  --primary-300: #81CAEF;
+  --primary-400: #4AB3E8;
+  --primary-500: #1677A7;
+  --primary-600: #1987BE;
+  --primary-700: #136790;
+  --primary-800: #0D4663;
+  --primary-900: #0A2C3E;
+
+  /* Secondary Shade Scale (50 - 900) */
+  --secondary-50: #F2F6F8;
+  --secondary-100: #E2EFF3;
+  --secondary-200: #C0E3ED;
+  --secondary-300: #89D2E6;
+  --secondary-400: #57BFDB;
+  --secondary-500: #29A1C2;
+  --secondary-600: #2593B1;
+  --secondary-700: #1D7087;
+  --secondary-800: #144D5D;
+  --secondary-900: #0E303A;
+
+  /* Backgrounds & Surfaces */
+  --background: #F4FAFD;
+  --background-rgb: 244, 250, 253;
+  --surface: #FFFFFF;
+  --surface-rgb: 255, 255, 255;
+
+  --sidebar: #123B57;
+  --sidebar-text: #F4FAFD;
+  --sidebar-muted: #9BC5D8;
+
+  --navbar: #FFFFFF;
+  --navbar-border: #DCEBF2;
+
+  /* Typography */
+  --text-primary: #183040;
+  --text-secondary: #486273;
+  --text-muted: #7D96A4;
+
+  /* Borders */
+  --border: #DCEBF2;
+  --border-strong: #BDD5E1;
+
+  /* Semantic Tokens */
+  --success: #258265;
+  --warning: #C18120;
+  --danger: #C94C4C;
+  --info: #1677A8;
+
+  --success-light: rgba(37, 130, 101, 0.12);
+  --warning-light: rgba(193, 129, 32, 0.12);
+  --danger-light: rgba(201, 76, 76, 0.12);
+  --info-light: rgba(22, 119, 168, 0.12);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -39,8 +108,8 @@ body {
   overflow-y: hidden;
   touch-action: pan-y !important;
   overscroll-behavior-x: none !important;
-  background-color: #FFF8E1;
-  color: #5d4037;
+  background-color: var(--background, #F4FAFD);
+  color: var(--text-primary, #183040);
 }
 
 #root {

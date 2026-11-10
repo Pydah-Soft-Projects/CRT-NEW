@@ -22,11 +22,11 @@ const Header = () => {
   }
 
   return (
-    <header className="z-40 bg-white shadow-md flex items-center h-16 sm:h-20 px-2 sm:px-4 border-b-2 border-emerald-400 flex-shrink-0">
+    <header className="z-40 bg-[var(--navbar,#FFFFFF)] shadow-sm flex items-center h-16 sm:h-20 px-2 sm:px-4 border-b border-[var(--navbar-border,var(--border,#DCEBF2))] flex-shrink-0">
       {/* Left: Hamburger menu */}
       <div className="flex items-center flex-shrink-0 mr-2">
         <button
-          className="md:hidden p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+          className="md:hidden p-3 rounded-md text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] hover:bg-[var(--background,#F4FAFD)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]"
           onClick={toggleSidebar}
           style={{ minWidth: 44, minHeight: 44 }}
         >
@@ -40,7 +40,7 @@ const Header = () => {
         <div className="flex items-center space-x-6 flex-shrink-0">
           {/* Notifications - Only for superadmin */}
           {user?.role === 'superadmin' && (
-            <button className="p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500">
+            <button className="p-3 rounded-md text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] hover:bg-[var(--background,#F4FAFD)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]">
               <Bell className="h-7 w-7" />
             </button>
           )}
@@ -48,20 +48,23 @@ const Header = () => {
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center space-x-4 p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              className="flex items-center space-x-4 p-3 rounded-md text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] hover:bg-[var(--background,#F4FAFD)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]"
             >
-              <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center shadow-xs"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+              >
                 <User className="h-6 w-6 text-white" />
               </div>
-              <span className="hidden md:block text-lg font-medium text-black">
+              <span className="hidden md:block text-lg font-medium text-[var(--text-primary,#183040)]">
                 {user?.name}
               </span>
             </button>
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                <div className="px-4 py-2 text-base text-black border-b border-gray-100">
+              <div className="absolute right-0 mt-2 w-48 bg-[var(--surface,#FFFFFF)] rounded-xl shadow-lg border border-[var(--border,#DCEBF2)] py-1 z-50">
+                <div className="px-4 py-2 text-base text-[var(--text-primary,#183040)] border-b border-[var(--border,#DCEBF2)]">
                   <p className="font-medium">{user?.name}</p>
-                  <p className="text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+                  <p className="text-[var(--text-muted,#7D96A4)] capitalize">{user?.role?.replace('_', ' ')}</p>
                 </div>
                 <Link
                   to={
@@ -71,14 +74,14 @@ const Header = () => {
                     user?.role === 'course_admin' ? '/course-admin/profile' : 
                     '/profile'
                   }
-                  className="block px-4 py-2 text-base text-black hover:bg-gray-100"
+                  className="block px-4 py-2 text-base text-[var(--text-primary,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] transition-colors"
                   onClick={() => setUserMenuOpen(false)}
                 >
                   Your Profile
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-base text-black hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-base text-[var(--text-primary,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] transition-colors"
                 >
                   Sign out
                 </button>

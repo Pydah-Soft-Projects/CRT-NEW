@@ -103,7 +103,7 @@ const SSOLogin = () => {
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
           <img
             src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-            alt="Study Edge Logo"
+            alt="Campo Logo"
             className="h-14 w-auto mx-auto mb-6"
           />
           <div className="relative flex items-center justify-center w-14 h-14 mx-auto my-3">
@@ -150,7 +150,7 @@ const SSOLogin = () => {
       <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
         <img
           src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-          alt="Study Edge Logo"
+          alt="Campo Logo"
           className="h-14 w-auto mx-auto mb-6"
         />
 

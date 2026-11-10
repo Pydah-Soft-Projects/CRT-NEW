@@ -188,13 +188,16 @@ const StudentUploadResults = ({ results, onClose, batchId }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div key={renderKey} className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+      <div key={renderKey} className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-2xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-white">
+        <div 
+          className="px-6 py-4 text-white"
+          style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+        >
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold">Student Upload Results</h3>
-              <p className="text-blue-100 mt-1">
+              <p className="text-white/80 mt-1">
                 {summary.total_students} students processed • {summary.database_registered} registered • {summary.emails_sent} emails • {summary.sms_sent} SMS
               </p>
             </div>
@@ -224,7 +227,7 @@ const StudentUploadResults = ({ results, onClose, batchId }) => {
         </div>
 
         {/* KPI Cards */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-[var(--border,#DCEBF2)]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Database Registration KPI */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
