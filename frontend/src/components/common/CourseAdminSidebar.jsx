@@ -134,19 +134,18 @@ const CourseAdminSidebar = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
-          className="p-6 border-b border-[var(--border,#DCEBF2)] bg-[var(--primary-light,#F4FAFD)]"
+          className="px-3.5 py-3 border-b border-white/10 bg-[#071C46]"
         >
-          <h1 
-            className="text-2xl font-bold bg-clip-text text-transparent"
-            style={{ backgroundImage: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
-          >
-            Campo
-          </h1>
-          <p className="text-sm text-[var(--text-muted,#7D96A4)] font-medium">Course Admin Portal</p>
+          <img
+            src="/campo-logos/campo_logo_transparent_hq.png"
+            alt="Campo"
+            className="h-7 w-auto object-contain object-left"
+          />
+          <p className="text-[11px] text-white/75 font-medium mt-0.5">Course Admin Portal</p>
         </motion.div>
 
         <nav className="flex-1 flex flex-col justify-between">
-          <div className="flex flex-col space-y-1 px-4 mt-6">
+          <div className="flex flex-col space-y-0.5 px-3 mt-2">
             {navigation.map((link, idx) => (
               <motion.div
                 key={link.name}
@@ -159,9 +158,9 @@ const CourseAdminSidebar = () => {
                 <Link
                   to={link.path}
                   style={isActive(link.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
-                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden
+                  className={`group flex items-center px-3 py-1.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden
                     ${isActive(link.path)
-                      ? 'text-white shadow-lg transform scale-105'
+                      ? 'text-white shadow-md'
                       : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-sm'}
                   `}
                 >

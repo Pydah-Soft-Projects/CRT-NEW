@@ -138,14 +138,36 @@ const CampusAdminSidebar = () => {
           boxShadow: 'inset -1px 0 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
         }}
       >
+        {/* Brand Logo Header */}
+        <div className={`px-3 py-2.5 bg-[#071C46] border-b border-white/10 flex-shrink-0 flex items-center ${isCollapsed && isDesktop ? 'justify-center' : 'justify-between'}`}>
+          {isCollapsed && isDesktop ? (
+            <img
+              src="/campo-logos/favicon.svg"
+              alt="Campo"
+              className="w-8 h-8 rounded-lg shadow-sm flex-shrink-0"
+            />
+          ) : (
+            <div className="flex flex-col leading-tight min-w-0">
+              <img
+                src="/campo-logos/campo_logo_transparent_hq.png"
+                alt="Campo"
+                className="h-6 w-auto object-contain object-left"
+              />
+              <span className="text-[10px] text-white/75 font-medium tracking-wide mt-0.5">
+                Campus Admin
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Header with User Profile */}
-        <div className="p-2 sm:p-3 border-b border-gray-200/50 flex-shrink-0">
+        <div className="px-2.5 py-2 border-b border-gray-200/50 flex-shrink-0">
           <div className="flex items-center space-x-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg"
             >
-              <Building2 className="w-6 h-6 text-white" />
+              <Building2 className="w-5 h-5 text-white" />
             </motion.div>
             <AnimatePresence>
               {!isCollapsed && (
@@ -167,7 +189,7 @@ const CampusAdminSidebar = () => {
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto py-1 px-1 min-h-0 space-y-1">
+        <div className="flex-1 overflow-y-auto py-1 px-1 min-h-0">
           {featuresLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-xs text-gray-500">Loading menu...</div>
@@ -190,13 +212,13 @@ const CampusAdminSidebar = () => {
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       style={isActive(item.path) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
-                      className={`group flex items-center justify-center px-2 py-2 sm:py-3 mx-1 rounded-lg transition-all duration-300 relative ${isActive(item.path)
+                      className={`group flex items-center justify-center px-2.5 py-1.5 mx-1 rounded-lg transition-all duration-300 relative ${isActive(item.path)
                           ? 'text-white shadow-md'
                           : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)]'
                         }`}
                     >
                       {React.createElement(iconMap[item.icon] || LayoutDashboard, {
-                        className: `w-6 h-6 transition-all duration-300 ${isActive(item.path) ? 'text-white' : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)]'
+                        className: `w-5 h-5 transition-all duration-300 ${isActive(item.path) ? 'text-white' : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)]'
                           }`
                       })}
 
@@ -302,13 +324,11 @@ const CampusAdminSidebar = () => {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="flex items-center space-x-3">
-                <div className="w-16 h-12 bg-transparent rounded-lg flex items-center justify-center">
-                  <img
-                    src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-                    alt="Logo"
-                    className="h-10 w-auto"
-                  />
-                </div>
+                <img
+                  src="/campo-logos/favicon.svg"
+                  alt="Campo"
+                  className="w-9 h-9 rounded-lg shadow-sm flex-shrink-0"
+                />
                 <span className="text-lg font-semibold text-gray-800">
                   <span className="hidden lg:inline">Campus Admin Portal</span>
                   <span className="lg:hidden">Campus Admin</span>

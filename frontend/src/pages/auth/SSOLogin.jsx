@@ -101,11 +101,13 @@ const SSOLogin = () => {
     return (
       <div className="min-h-screen bg-[#F0F4FF] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
-          <img
-            src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-            alt="Campo Logo"
-            className="h-14 w-auto mx-auto mb-6"
-          />
+          <div className="inline-flex items-center justify-center bg-[#071C46] px-5 py-2.5 rounded-xl shadow-md mx-auto mb-6">
+            <img
+              src="/campo-logos/campo_logo_transparent_hq.png"
+              alt="Campo Logo"
+              className="h-8 w-auto object-contain"
+            />
+          </div>
           <div className="relative flex items-center justify-center w-14 h-14 mx-auto my-3">
             <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 animate-spin" />
@@ -148,11 +150,13 @@ const SSOLogin = () => {
   return (
     <div className="min-h-screen bg-[#F0F4FF] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full text-center">
-        <img
-          src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-          alt="Campo Logo"
-          className="h-14 w-auto mx-auto mb-6"
-        />
+        <div className="inline-flex items-center justify-center bg-[#071C46] px-5 py-2.5 rounded-xl shadow-md mx-auto mb-6">
+          <img
+            src="/campo-logos/campo_logo_transparent_hq.png"
+            alt="Campo Logo"
+            className="h-8 w-auto object-contain"
+          />
+        </div>
 
         <div className="relative flex items-center justify-center w-14 h-14 mx-auto my-3">
           <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />

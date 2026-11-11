@@ -110,11 +110,13 @@ const GetStarted = () => {
               className="flex items-center flex-shrink-0"
             >
               <div className="flex items-center space-x-2 md:space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-lg">C</span>
-                </div>
+                <img
+                  src="/campo-logos/favicon.svg"
+                  alt="Campo Logo"
+                  className="w-10 h-10 rounded-lg shadow-md flex-shrink-0"
+                />
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-[#071C46] to-[#00C5B5] bg-clip-text text-transparent">
                     Campo
                   </h1>
                   <p className="text-xs md:text-sm text-gray-500 font-medium">Education & Beyond</p>
@@ -470,14 +472,13 @@ const GetStarted = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                    <span className="text-white font-bold text-lg">C</span>
-                  </div>
-                  <div className="hidden sm:block">
-                    <h1 className="text-xl font-bold text-white">Campo</h1>
-                    <p className="text-gray-400 text-sm font-medium">Education & Beyond</p>
-                  </div>
+                <div className="mb-4">
+                  <img
+                    src="/campo-logos/campo_logo_transparent_hq.png"
+                    alt="Campo"
+                    className="h-9 w-auto object-contain object-left"
+                  />
+                  <p className="text-gray-400 text-sm font-medium mt-1">Education & Beyond</p>
                 </div>
                 <p className="text-gray-400 mb-4 text-base leading-relaxed">
                   Empowering minds through comprehensive learning experiences that transform English language skills and cognitive abilities.

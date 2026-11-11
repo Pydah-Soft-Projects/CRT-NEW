@@ -123,14 +123,14 @@ const Sidebar = () => {
         style={{ willChange: 'transform' }}
       >
         {/* Mobile close button */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-[var(--border,#DCEBF2)]">
+        <div className="flex items-center justify-between h-14 px-3.5 bg-[#071C46] border-b border-white/10 rounded-tr-3xl">
           <img
-            src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-            alt="VERSANT Logo"
-            className="h-8 w-auto"
+            src="/campo-logos/campo_logo_transparent_hq.png"
+            alt="Campo Logo"
+            className="h-7 w-auto object-contain object-left"
           />
           <button
-            className="lg:hidden ml-2 p-2 rounded-full hover:bg-[var(--primary-light,#F4FAFD)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            className="lg:hidden ml-2 p-2 rounded-full text-white/80 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             style={{ minWidth: 44, minHeight: 44 }}
             onClick={closeSidebar}
             aria-label="Close sidebar"
@@ -140,7 +140,7 @@ const Sidebar = () => {
         </div>
 
         <nav className="flex-1 flex flex-col justify-between">
-          <div className="flex flex-col space-y-2 px-4 mt-8">
+          <div className="flex flex-col space-y-0.5 px-3 mt-2">
             {navigationItems.map((item, idx) => {
               const Icon = item.icon
               return (
@@ -148,13 +148,12 @@ const Sidebar = () => {
                   key={item.name}
                   to={item.href}
                   onClick={closeSidebar}
-                  style={isActive(item.href) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
-                  className={`group flex items-center px-3 py-2 text-base font-medium rounded-lg transition-all duration-300 animate-fade-in
+                  className={`group flex items-center px-3 py-1.5 text-base font-medium rounded-lg transition-all duration-300 animate-fade-in
                     ${isActive(item.href)
-                      ? 'text-white shadow-md scale-105'
-                      : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-xs hover:scale-105'}
+                      ? 'text-white shadow-md'
+                      : 'text-[var(--sidebar-text,#183040)] hover:bg-[var(--primary-light,#F4FAFD)] hover:text-[var(--primary)] hover:shadow-xs'}
                   `}
-                  style={{ marginBottom: '2px', ...(isActive(item.href) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}) }}
+                  style={isActive(item.href) ? { background: 'linear-gradient(135deg, var(--primary), var(--secondary))' } : {}}
                 >
                   <Icon className={`mr-3 h-5 w-5 transition-colors duration-200 ${isActive(item.href) ? 'text-white' : 'text-[var(--text-muted,#7D96A4)] group-hover:text-[var(--primary)]'}`} />
                   <span className="transition-transform duration-300 group-hover:translate-x-1">{item.name}</span>
@@ -197,15 +196,15 @@ export const SuperAdminSidebar = () => {
 
   return (
     <div className="fixed top-0 left-0 h-screen w-64 bg-white shadow-lg z-30 flex flex-col">
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+      <div className="flex items-center justify-center h-14 px-4 bg-[#071C46] border-b border-white/10">
         <img
-          src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-          alt="VERSANT Logo"
-          className="h-8 w-auto"
+          src="/campo-logos/campo_logo_transparent_hq.png"
+          alt="Campo Logo"
+          className="h-7 w-auto object-contain"
         />
       </div>
-      <nav className="mt-8 px-4 flex-1">
-        <div className="flex flex-col space-y-2 mb-6">
+      <nav className="mt-2 px-3 flex-1">
+        <div className="flex flex-col space-y-0.5 mb-4">
           <Link
             to="/superadmin"
             className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${isActive('/superadmin') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}

@@ -122,8 +122,39 @@ const StudentSidebar = () => {
                     boxShadow: 'inset -1px 0 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
                 }}
             >
+                {/* Brand Logo Header */}
+                <div className={`px-3 py-2.5 bg-[#071C46] border-b border-white/10 flex-shrink-0 flex items-center ${isCollapsed && isDesktop ? 'justify-center' : 'justify-between'}`}>
+                    {isCollapsed && isDesktop ? (
+                        <img
+                            src="/campo-logos/favicon.svg"
+                            alt="Campo"
+                            className="w-8 h-8 rounded-lg shadow-sm flex-shrink-0"
+                        />
+                    ) : (
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <img
+                                src="/campo-logos/campo_logo_transparent_hq.png"
+                                alt="Campo"
+                                className="h-6 w-auto object-contain object-left"
+                            />
+                            <span className="text-[10px] text-white/75 font-medium tracking-wide mt-0.5">
+                                Student Portal
+                            </span>
+                        </div>
+                    )}
+                    {!isDesktop && (
+                        <button
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="p-1 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                            aria-label="Close menu"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+
                 {/* Header with User Profile */}
-                <div className="p-2 sm:p-3 border-b border-gray-200/50 flex-shrink-0 flex items-center justify-between">
+                <div className="px-2.5 py-2 border-b border-gray-200/50 flex-shrink-0 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <motion.div 
                             whileHover={{ scale: 1.05 }}
@@ -157,20 +188,10 @@ const StudentSidebar = () => {
                             )}
                         </AnimatePresence>
                     </div>
-
-                    {!isDesktop && (
-                        <button
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="p-1 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                            aria-label="Close menu"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
                 </div>
 
                 {/* Navigation Items */}
-                <div className="flex-1 overflow-y-auto py-1 px-1 min-h-0 space-y-1">
+                <div className="flex-1 overflow-y-auto py-1 px-1 min-h-0">
                     {featuresLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="text-xs text-gray-500">Loading menu...</div>
@@ -192,14 +213,14 @@ const StudentSidebar = () => {
                                         <Link
                                             to={item.path}
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className={`group flex items-center justify-center px-2 py-2 sm:py-3 mx-1 rounded-lg transition-all duration-300 relative ${
+                                            className={`group flex items-center justify-center px-2.5 py-1.5 mx-1 rounded-lg transition-all duration-300 relative ${
                                                 isActive(item.path)
                                                     ? 'bg-blue-50 text-blue-600 border border-blue-200'
                                                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                                             }`}
                                         >
                                             {React.createElement(iconMap[item.icon] || Home, {
-                                                className: `w-6 h-6 transition-all duration-300 ${
+                                                className: `w-5 h-5 transition-all duration-300 ${
                                                     isActive(item.path) ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
                                                 }`
                                             })}
@@ -309,10 +330,12 @@ const StudentSidebar = () => {
                                 <Menu className="h-5 w-5" />
                             </button>
                             <div className="flex items-center space-x-2 sm:space-x-2.5">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm font-black text-xs sm:text-sm">
-                                    C
-                                </div>
-                                <span className="text-sm sm:text-base font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 bg-clip-text text-transparent tracking-tight">
+                                <img
+                                    src="/campo-logos/favicon.svg"
+                                    alt="Campo"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-sm flex-shrink-0"
+                                />
+                                <span className="text-sm sm:text-base font-extrabold bg-gradient-to-r from-[#071C46] to-[#00C5B5] bg-clip-text text-transparent tracking-tight">
                                     Campo
                                 </span>
                             </div>

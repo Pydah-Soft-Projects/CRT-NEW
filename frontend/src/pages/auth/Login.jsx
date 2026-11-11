@@ -132,14 +132,18 @@ const Login = () => {
         >
           <div className="p-8 sm:p-12">
             <div className="text-center">
-              <motion.img
-                src="https://static.wixstatic.com/media/bfee2e_7d499a9b2c40442e85bb0fa99e7d5d37~mv2.png/v1/fill/w_203,h_111,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo1.png"
-                alt="Campo Logo"
-                className="h-16 w-auto mx-auto mb-4 drop-shadow-lg"
+              <motion.div
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-              />
+                className="inline-flex items-center justify-center bg-[#071C46] px-5 py-2.5 rounded-xl shadow-lg mb-4"
+              >
+                <img
+                  src="/campo-logos/campo_logo_transparent_hq.png"
+                  alt="Campo Logo"
+                  className="h-9 w-auto object-contain"
+                />
+              </motion.div>
               <h2 className="text-3xl font-bold text-gray-800">
                 Sign in to your account
               </h2>
