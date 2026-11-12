@@ -2,7 +2,7 @@
  * SSOLogin.jsx
  *
  * Landing page for students redirected from the SDMS portal.
- * URL shape: https://crt.pydahsoft.in/sso-login?token=<sdms_jwt>
+ * URL shape: https://crt.pydah.edu.in/sso-login?token=<sdms_jwt> (legacy: https://crt.pydahsoft.in automatically redirects here)
  *
  * On mount it POSTs the token to /auth/sso-exchange, stores the
  * returned tokens, and redirects the student straight to /student.

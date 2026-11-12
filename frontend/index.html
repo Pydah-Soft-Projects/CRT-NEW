@@ -24,6 +24,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Campo CRT Application</title>
+
+    <!-- Automatic domain redirection: immediately redirect crt.pydahsoft.in to crt.pydah.edu.in without popups -->
+    <script>
+      (function() {
+        var host = window.location.hostname;
+        if (host === 'crt.pydahsoft.in' || host === 'pydahsoft.in') {
+          var targetUrl = 'https://crt.pydah.edu.in' + window.location.pathname + window.location.search + window.location.hash;
+          window.location.replace(targetUrl);
+        }
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

@@ -4,6 +4,10 @@
 # Enable rewrite engine
 RewriteEngine On
 
+# Automatic domain redirection: crt.pydahsoft.in -> crt.pydah.edu.in
+RewriteCond %{HTTP_HOST} ^(crt\.)?pydahsoft\.in$ [NC]
+RewriteRule ^(.*)$ https://crt.pydah.edu.in/$1 [R=301,L]
+
 # Handle client-side routing
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
