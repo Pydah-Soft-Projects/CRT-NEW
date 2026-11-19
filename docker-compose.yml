@@ -82,7 +82,7 @@ services:
       DB_SSL: ${DB_SSL:-false}
       USE_RDS_ORG_DATA: ${USE_RDS_ORG_DATA:-false}
       MYSQL_RDS_READ_ONLY: ${MYSQL_RDS_READ_ONLY:-false}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,https://crt.pydahsoft.in}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,https://crt.pydah.edu.in,https://crt.pydahsoft.in}
     depends_on:
       mongodb:
         condition: service_healthy

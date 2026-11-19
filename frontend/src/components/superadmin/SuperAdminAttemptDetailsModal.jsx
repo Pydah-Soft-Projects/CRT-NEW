@@ -67,10 +67,13 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePat
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden border border-white/20"
+        className="bg-[var(--surface,#FFFFFF)] rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden border border-[var(--border,#DCEBF2)]"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+        <div 
+          className="p-6 text-white"
+          style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+        >
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/20 rounded-xl">
@@ -78,7 +81,7 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePat
               </div>
               <div>
                 <h3 className="text-2xl font-bold">Attempt Details</h3>
-                <p className="text-indigo-100 mt-1">
+                <p className="text-white/80 mt-1">
                   {test?.test_name} • {attempt?.submitted_at ? new Date(attempt.submitted_at).toLocaleDateString() : 'Unknown Date'}
                 </p>
               </div>
@@ -86,13 +89,13 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePat
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className={`text-3xl font-bold ${
-                  attempt?.score >= 80 ? 'text-green-300' :
-                  attempt?.score >= 60 ? 'text-yellow-300' :
-                  'text-red-300'
+                  attempt?.score >= 80 ? 'text-green-200' :
+                  attempt?.score >= 60 ? 'text-yellow-200' :
+                  'text-red-200'
                 }`}>
                   {attempt?.score?.toFixed(1)}%
                 </div>
-                <div className="text-indigo-100 text-sm">
+                <div className="text-white/80 text-sm">
                   {attempt?.correct_answers}/{attempt?.total_questions} correct
                 </div>
               </div>
@@ -107,7 +110,7 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePat
         </div>
 
         {/* Content */}
-        <div className="p-8 overflow-y-auto max-h-[80vh] bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="p-8 overflow-y-auto max-h-[80vh] bg-[var(--background,#F4FAFD)]">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <LoadingSpinner size="lg" />
@@ -124,52 +127,67 @@ const SuperAdminAttemptDetailsModal = ({ isOpen, onClose, attempt, test, basePat
             <div className="space-y-6">
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-3 text-white">
+                <div 
+                  className="rounded-xl p-3 text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                >
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4" />
                     <div>
                       <div className="text-lg font-bold">{attemptDetails.attempt?.total_questions || 0}</div>
-                      <div className="text-blue-100 text-xs">Total Questions</div>
+                      <div className="text-white/80 text-xs">Total Questions</div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-3 text-white">
+                <div 
+                  className="rounded-xl p-3 text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, var(--success), #1b634c)' }}
+                >
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4" />
                     <div>
                       <div className="text-lg font-bold">{attemptDetails.attempt?.correct_answers || 0}</div>
-                      <div className="text-green-100 text-xs">Correct</div>
+                      <div className="text-white/80 text-xs">Correct</div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl p-3 text-white">
+                <div 
+                  className="rounded-xl p-3 text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, var(--warning), #9b6314)' }}
+                >
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <div>
                       <div className="text-lg font-bold">{attemptDetails.attempt?.time_taken || 'N/A'}</div>
-                      <div className="text-yellow-100 text-xs">Time</div>
+                      <div className="text-white/80 text-xs">Time</div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-3 text-white">
+                <div 
+                  className="rounded-xl p-3 text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, var(--secondary), var(--primary))' }}
+                >
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4" />
                     <div>
                       <div className="text-lg font-bold">{attemptDetails.attempt?.score?.toFixed(1) || 0}%</div>
-                      <div className="text-purple-100 text-xs">Score</div>
+                      <div className="text-white/80 text-xs">Score</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Questions List */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 border-b border-gray-200/50">
+              <div className="bg-[var(--surface,#FFFFFF)] rounded-2xl border border-[var(--border,#DCEBF2)] shadow-xl overflow-hidden">
+                <div className="bg-[var(--background,#F4FAFD)] p-4 border-b border-[var(--border,#DCEBF2)]">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg">
+                    <div 
+                      className="p-1.5 rounded-lg shadow-xs"
+                      style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                    >
                       <Brain className="w-4 h-4 text-white" />
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900">Question Details</h4>
+                    <h4 className="text-lg font-semibold text-[var(--text-primary,#183040)]">Question Details</h4>
                   </div>
                 </div>
                 

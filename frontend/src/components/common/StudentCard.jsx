@@ -6,13 +6,18 @@ const StudentCard = ({ student, onClick, showDetails = false }) => {
     return (
       <div 
         onClick={onClick}
-        className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+        className="bg-[var(--surface,#FFFFFF)] p-4 rounded-xl shadow-xs hover:shadow-md transition-shadow cursor-pointer border border-[var(--border,#DCEBF2)]"
       >
         <div className="flex items-center space-x-3">
-          <User className="w-6 h-6 text-blue-500" />
+          <div 
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-xs"
+            style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+          >
+            <User className="w-5 h-5 text-white" />
+          </div>
           <div>
-            <h3 className="font-medium text-gray-900">{student.name}</h3>
-            <p className="text-sm text-gray-500">{student.roll_number}</p>
+            <h3 className="font-medium text-[var(--text-primary,#183040)]">{student.name}</h3>
+            <p className="text-sm text-[var(--text-muted,#7D96A4)]">{student.roll_number}</p>
           </div>
         </div>
       </div>
@@ -20,21 +25,21 @@ const StudentCard = ({ student, onClick, showDetails = false }) => {
   }
 
   const getLevelColor = (percentage) => {
-    if (percentage >= 80) return 'text-green-500';
-    if (percentage >= 60) return 'text-yellow-500';
-    return 'text-red-500';
+    if (percentage >= 80) return 'text-[var(--success,#258265)]';
+    if (percentage >= 60) return 'text-[var(--warning,#C18120)]';
+    return 'text-[var(--danger,#C94C4C)]';
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+    <div className="bg-[var(--surface,#FFFFFF)] p-6 rounded-2xl shadow-lg border border-[var(--border,#DCEBF2)]">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{student.name}</h2>
-          <p className="text-gray-600">{student.roll_number}</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary,#183040)]">{student.name}</h2>
+          <p className="text-[var(--text-secondary,#486273)]">{student.roll_number}</p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-500">{student.email}</p>
-          <p className="text-sm text-gray-500">{student.mobile_number}</p>
+          <p className="text-sm text-[var(--text-muted,#7D96A4)]">{student.email}</p>
+          <p className="text-sm text-[var(--text-muted,#7D96A4)]">{student.mobile_number}</p>
         </div>
       </div>
 

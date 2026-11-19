@@ -182,55 +182,55 @@ const TestProgressChart = ({ attempts, testName }) => {
       {/* Trend indicator */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-1">
-          <span className="text-xs font-medium text-gray-600">Progress:</span>
+          <span className="text-xs font-medium text-[var(--text-secondary,#486273)]">Progress:</span>
           <div className={`flex items-center space-x-1 ${trendColor}`}>
             {trendIcon}
             <span className="text-xs font-medium">{trendText}</span>
           </div>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-[var(--text-muted,#7D96A4)]">
           {finalChartData.length - 1} attempt{(finalChartData.length - 1) !== 1 ? 's' : ''}
         </div>
       </div>
 
       {/* Chart */}
-      <div className="h-32 w-full bg-white rounded-lg border border-gray-200 p-2">
+      <div className="h-32 w-full bg-[var(--surface,#FFFFFF)] rounded-xl border border-[var(--border,#DCEBF2)] p-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={finalChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" vertical={false} />
+            <CartesianGrid strokeDasharray="2 2" stroke="var(--border, #DCEBF2)" vertical={false} />
             <XAxis 
               dataKey="attempt" 
-              tick={{ fontSize: 11, fill: '#374151', fontWeight: 500 }}
+              tick={{ fontSize: 11, fill: 'var(--text-secondary, #486273)', fontWeight: 500 }}
               interval={0}
               type="category"
               scale="point"
               tickFormatter={(value) => value.toString()}
-              axisLine={{ stroke: '#d1d5db', strokeWidth: 1 }}
-              tickLine={{ stroke: '#d1d5db', strokeWidth: 1 }}
+              axisLine={{ stroke: 'var(--border, #DCEBF2)', strokeWidth: 1 }}
+              tickLine={{ stroke: 'var(--border, #DCEBF2)', strokeWidth: 1 }}
             />
             <YAxis 
               domain={[0, 100]}
-              tick={{ fontSize: 11, fill: '#374151', fontWeight: 500 }}
+              tick={{ fontSize: 11, fill: 'var(--text-secondary, #486273)', fontWeight: 500 }}
               tickCount={6}
               ticks={[0, 20, 40, 60, 80, 100]}
-              axisLine={{ stroke: '#d1d5db', strokeWidth: 1 }}
-              tickLine={{ stroke: '#d1d5db', strokeWidth: 1 }}
+              axisLine={{ stroke: 'var(--border, #DCEBF2)', strokeWidth: 1 }}
+              tickLine={{ stroke: 'var(--border, #DCEBF2)', strokeWidth: 1 }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line
               type="monotone"
               dataKey="score"
-              stroke={chartTheme === 'improving' ? '#059669' : chartTheme === 'declining' ? '#dc2626' : '#6b7280'}
+              stroke={chartTheme === 'improving' ? 'var(--success, #258265)' : chartTheme === 'declining' ? 'var(--danger, #C94C4C)' : 'var(--primary, #1677A8)'}
               strokeWidth={2.5}
               dot={{ 
-                fill: chartTheme === 'improving' ? '#059669' : chartTheme === 'declining' ? '#dc2626' : '#6b7280', 
+                fill: chartTheme === 'improving' ? 'var(--success, #258265)' : chartTheme === 'declining' ? 'var(--danger, #C94C4C)' : 'var(--primary, #1677A8)', 
                 strokeWidth: 2, 
                 r: 4,
                 stroke: '#fff'
               }}
               activeDot={{ 
                 r: 6, 
-                stroke: chartTheme === 'improving' ? '#059669' : chartTheme === 'declining' ? '#dc2626' : '#6b7280', 
+                stroke: chartTheme === 'improving' ? 'var(--success, #258265)' : chartTheme === 'declining' ? 'var(--danger, #C94C4C)' : 'var(--primary, #1677A8)', 
                 strokeWidth: 2,
                 fill: '#fff'
               }}

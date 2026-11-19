@@ -123,10 +123,10 @@ export default function MultiSelectDropdown({
   return (
     <div className={`relative ${isOpen ? 'z-40' : 'z-10'}`} ref={dropdownRef}>
       {label && (
-        <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+        <label className="block text-xs font-semibold text-[var(--text-secondary,#486273)] mb-1 flex items-center justify-between">
           <span>{label}</span>
           {safeSelected.length > 0 && (
-            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+            <span className="text-[11px] font-bold text-[var(--primary)] bg-[var(--primary-50,#E8F4FA)] px-1.5 py-0.5 rounded-md">
               {safeSelected.length} selected
             </span>
           )}
@@ -140,19 +140,19 @@ export default function MultiSelectDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full text-left transition-all flex items-center justify-between gap-2 ${
           compact
-            ? 'px-2.5 py-1.5 text-xs bg-white border rounded-lg shadow-2xs'
-            : 'px-3 py-2 text-xs bg-white border rounded-xl shadow-2xs'
+            ? 'px-2.5 py-1.5 text-xs bg-[var(--surface,#FFFFFF)] border rounded-lg shadow-2xs'
+            : 'px-3 py-2 text-xs bg-[var(--surface,#FFFFFF)] border rounded-xl shadow-2xs'
         } ${
           disabled
-            ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200'
+            ? 'opacity-60 cursor-not-allowed bg-slate-50 border-[var(--border,#DCEBF2)]'
             : isOpen
-            ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+            ? 'border-[var(--primary)] ring-2 ring-[var(--primary)]/20'
             : safeSelected.length > 0
-            ? 'border-indigo-300 bg-indigo-50/20 text-slate-900 font-semibold'
-            : 'border-slate-200 hover:border-slate-300 text-slate-700'
+            ? 'border-[var(--primary-300,#71C2E2)] bg-[var(--primary-50,#E8F4FA)]/30 text-[var(--text-primary,#183040)] font-semibold'
+            : 'border-[var(--border,#DCEBF2)] hover:border-slate-300 text-[var(--text-primary,#183040)]'
         }`}
       >
-        <span className={`truncate ${safeSelected.length === 0 ? 'text-slate-600 font-medium' : 'text-slate-900 font-semibold'}`}>
+        <span className={`truncate ${safeSelected.length === 0 ? 'text-[var(--text-secondary,#486273)] font-medium' : 'text-[var(--text-primary,#183040)] font-semibold'}`}>
           {loading ? 'Loading...' : displayLabel}
         </span>
 
@@ -161,44 +161,44 @@ export default function MultiSelectDropdown({
             <span
               onClick={handleClear}
               title="Reset to All"
-              className="p-0.5 rounded hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 transition-colors"
+              className="p-0.5 rounded hover:bg-slate-200/80 text-[var(--text-muted,#7D96A4)] hover:text-[var(--text-primary,#183040)] transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-muted,#7D96A4)] transition-transform ${isOpen ? 'rotate-180 text-[var(--primary)]' : ''}`} />
         </div>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className={`absolute z-50 w-full min-w-[260px] max-w-sm bg-white rounded-xl shadow-2xl border border-slate-200 py-2 space-y-1 animate-in fade-in ${
+          className={`absolute z-50 w-full min-w-[260px] max-w-sm bg-[var(--surface,#FFFFFF)] rounded-xl shadow-2xl border border-[var(--border,#DCEBF2)] py-2 space-y-1 animate-in fade-in ${
             openUpward ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           }`}
         >
           {/* Search box */}
           {normalizedOptions.length > 3 && (
-            <div className="px-2 pb-1.5 border-b border-slate-100">
+            <div className="px-2 pb-1.5 border-b border-[var(--border,#DCEBF2)]">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted,#7D96A4)]" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={`Search ${label || 'colleges'}...`}
-                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder-slate-400"
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-[var(--background,#F4FAFD)] border border-[var(--border,#DCEBF2)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary)] text-[var(--text-primary,#183040)] placeholder-[var(--text-muted,#7D96A4)]"
                 />
               </div>
             </div>
           )}
 
           {/* Quick Select Buttons */}
-          <div className="flex items-center justify-between px-3 py-1 border-b border-slate-100 text-[11px] font-semibold text-slate-500">
+          <div className="flex items-center justify-between px-3 py-1 border-b border-[var(--border,#DCEBF2)] text-[11px] font-semibold text-[var(--text-muted,#7D96A4)]">
             <button
               type="button"
               onClick={handleSelectAll}
-              className="hover:text-indigo-600 transition-colors"
+              className="hover:text-[var(--primary)] transition-colors"
             >
               Select All (Global)
             </button>
@@ -206,7 +206,7 @@ export default function MultiSelectDropdown({
               <button
                 type="button"
                 onClick={() => onChange && onChange([])}
-                className="text-rose-600 hover:text-rose-700 transition-colors"
+                className="text-[var(--danger,#C94C4C)] hover:opacity-80 transition-colors"
               >
                 Clear Selection
               </button>
@@ -220,26 +220,26 @@ export default function MultiSelectDropdown({
               onClick={handleSelectAll}
               className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                 safeSelected.length === 0
-                  ? 'bg-indigo-50 text-indigo-900 font-semibold'
-                  : 'hover:bg-slate-50 text-slate-700'
+                  ? 'bg-[var(--primary-50,#E8F4FA)] text-[var(--primary-900,#082B3D)] font-semibold'
+                  : 'hover:bg-[var(--background,#F4FAFD)] text-[var(--text-primary,#183040)]'
               }`}
             >
               <input
                 type="checkbox"
                 checked={safeSelected.length === 0}
                 onChange={handleSelectAll}
-                className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+                className="w-3.5 h-3.5 text-[var(--primary)] rounded border-[var(--border,#DCEBF2)] focus:ring-[var(--primary)] pointer-events-none"
               />
               <span className="flex-1">{allLabel}</span>
               {safeSelected.length === 0 && (
-                <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-full">
+                <span className="text-[10px] bg-[var(--primary)] text-white font-bold px-1.5 py-0.2 rounded-full">
                   Active
                 </span>
               )}
             </div>
 
             {filteredOptions.length === 0 ? (
-              <p className="text-center py-3 text-xs text-slate-400">No matching colleges</p>
+              <p className="text-center py-3 text-xs text-[var(--text-muted,#7D96A4)]">No matching colleges</p>
             ) : (
               filteredOptions.map((opt) => {
                 const isChecked = safeSelected.some((v) => String(v) === String(opt.id));
@@ -249,15 +249,15 @@ export default function MultiSelectDropdown({
                     onClick={() => toggleOption(opt.id)}
                     className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                       isChecked
-                        ? 'bg-indigo-50 text-indigo-900 font-semibold'
-                        : 'hover:bg-slate-50 text-slate-700'
+                        ? 'bg-[var(--primary-50,#E8F4FA)] text-[var(--primary-900,#082B3D)] font-semibold'
+                        : 'hover:bg-[var(--background,#F4FAFD)] text-[var(--text-primary,#183040)]'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleOption(opt.id)}
-                      className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
+                      className="w-3.5 h-3.5 text-[var(--primary)] rounded border-[var(--border,#DCEBF2)] focus:ring-[var(--primary)] pointer-events-none"
                     />
                     <span className="flex-1 truncate">{opt.name}</span>
                     {opt.code && (

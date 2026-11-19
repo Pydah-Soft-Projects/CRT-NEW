@@ -451,20 +451,23 @@ const DynamicFormRenderer = ({
       {showProgress && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700">Form Progress</span>
-            <span className="text-sm font-bold text-blue-600">{getProgressPercentage()}%</span>
+            <span className="text-sm font-semibold text-[var(--text-secondary,#486273)]">Form Progress</span>
+            <span className="text-sm font-bold text-[var(--primary)]">{getProgressPercentage()}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 shadow-inner">
+          <div className="w-full bg-[var(--background,#F4FAFD)] border border-[var(--border,#DCEBF2)] rounded-full h-2.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out shadow-sm"
-              style={{ width: `${getProgressPercentage()}%` }}
+              className="h-2.5 rounded-full transition-all duration-500 ease-out shadow-xs"
+              style={{ 
+                width: `${getProgressPercentage()}%`,
+                background: 'linear-gradient(135deg, var(--primary), var(--secondary))'
+              }}
             />
           </div>
         </div>
       )}
 
       {/* Form Fields with Responsive Grid */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-[var(--surface,#FFFFFF)] rounded-2xl shadow-lg border border-[var(--border,#DCEBF2)] overflow-hidden">
         <form className="p-6">
           {/* Responsive Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -476,17 +479,15 @@ const DynamicFormRenderer = ({
           </div>
 
           {/* Action Buttons with Soft Design */}
-          <div className="pt-6 mt-6 border-t border-gray-100">
+          <div className="pt-6 mt-6 border-t border-[var(--border,#DCEBF2)]">
             <div className="flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => handleSubmit('submitted')}
                 disabled={isSubmitting || isProcessing}
-                className="group relative px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+                className="group relative px-6 py-3 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden"
               >
-                {/* Animated background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
                 {/* Button content */}
                 <div className="relative flex items-center justify-center">
                   {isSubmitting || isProcessing ? (
@@ -503,9 +504,6 @@ const DynamicFormRenderer = ({
                     </>
                   )}
                 </div>
-                
-                {/* Shine effect */}
-                <div className="absolute inset-0 -top-1 -left-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 group-hover:animate-pulse"></div>
               </button>
             </div>
           </div>

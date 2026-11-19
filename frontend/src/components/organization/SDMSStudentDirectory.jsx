@@ -41,31 +41,35 @@ const SDMSStudentDirectory = ({ title }) => {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 p-4 md:p-6 bg-[var(--background,#F4FAFD)] min-h-screen">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-[var(--text-primary,#183040)]">{title}</h1>
+          <p className="mt-1 text-sm text-[var(--text-secondary,#486273)]">
             Student identities and academic records are read directly from SDMS. This directory cannot create, edit, or delete student records.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
-          <Users className="h-5 w-5" />
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--primary-50,#E8F4FA)] border border-[var(--border,#DCEBF2)] px-4 py-3 text-sm font-medium text-[var(--primary-900,#082B3D)]">
+          <Users className="h-5 w-5 text-[var(--primary)]" />
           {pagination.total.toLocaleString()} students
         </div>
       </div>
 
       <form onSubmit={submitSearch} className="flex flex-col gap-3 sm:flex-row">
         <label className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted,#7D96A4)]" />
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search name, roll number, admission number, or email"
-            className="w-full rounded-xl border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-[var(--border,#DCEBF2)] bg-[var(--surface,#FFFFFF)] py-2.5 pl-10 pr-3 text-sm focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-100)] text-[var(--text-primary,#183040)] placeholder-[var(--text-muted,#7D96A4)]"
           />
         </label>
-        <button type="submit" className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+        <button 
+          type="submit" 
+          style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
+        >
           Search
         </button>
         <button
@@ -73,22 +77,22 @@ const SDMSStudentDirectory = ({ title }) => {
           onClick={loadStudents}
           disabled={loading}
           aria-label="Refresh student directory"
-          className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-4 py-2.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-xl border border-[var(--border,#DCEBF2)] bg-[var(--surface,#FFFFFF)] px-4 py-2.5 text-[var(--text-primary,#183040)] hover:bg-[var(--background,#F4FAFD)] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </form>
 
       {loadError && (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-xl border border-[var(--danger,#C94C4C)]/30 bg-[var(--danger-light,rgba(201,76,76,0.12))] px-4 py-3 text-sm text-[var(--danger,#C94C4C)]">
           {loadError}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border,#DCEBF2)] bg-[var(--surface,#FFFFFF)] shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <table className="min-w-full divide-y divide-[var(--border,#DCEBF2)] text-sm">
+            <thead className="bg-[var(--background,#F4FAFD)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary,#486273)]">
               <tr>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Roll / Admission</th>
@@ -99,20 +103,20 @@ const SDMSStudentDirectory = ({ title }) => {
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--border,#DCEBF2)]">
               {loading ? (
-                <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-500">Loading SDMS students...</td></tr>
+                <tr><td colSpan="7" className="px-4 py-10 text-center text-[var(--text-muted,#7D96A4)]">Loading SDMS students...</td></tr>
               ) : students.length === 0 ? (
-                <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-500">No students found.</td></tr>
+                <tr><td colSpan="7" className="px-4 py-10 text-center text-[var(--text-muted,#7D96A4)]">No students found.</td></tr>
               ) : students.map((student) => (
-                <tr key={student.sdms_student_id || student.id} className="hover:bg-gray-50">
+                <tr key={student.sdms_student_id || student.id} className="hover:bg-[var(--background,#F4FAFD)] transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{student.name || '—'}</div>
-                    <div className="text-xs text-gray-500">{student.email || 'No email'}</div>
+                    <div className="font-medium text-[var(--text-primary,#183040)]">{student.name || '—'}</div>
+                    <div className="text-xs text-[var(--text-muted,#7D96A4)]">{student.email || 'No email'}</div>
                   </td>
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="px-4 py-3 text-[var(--text-secondary,#486273)]">
                     <div>{student.roll_number || student.pin_no || '—'}</div>
-                    <div className="text-xs text-gray-500">{student.admission_number || ''}</div>
+                    <div className="text-xs text-[var(--text-muted,#7D96A4)]">{student.admission_number || ''}</div>
                   </td>
                   <td className="px-4 py-3 text-gray-700">{student.college_name || '—'}</td>
                   <td className="px-4 py-3 text-gray-700">

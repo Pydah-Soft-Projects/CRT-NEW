@@ -545,13 +545,13 @@ const TechnicalCodeEditor = ({
 
       {/* Question */}
       {question && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-semibold text-gray-900 mb-2">Question:</h4>
-          <p className="text-gray-700 whitespace-pre-wrap">{question.question}</p>
+        <div className="mb-4 p-4 bg-[var(--primary-50,#E8F4FA)] border border-[var(--border,#DCEBF2)] rounded-xl">
+          <h4 className="font-semibold text-[var(--text-primary,#183040)] mb-2">Question:</h4>
+          <p className="text-[var(--text-secondary,#486273)] whitespace-pre-wrap">{question.question}</p>
           {question.instructions && (
             <div className="mt-2">
-              <p className="text-sm font-medium text-gray-600">Instructions:</p>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{question.instructions}</p>
+              <p className="text-sm font-medium text-[var(--text-secondary,#486273)]">Instructions:</p>
+              <p className="text-sm text-[var(--text-muted,#7D96A4)] whitespace-pre-wrap">{question.instructions}</p>
             </div>
           )}
         </div>
@@ -559,7 +559,7 @@ const TechnicalCodeEditor = ({
 
       {/* Code Editor */}
       <div className="mb-4">
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
+        <div className="border border-[var(--border,#DCEBF2)] rounded-xl overflow-hidden shadow-xs">
           <Editor
             height="400px"
             language={languageConfig[selectedLanguage]?.monacoLang || 'plaintext'}
@@ -587,7 +587,7 @@ const TechnicalCodeEditor = ({
       {/* Input Section (for testing) */}
       {selectedLanguage !== 'html' && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[var(--text-primary,#183040)] mb-2">
             Input (stdin) - Optional:
           </label>
           <textarea
@@ -595,7 +595,7 @@ const TechnicalCodeEditor = ({
             onChange={(e) => setStdin(e.target.value)}
             disabled={readOnly || isRunning || isSubmitting}
             placeholder="Enter input for your program (one value per line)..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+            className="w-full px-3 py-2 border border-[var(--border,#DCEBF2)] bg-[var(--surface,#FFFFFF)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] font-mono text-sm text-[var(--text-primary,#183040)]"
             rows="3"
           />
         </div>
@@ -606,7 +606,7 @@ const TechnicalCodeEditor = ({
         <button
           onClick={handleRunCode}
           disabled={readOnly || isRunning || isSubmitting || !code.trim()}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--success,#258265)] text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm"
         >
           {isRunning ? (
             <>
@@ -625,7 +625,8 @@ const TechnicalCodeEditor = ({
         <button
           onClick={handleValidateAllTestCases}
           disabled={readOnly || isValidating || isSubmitting || !code.trim() || !question?.test_cases?.length}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{ background: 'linear-gradient(135deg, var(--secondary), var(--primary))' }}
+          className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm"
         >
           {isValidating ? (
             <>
@@ -644,7 +645,8 @@ const TechnicalCodeEditor = ({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !testResults || !testId || !(question?._id || question?.question_id) || !selectedLanguage || !code.trim()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))' }}
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm"
           >
             {isSubmitting ? (
               <>

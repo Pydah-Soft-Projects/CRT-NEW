@@ -52,22 +52,22 @@ const PracticeTestAttemptsModal = ({ isOpen, onClose, test, onViewAttemptDetails
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col"
+        className="bg-[var(--surface,#FFFFFF)] border border-[var(--border,#DCEBF2)] rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="p-3 sm:p-6 border-b border-gray-200">
+        <div className="p-3 sm:p-6 border-b border-[var(--border,#DCEBF2)]">
           <div className="flex justify-between items-center gap-2">
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
+              <h3 className="text-sm sm:text-xl font-bold text-[var(--text-primary,#183040)] truncate">
                 {test?.test_name} - Attempts
               </h3>
-              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
+              <p className="text-xs sm:text-sm text-[var(--text-muted,#7D96A4)] mt-0.5 truncate">
                 {test?.module_id} • {test?.subcategory || test?.level_id || 'Practice Test'}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-1 sm:p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+              className="p-1 sm:p-2 hover:bg-[var(--background,#F4FAFD)] rounded-full transition-colors shrink-0 text-[var(--text-muted,#7D96A4)]"
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>

@@ -9,42 +9,42 @@ const NotificationToast = () => {
   const getIcon = (type) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-400" />
+        return <CheckCircle className="h-5 w-5 text-[var(--success,#258265)]" />
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-400" />
+        return <AlertCircle className="h-5 w-5 text-[var(--danger,#C94C4C)]" />
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-400" />
+        return <AlertTriangle className="h-5 w-5 text-[var(--warning,#C18120)]" />
       case 'info':
       default:
-        return <Info className="h-5 w-5 text-blue-400" />
+        return <Info className="h-5 w-5 text-[var(--info,#1677A8)]" />
     }
   }
 
   const getBackgroundColor = (type) => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200'
+        return 'bg-[var(--success-light,rgba(37,130,101,0.12))] border-[var(--success,#258265)]/30'
       case 'error':
-        return 'bg-red-50 border-red-200'
+        return 'bg-[var(--danger-light,rgba(201,76,76,0.12))] border-[var(--danger,#C94C4C)]/30'
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200'
+        return 'bg-[var(--warning-light,rgba(193,129,32,0.12))] border-[var(--warning,#C18120)]/30'
       case 'info':
       default:
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-[var(--info-light,rgba(22,119,168,0.12))] border-[var(--info,#1677A8)]/30'
     }
   }
 
   const getTextColor = (type) => {
     switch (type) {
       case 'success':
-        return 'text-green-800'
+        return 'text-[var(--success,#258265)]'
       case 'error':
-        return 'text-red-800'
+        return 'text-[var(--danger,#C94C4C)]'
       case 'warning':
-        return 'text-yellow-800'
+        return 'text-[var(--warning,#C18120)]'
       case 'info':
       default:
-        return 'text-blue-800'
+        return 'text-[var(--info,#1677A8)]'
     }
   }
 

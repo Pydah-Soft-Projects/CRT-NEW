@@ -1,13 +1,28 @@
-# 1. HTTP Server - Redirects all traffic cleanly to HTTPS
+# 1. HTTP Server - Redirects all traffic cleanly to HTTPS crt.pydah.edu.in
 server {
     listen 80;
     listen [::]:80;
-    server_name crt.pydah.edu.in 13.206.203.113 localhost _;
+    server_name crt.pydah.edu.in crt.pydahsoft.in 13.206.203.113 localhost _;
 
     return 301 https://crt.pydah.edu.in$request_uri;
 }
 
-# 2. HTTPS Server - Secure Production Portal
+# 2. HTTPS Redirect Server - Automatically redirects crt.pydahsoft.in to crt.pydah.edu.in
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name crt.pydahsoft.in;
+
+    # SSL certificates for crt.pydahsoft.in (or fallback to live cert)
+    ssl_certificate /etc/letsencrypt/live/crt.pydah.edu.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/crt.pydah.edu.in/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    return 301 https://crt.pydah.edu.in$request_uri;
+}
+
+# 3. HTTPS Server - Secure Production Portal
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
