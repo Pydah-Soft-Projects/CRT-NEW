@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { FilePlus, BarChart, LayoutDashboard, GraduationCap, Users, Activity, Menu, X } from 'lucide-react'
+import { FilePlus, BarChart, LayoutDashboard, GraduationCap, Users, Activity, Menu, X, Sparkles } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePermissionContext } from '../../contexts/PermissionContext'
 import { motion } from 'framer-motion'
@@ -98,6 +98,7 @@ const SuperAdminSidebar = () => {
     { name: 'Student Management', path: '/superadmin/students', icon: GraduationCap, module: 'students' },
     { name: 'Test Management', path: '/superadmin/tests', icon: FilePlus, module: 'tests' },
     { name: 'CRT & Versant', path: '/superadmin/crt-upload', icon: FilePlus, module: 'crt_upload' },
+    { name: 'AI Question Settings', path: '/superadmin/ai-settings', icon: Sparkles, module: 'crt_upload' },
     { name: 'Results Management', path: '/superadmin/results', icon: BarChart, module: 'results' },
     { name: 'Progress Tracking', path: '/superadmin/progress-tracking', icon: Activity, module: 'progress_tracking' },
     { name: 'User Management', path: '/superadmin/user-management', icon: Users, module: 'user_management' },

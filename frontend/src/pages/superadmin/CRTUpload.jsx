@@ -37,10 +37,14 @@ import {
   ArrowLeft,
   School,
   Building2,
-  Globe
+  Globe,
+  Settings
 } from 'lucide-react';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import MultiSelectDropdown from '../../components/common/MultiSelectDropdown';
+import AiQuestionGenerationModal from '../../components/superadmin/AiQuestionGenerationModal';
+import AiQuestionsPreviewModal from '../../components/superadmin/AiQuestionsPreviewModal';
+import AiSettingsModal from '../../components/superadmin/AiSettingsModal';
 import {
   getCrtModules,
   createCrtModule,
@@ -55,7 +59,10 @@ import {
   bulkUploadCrtQuestions,
   updateCrtQuestion,
   deleteCrtQuestion,
-  getCrtStats
+  getCrtStats,
+  generateAiQuestions,
+  regenerateAiSingleQuestion,
+  saveAiApprovedQuestions
 } from '../../services/api';
 
 // Icon Map for Dynamic Modules
@@ -262,6 +269,14 @@ export default function CRTUpload() {
   // Bulk Import & Sentence Target College Scopes (multi-selection, empty = All Colleges)
   const [importCollegeScopes, setImportCollegeScopes] = useState([]);
   const [bulkSentenceCollegeScopes, setBulkSentenceCollegeScopes] = useState([]);
+
+  // AI Question Generation States
+  const [isAiGenerateModalOpen, setIsAiGenerateModalOpen] = useState(false);
+  const [isAiPreviewModalOpen, setIsAiPreviewModalOpen] = useState(false);
+  const [isAiSettingsModalOpen, setIsAiSettingsModalOpen] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [isAiSaving, setIsAiSaving] = useState(false);
+  const [aiGeneratedData, setAiGeneratedData] = useState(null);
 
   // Modules horizontal inline scrolling
   const modulesScrollRef = useRef(null);
@@ -755,6 +770,61 @@ export default function CRTUpload() {
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to delete question');
     }
+  };
+
+  // -------------------------------------------------------------
+  // AI QUESTION GENERATION ACTIONS
+  // -------------------------------------------------------------
+  const handleStartAiGenerate = () => {
+    setIsAiGenerateModalOpen(true);
+  };
+
+  const handleExecuteAiGenerate = async (payload) => {
+    try {
+      setIsAiGenerating(true);
+      const res = await generateAiQuestions(payload);
+      if (res.data?.success && res.data?.data) {
+        setAiGeneratedData(res.data.data);
+        setIsAiGenerateModalOpen(false);
+        setIsAiPreviewModalOpen(true);
+        toast.success(`Generated ${res.data.data.questions?.length || 0} questions with AI!`);
+      } else {
+        throw new Error(res.data?.message || 'Failed to generate questions');
+      }
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || err.message || 'Generation failed';
+      toast.error(errMsg);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const handleSaveApprovedAiQuestions = async (approvedQuestions) => {
+    try {
+      setIsAiSaving(true);
+      const res = await saveAiApprovedQuestions({ questions: approvedQuestions });
+      if (res.data?.success) {
+        toast.success(res.data.message || 'Approved questions added to Question Bank!');
+        setIsAiPreviewModalOpen(false);
+        setAiGeneratedData(null);
+        await loadQuestions();
+        await fetchStructure(true);
+      } else {
+        throw new Error(res.data?.message || 'Failed to save approved questions');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Failed to save questions');
+    } finally {
+      setIsAiSaving(false);
+    }
+  };
+
+  const handleRegenerateSingleAiQuestion = async (singlePayload) => {
+    const res = await regenerateAiSingleQuestion(singlePayload);
+    if (res.data?.success && res.data?.data) {
+      return res.data.data;
+    }
+    throw new Error(res.data?.message || 'Failed to regenerate question');
   };
 
   const handleToggleSelectAll = () => {
@@ -1720,6 +1790,27 @@ export default function CRTUpload() {
               >
                 <Mic className="w-3.5 h-3.5 text-rose-600" />
                 <span>+ Paste Sentences</span>
+              </button>
+
+              {/* ✨ Generate Questions with AI */}
+              <button
+                type="button"
+                onClick={handleStartAiGenerate}
+                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-2xs hover:shadow-xs transition-all"
+                title="Generate high-quality placement MCQs with Google Gemini AI"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                <span>✨ Generate Questions with AI</span>
+              </button>
+
+              {/* AI Settings Shortcut */}
+              <button
+                type="button"
+                onClick={() => setIsAiSettingsModalOpen(true)}
+                className="p-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-blue-600 rounded-lg text-xs shadow-2xs transition-colors"
+                title="AI Question Generation Settings & Gemini API Key"
+              >
+                <Settings className="w-3.5 h-3.5" />
               </button>
 
               {/* Add Question Button (Royal Blue) */}
@@ -2909,6 +3000,35 @@ export default function CRTUpload() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ============================================================= */}
+      {/* AI QUESTION BANK GENERATION MODALS                            */}
+      {/* ============================================================= */}
+      <AiQuestionGenerationModal
+        isOpen={isAiGenerateModalOpen}
+        onClose={() => setIsAiGenerateModalOpen(false)}
+        modules={modules}
+        currentModuleId={selectedModuleId}
+        currentTopicId={selectedTopicId}
+        colleges={colleges}
+        onGenerate={handleExecuteAiGenerate}
+        isGenerating={isAiGenerating}
+        onOpenSettings={() => setIsAiSettingsModalOpen(true)}
+      />
+
+      <AiQuestionsPreviewModal
+        isOpen={isAiPreviewModalOpen}
+        onClose={() => setIsAiPreviewModalOpen(false)}
+        data={aiGeneratedData}
+        onSaveApproved={handleSaveApprovedAiQuestions}
+        isSaving={isAiSaving}
+        onRegenerateSingle={handleRegenerateSingleAiQuestion}
+      />
+
+      <AiSettingsModal
+        isOpen={isAiSettingsModalOpen}
+        onClose={() => setIsAiSettingsModalOpen(false)}
+      />
 
     </div>
   );

@@ -57,6 +57,27 @@ class QuestionBankService {
         { module_id: new RegExp(`^${resolvedTopic}$`, 'i') }
       ];
 
+      // Expand topic synonyms across CRT and Versant question banks
+      if (resolvedTopic.includes('speak') || resolvedTopic.includes('repeat')) {
+        orConditions.push(
+          { subcategory: { $in: ['speaking', 'versant-repeat', 'versant-reading'] } },
+          { subcategory: /speak|repeat/i },
+          { topic_id: { $in: ['speaking', 'versant-repeat', 'versant-reading', '6ae440e3e098c7b44b671fc8', '6ae440e3e098c7b44b671fc4'] } }
+        );
+      } else if (resolvedTopic.includes('listen')) {
+        orConditions.push(
+          { subcategory: { $in: ['listening', 'versant-listening'] } },
+          { subcategory: /listen/i },
+          { topic_id: { $in: ['listening', 'versant-listening', '6ae440e3e098c7b44b671fd8'] } }
+        );
+      } else if (resolvedTopic.includes('read')) {
+        orConditions.push(
+          { subcategory: { $in: ['reading', 'versant-reading'] } },
+          { subcategory: /reading/i },
+          { topic_id: { $in: ['reading', 'versant-reading', '6ae440e3e098c7b44b671fc4'] } }
+        );
+      }
+
       // If generic query, match by parent module
       if (resolvedTopic === 'general' || resolvedTopic === 'all') {
         orConditions.push({ module_id: new RegExp(`^${resolvedModule}`, 'i') });

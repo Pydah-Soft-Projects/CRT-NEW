@@ -39,6 +39,7 @@ const TestHistory = lazy(() => import('./pages/student/TestHistory'))
 const ProgressTracker = lazy(() => import('./pages/student/ProgressTracker'))
 const StudentProfile = lazy(() => import('./pages/student/Profile'))
 const SuperAdminProfile = lazy(() => import('./pages/superadmin/Profile'))
+const AiSettingsPage = lazy(() => import('./pages/superadmin/AiSettingsPage'))
 const OnlineExamTaking = lazy(() => import('./pages/student/OnlineExamTaking'))
 const PracticeModuleTaking = lazy(() => import('./pages/student/PracticeModuleTaking'))
 const TechnicalTestTaking = lazy(() => import('./pages/student/TechnicalTestTaking'))
@@ -100,6 +101,7 @@ function AppContent() {
             <Route path="tests/create" element={<TestManagement />} />
             <Route path="question-bank-upload" element={<Navigate to="/superadmin/crt-upload" replace />} />
             <Route path="crt-upload" element={<CRTUpload />} />
+            <Route path="ai-settings" element={<AiSettingsPage />} />
             <Route path="user-management" element={<UserManagement />} />
             <Route path="profile" element={<SuperAdminProfile />} />
           </Route>

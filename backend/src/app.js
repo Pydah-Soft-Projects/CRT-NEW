@@ -16,6 +16,7 @@ const studentRoutes = require('./routes/student.routes');
 const hrmsRoutes = require('./routes/hrms.routes');
 const userManagementRoutes = require('./routes/userManagement.routes');
 const crtRoutes = require('./routes/crt.routes');
+const aiQuestionRoutes = require('./routes/aiQuestionGeneration.routes');
 const superadminController = require('./controllers/superadmin.controller');
 
 const app = express();
@@ -68,6 +69,8 @@ app.use('/hrms', hrmsRoutes);
 app.use('/user-management', userManagementRoutes);
 app.use('/crt', crtRoutes);
 app.use('/test-management/crt', crtRoutes);
+app.use('/admin/ai-question-generation', aiQuestionRoutes);
+app.use('/api/admin/ai-question-generation', aiQuestionRoutes);
 
 // Centralized Error Handling Middleware
 app.use(errorHandler);

@@ -597,4 +597,31 @@ export const submitSpeakingExam = async (testId, payload) => {
   return api.post(`/student/tests/${testId}/submit-speaking`, payload);
 };
 
+// ==========================================
+// AI Question Bank Generator API Services
+// ==========================================
+export const getAiQuestionSettings = async () => {
+  return api.get('/admin/ai-question-generation/settings');
+};
+
+export const updateAiQuestionSettings = async (data) => {
+  return api.put('/admin/ai-question-generation/settings', data);
+};
+
+export const testAiConnection = async (data = {}) => {
+  return api.post('/admin/ai-question-generation/test-connection', data);
+};
+
+export const generateAiQuestions = async (data) => {
+  return api.post('/admin/ai-question-generation/generate', data);
+};
+
+export const regenerateAiSingleQuestion = async (data) => {
+  return api.post('/admin/ai-question-generation/regenerate-single', data);
+};
+
+export const saveAiApprovedQuestions = async (data) => {
+  return api.post('/admin/ai-question-generation/save-approved', data);
+};
+
 export default api;
